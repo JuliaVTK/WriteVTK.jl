@@ -372,6 +372,7 @@ end
 
 function vtk_save(vtk::DatasetFile)
     if !APPEND
+        close(vtk.buf)  # Close append buffer, even if it wasn't used.
         save_file(vtk.xdoc, vtk.path)
         return vtk.path::String
     end
