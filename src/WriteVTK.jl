@@ -9,6 +9,7 @@ module WriteVTK
 #   * add support for cell data (not sure if this is easy though...).
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
+# - Replace String types with concrete types (ASCIIString, UTF8String?).
 
 export VTKFile, MultiblockFile, DatasetFile
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
@@ -102,10 +103,27 @@ end
 function data_to_xml{T<:FloatingPoint}(
     bapp::IOBuffer, xParent::XMLElement, data::Array{T}, Nc::Integer,
     varname::String, compress::Bool)
-    # This variant of data_to_xml should be used when writing appended data.
-    # * bapp is the IOBuffer where the appended data is written.
-    # * xParent is the XML node under which the DataArray node will be created.
-    #   It is either a "Points" or a "PointData" node.
+    #==========================================================================
+    This variant of data_to_xml should be used when writing appended data.
+      * bapp is the IOBuffer where the appended data is written.
+      * xParent is the XML node under which the DataArray node will be created.
+        It is either a "Points" or a "PointData" node.
+
+    When compress == true:
+      * the data array is written in compressed form (obviously);
+      * the header, written before the actual numerical data, is an array of
+        Uint32 values:
+            [num_blocks, blocksize, last_blocksize, compressed_blocksizes]
+        All the sizes are in bytes. The header itself is not compressed, only
+        the data is.
+        See also:
+            http://public.kitware.com/pipermail/paraview/2005-April/001391.html
+            http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats
+      * note that VTK only allows compressing appended data, not inline data.
+
+    Otherwise, the header is just a single Uint32 value containing the size of
+    the data array in bytes.
+    ==========================================================================#
 
     @assert name(xParent) in ("Points", "PointData")
 
@@ -128,39 +146,32 @@ function data_to_xml{T<:FloatingPoint}(
         "offset"             => "$(bapp.size)")
     set_attributes(xDA, atts)
 
-    # Number of bytes of data.
-    nb = uint32(sizeof(data))
+    # Size of data array (in bytes).
+    const nb = uint32(sizeof(data))
 
-    # Write raw binary data to an IOBuffer, and then to "bapp".
-    # NOTE: I can't write directly to the "bapp" buffer, since I first need to
-    # know the size of the compressed data, to be included in the header.
-    buf = IOBuffer()
-
-    if compress
-        zWriter = Zlib.Writer(buf, COMPRESSION_LEVEL)
-        io = zWriter
-    else
-        io = buf
-        write(io, nb)       # header (uncompressed version)
-    end
-
-    write(io, data)
+    # Position in the append buffer where the previous record ends.
+    const initpos = position(bapp)
+    header = zeros(Uint32, 4)
 
     if compress
-        # Header (Uint32 values):
-        #   num_blocks | blocksize | last_blocksize | compressed_blocksizes
-        #
-        # See:
-        #   http://public.kitware.com/pipermail/paraview/2005-April/001391.html
-        #   http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats
+        # Write temporary array that will be replaced later by the real header.
+        write(bapp, header)
+
+        # Write compressed data.
+        zWriter = Zlib.Writer(bapp, COMPRESSION_LEVEL)
+        write(zWriter, data)
         close(zWriter)
-        hdr = uint32([1, nb, nb, buf.size])
-        write(bapp, hdr)
+
+        # Write real header.
+        compbytes = position(bapp) - initpos - sizeof(header)
+        header[:] = [1, nb, nb, compbytes]
+        seek(bapp, initpos)
+        write(bapp, header)
+        seekend(bapp)
+    else
+        write(bapp, nb)       # header (uncompressed version)
+        write(bapp, data)
     end
-
-    write(bapp, takebuf_array(buf))
-
-    close(buf)
 
     return xDA
 end
