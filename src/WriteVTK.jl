@@ -5,11 +5,12 @@ module WriteVTK
 # - Add better support for 2D datasets (slices).
 # - Reduce duplicate code: data_to_xml() variants...
 # - Generalise:
-#   * add support for other types of grid (RectilinearGrid should be easy).
+#   * add support for other types of grid.
 #   * add support for cell data (not sure if this is easy though...).
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
 # - Replace String types with concrete types (ASCIIString, UTF8String?).
+# - Remove support for inline (non-appended) data.
 
 export VTKFile, MultiblockFile, DatasetFile
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
@@ -26,6 +27,10 @@ using Compat
 const COMPRESSION_LEVEL = 6
 const APPEND = true         # FIXME this constant is temporary...
 
+# Grid types (maybe there's a better way of doing this?).
+const GRID_RECTILINEAR = 1
+const GRID_STRUCTURED  = 2
+
 # ====================================================================== #
 ## Types ##
 abstract VTKFile
@@ -36,10 +41,19 @@ type DatasetFile <: VTKFile
     compressed::Bool
     Npts::Int           # Number of grid points (= Ni*Nj*Nk).
     buf::IOBuffer       # Buffer with appended data.
+    gridType::Int       # One of the GRID_* constants.
+    gridType_str::UTF8String
 
     # Override default constructor.
-    DatasetFile(xdoc, path, compressed, Npts) =
-        new(xdoc, path, compressed, Npts, IOBuffer())
+    function DatasetFile(xdoc, path, compressed, Npts, gridType)
+        gridType_str =
+            gridType == GRID_RECTILINEAR ? "RectilinearGrid" :
+            gridType == GRID_STRUCTURED  ? "StructuredGrid"  :
+            error("Grid type not supported...")
+
+        return new(xdoc, path, compressed, Npts, IOBuffer(),
+                   gridType, gridType_str)
+    end
 end
 
 type MultiblockFile <: VTKFile
@@ -125,7 +139,7 @@ function data_to_xml{T<:FloatingPoint}(
     the data array in bytes.
     ==========================================================================#
 
-    @assert name(xParent) in ("Points", "PointData")
+    @assert name(xParent) in ("Points", "PointData", "Coordinates")
 
     if T === Float32
         sType = "Float32"
@@ -184,7 +198,7 @@ function data_to_xml{T<:FloatingPoint}(
     # * xParent is the XML node under which the DataArray node will be created.
     #   It is either a "Points" or a "PointData" node.
 
-    @assert name(xParent) in ("Points", "PointData")
+    @assert name(xParent) in ("Points", "PointData", "Coordinates")
 
     if T === Float32
         sType = "Float32"
@@ -259,7 +273,7 @@ function vtk_grid{T<:FloatingPoint}(
 end
 
 function vtk_grid{T<:FloatingPoint}(
-    filename_noext::String, x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
+    filename_noext::String, x::Array{T}, y::Array{T}, z::Array{T};
     compress::Bool=true)
     #==========================================================================#
     # Creates a new grid file with coordinates x, y, z.
@@ -275,23 +289,38 @@ function vtk_grid{T<:FloatingPoint}(
     #
     #==========================================================================#
 
-    @assert size(x) == size(y) == size(z)
-    Ni, Nj, Nk = size(x)
+    if length(size(x)) == 1
+        const grid_type = GRID_RECTILINEAR::Int
+        @assert length(size(y)) == length(size(z)) == 1
+        const Ni, Nj, Nk = length(x), length(y), length(z)
+        const file_ext = ".vtr"
 
-    xvts = XMLDocument()
+    elseif length(size(x)) == 3
+        const grid_type = GRID_STRUCTURED::Int
+        @assert size(x) == size(y) == size(z)
+        const Ni, Nj, Nk = size(x)
+        const file_ext = ".vts"
 
-    vts = DatasetFile(xvts, "$(filename_noext).vts", compress, Ni*Nj*Nk)
+    else
+        error("Wrong dimensions of grid coordinates x, y, z.")
+
+    end
+
+    xvtk = XMLDocument()
+
+    vtk = DatasetFile(xvtk, filename_noext * file_ext, compress, Ni*Nj*Nk,
+                      grid_type)
 
     # -------------------------------------------------- #
     # VTKFile node
-    xroot = create_root(xvts, "VTKFile")
+    xroot = create_root(xvtk, "VTKFile")
 
     atts = @compat Dict{String,String}(
-        "type"       => "StructuredGrid",
+        "type"       => vtk.gridType_str,
         "version"    => "1.0",
         "byte_order" => "LittleEndian")
 
-    if vts.compressed
+    if vtk.compressed
         atts["compressor"] = "vtkZLibDataCompressor"
         atts["header_type"] = "UInt32"
     end
@@ -299,8 +328,8 @@ function vtk_grid{T<:FloatingPoint}(
     set_attributes(xroot, atts)
 
     # -------------------------------------------------- #
-    # StructuredGrid node
-    xSG = new_child(xroot, "StructuredGrid")
+    # StructuredGrid node (or equivalent)
+    xSG = new_child(xroot, vtk.gridType_str)
     extent = "1 $Ni 1 $Nj 1 $Nk"
     set_attribute(xSG, "WholeExtent", extent)
 
@@ -310,20 +339,35 @@ function vtk_grid{T<:FloatingPoint}(
     set_attribute(xPiece, "Extent", extent)
 
     # -------------------------------------------------- #
-    # Points node
-    xPoints = new_child(xPiece, "Points")
+    # Points (or Coordinates) node
+    if vtk.gridType == GRID_STRUCTURED
+        xPoints = new_child(xPiece, "Points")
+    elseif vtk.gridType == GRID_RECTILINEAR
+        xPoints = new_child(xPiece, "Coordinates")
+    end
 
     # -------------------------------------------------- #
     # DataArray node
-    xyz = [x[:] y[:] z[:]]'         # shape: [3, Ni*Nj*Nk]
+    if vtk.gridType == GRID_STRUCTURED
+        xyz = [x[:] y[:] z[:]]'         # shape: [3, Ni*Nj*Nk]
+        xDA = APPEND ?
+              data_to_xml(vtk.buf, xPoints, xyz, 3, "Points", vtk.compressed) :
+              data_to_xml(xPoints, xyz, 3, "Points", vtk.compressed)
 
-    if APPEND
-        xDA = data_to_xml(vts.buf, xPoints, xyz, 3, "Points", vts.compressed)
-    else
-        xDA = data_to_xml(xPoints, xyz, 3, "Points", vts.compressed)
+    elseif vtk.gridType == GRID_RECTILINEAR
+        if APPEND
+            data_to_xml(vtk.buf, xPoints, x, 1, "x", vtk.compressed)
+            data_to_xml(vtk.buf, xPoints, y, 1, "y", vtk.compressed)
+            data_to_xml(vtk.buf, xPoints, z, 1, "z", vtk.compressed)
+        else
+            data_to_xml(xPoints, x, 1, "x", vtk.compressed)
+            data_to_xml(xPoints, y, 1, "y", vtk.compressed)
+            data_to_xml(xPoints, z, 1, "z", vtk.compressed)
+        end
+
     end
 
-    return vts
+    return vtk
 end
 
 function vtk_point_data{T<:FloatingPoint}(
@@ -340,7 +384,6 @@ function vtk_point_data{T<:FloatingPoint}(
 
     # Number of components.
     Nc = div(length(data), vtk.Npts)
-
     @assert Nc*vtk.Npts == length(data)
 
     if Nc > 3
@@ -350,7 +393,7 @@ function vtk_point_data{T<:FloatingPoint}(
     # -------------------------------------------------- #
     # Find Piece node.
     xroot = root(vtk.xdoc)
-    xGrid = find_element(xroot, "StructuredGrid")   # TODO generalise...
+    xGrid = find_element(xroot, vtk.gridType_str)
     xPiece = find_element(xGrid, "Piece")
 
     # Find or create PointData node.
