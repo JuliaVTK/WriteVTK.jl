@@ -1,19 +1,33 @@
 using WriteVTK
 using Base.Test
 
-# Run the test scripts.
 tests = ["./rectilinear.jl", "./structured.jl", "./multiblock.jl"]
 
-checksum_list = readall("./checksums.sha1")
+# Only toggle to generate new checksums, if new tests are added.
+OVERWRITE_CHECKSUMS = false
+checksums_file = "./checksums.sha1"
 
+checksum_list = readall(checksums_file)
+
+if OVERWRITE_CHECKSUMS
+    csio = open(checksums_file, "w")
+end
+
+# Run the test scripts.
 for test in tests
     outfiles = evalfile(test)::Vector{UTF8String}
 
     # Check that the generated files match the stored checksums.
     for file in outfiles
         sha = readall(`sha1sum $file`)
-        cmp = search(checksum_list, sha)  # returns 0:-1 if string is not found
-        @test cmp != 0:-1
+        if OVERWRITE_CHECKSUMS
+            write(csio, sha)
+        else
+            # Returns 0:-1 if string is not found.
+            cmp = search(checksum_list, sha)
+            @test cmp != 0:-1
+        end
     end
 end
 
+OVERWRITE_CHECKSUMS && close(csio)
