@@ -257,19 +257,21 @@ function vtk_grid{T<:FloatingPoint}(
     #==========================================================================#
     # Creates a new grid file with coordinates x, y, z; and this file is
     # referenced as a block in the vtm file.
+    #
+    # See the documentation for the other variant of vtk_grid.
     #==========================================================================#
 
-    # vtm file without the extension
+    # Multiblock file without the extension
     path_base = splitext(vtm.path)[1]
 
-    # vts file without the extension
+    # Dataset file without the extension
     vtsFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
 
-    vts = vtk_grid(vtsFilename_noext, x, y, z, compress=compress)
+    vtk = vtk_grid(vtsFilename_noext, x, y, z, compress=compress)
 
-    multiblock_add_block(vtm, vts)
+    multiblock_add_block(vtm, vtk)
 
-    return vts
+    return vtk::DatasetFile
 end
 
 function vtk_grid{T<:FloatingPoint}(
@@ -280,12 +282,15 @@ function vtk_grid{T<:FloatingPoint}(
     #
     # The saved file has the name given by filename_noext, and its extension
     # depends on the type of grid.
-    # For now, only StructuredGrid (.vts) is supported.
     #
-    # TODO
-    # - Support RectilinearGrid (.vtr).
-    #   For RectilinearGrid: create variant of vtk_grid that accepts 1-dimension
-    #   arrays instead of 3D (for example, x::Array{T,1}).
+    # Accepted grid types:
+    #   * Rectilinear grid      x, y, z are 1D arrays with possibly different
+    #                           lengths
+    #
+    #   * Structured grid       x, y, z are 3D arrays with the same shape
+    #
+    # There's also an optional parameter 'compress' that can be set to false to
+    # disable compression (to improve writing speed for example).
     #
     #==========================================================================#
 
@@ -367,8 +372,9 @@ function vtk_grid{T<:FloatingPoint}(
 
     end
 
-    return vtk
+    return vtk::DatasetFile
 end
+
 
 function vtk_point_data{T<:FloatingPoint}(
     vtk::DatasetFile, data::Array{T}, name::String)
