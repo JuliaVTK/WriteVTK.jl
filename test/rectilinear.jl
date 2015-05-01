@@ -4,7 +4,7 @@
 
 using WriteVTK
 typealias FloatType Float32
-const vtk_filename_noext = "test_rectilinear"
+const vtk_filename_noext = "rectilinear"
 
 function main()
     # Define grid.
@@ -14,9 +14,9 @@ function main()
     y = zeros(FloatType, Nj)
     z = zeros(FloatType, Nk)
 
-    [x[i] = i*i for i = 1:Ni]
-    [y[j] = j*j for j = 1:Nj]
-    [z[k] = k*k for k = 1:Nk]
+    [x[i] = i*i/Ni/Ni for i = 1:Ni]
+    [y[j] = sqrt(j/Nj) for j = 1:Nj]
+    [z[k] = k/Nk for k = 1:Nk]
 
     # Create some scalar and vectorial data.
     p = zeros(FloatType, Ni, Nj, Nk)

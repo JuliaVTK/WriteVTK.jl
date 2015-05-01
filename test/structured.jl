@@ -4,7 +4,7 @@
 
 using WriteVTK
 typealias FloatType Float32
-const vts_filename_noext = "test_structured"
+const vtk_filename_noext = "structured"
 
 function main()
     # Define grid.
@@ -15,9 +15,9 @@ function main()
     z = zeros(FloatType, Ni, Nj, Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
-        x[i, j, k] = i/Ni * cos(2*pi/3 * j/Nj)
-        y[i, j, k] = i/Ni * sin(2*pi/3 * j/Nj)
-        z[i, j, k] = k/Nk
+        x[i, j, k] = i/Ni * cos(3*pi/2 * (j-1) / (Nj-1))
+        y[i, j, k] = i/Ni * sin(3*pi/2 * (j-1) / (Nj-1))
+        z[i, j, k] = (k-1) / Nk
     end
 
     # Create some scalar and vectorial data.
@@ -34,16 +34,16 @@ function main()
     end
 
     # Initialise new vts file (structured grid).
-    vts = vtk_grid(vts_filename_noext, x, y, z)
+    vtk = vtk_grid(vtk_filename_noext, x, y, z)
 
     # Add data.
-    vtk_point_data(vts, p, "p_values")
-    vtk_point_data(vts, q, "q_values")
-    vtk_point_data(vts, vec, "myVector")
+    vtk_point_data(vtk, p, "p_values")
+    vtk_point_data(vtk, q, "q_values")
+    vtk_point_data(vtk, vec, "myVector")
 
-    # Save and close vts file.
-    filename_vts = vtk_save(vts)
-    println("Saved ", filename_vts)
+    # Save and close vtk file.
+    filename_vtk = vtk_save(vtk)
+    println("Saved ", filename_vtk)
 
     return
 end
