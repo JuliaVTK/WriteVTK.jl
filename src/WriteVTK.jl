@@ -34,7 +34,7 @@ type DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::UTF8String
     compressed::Bool
-    Npts::Int           # Number of grid points (= Nx*Ny*Nz).
+    Npts::Int           # Number of grid points (= Ni*Nj*Nk).
     buf::IOBuffer       # Buffer with appended data.
 
     # Override default constructor.
@@ -276,11 +276,11 @@ function vtk_grid{T<:FloatingPoint}(
     #==========================================================================#
 
     @assert size(x) == size(y) == size(z)
-    Nx, Ny, Nz = size(x)
+    Ni, Nj, Nk = size(x)
 
     xvts = XMLDocument()
 
-    vts = DatasetFile(xvts, "$(filename_noext).vts", compress, Nx*Ny*Nz)
+    vts = DatasetFile(xvts, "$(filename_noext).vts", compress, Ni*Nj*Nk)
 
     # -------------------------------------------------- #
     # VTKFile node
@@ -301,7 +301,7 @@ function vtk_grid{T<:FloatingPoint}(
     # -------------------------------------------------- #
     # StructuredGrid node
     xSG = new_child(xroot, "StructuredGrid")
-    extent = "1 $Nx 1 $Ny 1 $Nz"
+    extent = "1 $Ni 1 $Nj 1 $Nk"
     set_attribute(xSG, "WholeExtent", extent)
 
     # -------------------------------------------------- #
@@ -315,7 +315,7 @@ function vtk_grid{T<:FloatingPoint}(
 
     # -------------------------------------------------- #
     # DataArray node
-    xyz = [x[:] y[:] z[:]]'         # shape: [3, Nx*Ny*Nz]
+    xyz = [x[:] y[:] z[:]]'         # shape: [3, Ni*Nj*Nk]
 
     if APPEND
         xDA = data_to_xml(vts.buf, xPoints, xyz, 3, "Points", vts.compressed)
@@ -331,10 +331,10 @@ function vtk_point_data{T<:FloatingPoint}(
     #==================================================
     # Accepted shapes of data:
     #
-    #   Scalar          data[1:Nx, 1:Ny, 1:Nz]
+    #   Scalar          data[1:Ni, 1:Nj, 1:Nk]
     #                   data[1:Npts]
     #
-    #   Vector          data[1:Nc, 1:Nx, 1:Ny, 1:Nz]
+    #   Vector          data[1:Nc, 1:Ni, 1:Nj, 1:Nk]
     #   (Nc <= 3)       data[1:Nc, 1:Npts]
     ==================================================#
 
