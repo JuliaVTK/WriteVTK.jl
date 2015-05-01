@@ -45,7 +45,7 @@ function main()
     filename_vtk = vtk_save(vtk)
     println("Saved ", filename_vtk)
 
-    return
+    return [filename_vtk]::Vector{UTF8String}
 end
 
 main()

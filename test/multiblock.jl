@@ -62,7 +62,11 @@ function main()
     filename_vtm = vtk_save(vtm)
     println("Saved ", filename_vtm)
 
-    return
+    # Just for running tests (ignore!):
+    paths = [filename_vtm]
+    [push!(paths, vtk.path) for vtk in vtm.blocks]
+
+    return paths::Vector{UTF8String}
 end
 
 main()
