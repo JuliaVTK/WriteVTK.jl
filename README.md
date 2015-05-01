@@ -14,6 +14,14 @@ Multiblock files (.vtm), which can point to multiple VTK files, can also be
 exported.
 Support for unstructured meshes is planned.
 
+## Installation
+
+From the Julia REPL:
+
+```julia
+Pkg.clone("git@github.com:jipolanco/WriteVTK.jl.git")
+```
+
 ## Usage
 
 ### Create a grid
@@ -24,6 +32,8 @@ Depending on the shape of the arrays `x`, `y` and `z`, either a rectilinear or
 structured grid is created.
 
 ```julia
+using WriteVTK
+
 vtkfile = vtk_grid("my_vtk_file", x, y, z)
 ```
 
@@ -56,7 +66,7 @@ Finally, close and save the file with `vtk_save`:
 final_filename = vtk_save(vtkfile)
 ```
 
-### Multiblock files
+## Multiblock files
 
 Multiblock files (.vtm) are XML VTK files that can point to multiple other VTK
 files.
@@ -75,11 +85,11 @@ Then, multiple grids can be generated with `vtk_grid` using the `vtmfile`
 object as the first argument:
 
 ```julia
-# First dataset file.
+# First block.
 vtkfile = vtk_grid(vtmfile, x1, y1, z1)
 vtk_point_data(vtkfile, p1, "Pressure")
 
-# Second dataset file.
+# Second block.
 vtkfile = vtk_grid(vtmfile, x2, y2, z2)
 vtk_point_data(vtkfile, p2, "Pressure")
 ```
@@ -89,6 +99,10 @@ Finally, only the multiblock file needs to be saved explicitely:
 ```julia
 final_filename = vtk_save(vtmfile)
 ```
+
+Assuming that the two blocks are structured grids, this generates the files
+`my_vtm_file.vtm`, `my_vtm_file.z01.vts` and `my_vtm_file.z02.vts`, where the
+`vtm` file points to the two `vts` files.
 
 ## Examples
 
