@@ -42,10 +42,10 @@ function main()
     vtk_point_data(vtk, vec, "myVector")
 
     # Save and close vtk file.
-    filename_vtk = vtk_save(vtk)
-    println("Saved ", filename_vtk)
+    outfiles = vtk_save(vtk)
+    println("Saved:   ", outfiles...)
 
-    return [filename_vtk]::Vector{UTF8String}
+    return outfiles::Vector{UTF8String}
 end
 
 main()

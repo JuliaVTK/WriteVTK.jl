@@ -421,20 +421,22 @@ function vtk_save(vtm::MultiblockFile)
     # Saves VTK multiblock file (.vtm).
     # Also saves the contained block files (vtm.blocks) recursively.
 
+    outfiles = [vtm.path]::Vector{UTF8String}
+
     for vtk in vtm.blocks
-        vtk_save(vtk)
+        push!(outfiles, vtk_save(vtk)...)
     end
 
     save_file(vtm.xdoc, vtm.path)
 
-    return vtm.path::String
+    return outfiles::Vector{UTF8String}
 end
 
 function vtk_save(vtk::DatasetFile)
     if !APPEND
         close(vtk.buf)  # Close append buffer, even if it wasn't used.
         save_file(vtk.xdoc, vtk.path)
-        return vtk.path::String
+        return [vtk.path]::Vector{UTF8String}
     end
 
     ## if APPEND:
@@ -471,7 +473,7 @@ function vtk_save(vtk::DatasetFile)
     close(vtk.buf)
     close(io)
 
-    return vtk.path::String
+    return [vtk.path]::Vector{UTF8String}
 end
 
 end     # module WriteVTK

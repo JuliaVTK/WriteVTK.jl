@@ -59,14 +59,10 @@ function main()
     vtk_point_data(vtk, q, "q_values")
 
     # Saved multiblock file and included block files.
-    filename_vtm = vtk_save(vtm)
-    println("Saved ", filename_vtm)
+    outfiles = vtk_save(vtm)
+    println("Saved:", [" "^3 * s for s in outfiles]...)
 
-    # Just for running tests (ignore!):
-    paths = [filename_vtm]
-    [push!(paths, vtk.path) for vtk in vtm.blocks]
-
-    return paths::Vector{UTF8String}
+    return outfiles::Vector{UTF8String}
 end
 
 main()

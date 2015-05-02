@@ -63,8 +63,12 @@ In the latter case, the shape of the array should be `[3, Ni, Nj, Nk]`.
 Finally, close and save the file with `vtk_save`:
 
 ```julia
-final_filename = vtk_save(vtkfile)
+outfiles = vtk_save(vtkfile)
 ```
+
+`outfiles` is an array of strings with the paths to the generated files.
+In this case, the array is obviously of length 1, but that changes when working
+with multiblock files.
 
 ## Multiblock files
 
@@ -97,7 +101,7 @@ vtk_point_data(vtkfile, p2, "Pressure")
 Finally, only the multiblock file needs to be saved explicitely:
 
 ```julia
-final_filename = vtk_save(vtmfile)
+outfiles = vtk_save(vtmfile)
 ```
 
 Assuming that the two blocks are structured grids, this generates the files
