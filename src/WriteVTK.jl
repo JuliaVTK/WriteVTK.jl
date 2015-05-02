@@ -161,7 +161,7 @@ function data_to_xml{T<:FloatingPoint}(
     set_attributes(xDA, atts)
 
     # Size of data array (in bytes).
-    const nb = @compat Uint32(sizeof(data))
+    const nb::Uint32 = sizeof(data)
 
     # Position in the append buffer where the previous record ends.
     const initpos = position(bapp)
@@ -219,7 +219,7 @@ function data_to_xml{T<:FloatingPoint}(
     set_attributes(xDA, atts)
 
     # Number of bytes of data.
-    nb = @compat Uint32(sizeof(data))
+    nb::Uint32 = sizeof(data)
 
     # Write data to an IOBuffer, which is then base64-encoded and added to the
     # XML document.
