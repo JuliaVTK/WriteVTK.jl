@@ -9,6 +9,7 @@ module WriteVTK
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
 # - Remove support for inline (non-appended) data?
+# - Maybe the VTKFile subtypes can be immutable??
 
 export VTKFile, MultiblockFile, DatasetFile
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
@@ -26,7 +27,7 @@ end
 # ====================================================================== #
 ## Constants ##
 const COMPRESSION_LEVEL = 6
-const APPEND = true         # FIXME this constant is temporary...
+const APPEND = false         # FIXME this constant is temporary...
 
 # Grid types (maybe there's a better way of doing this?).
 const GRID_RECTILINEAR = 1
@@ -39,21 +40,30 @@ abstract VTKFile
 type DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::UTF8String
-    compressed::Bool
-    Npts::Int           # Number of grid points (= Ni*Nj*Nk).
-    buf::IOBuffer       # Buffer with appended data.
     gridType::Int       # One of the GRID_* constants.
     gridType_str::UTF8String
+    Npts::Int           # Number of grid points (= Ni*Nj*Nk).
+    compressed::Bool    # Data is compressed?
+    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
+    buf::IOBuffer       # Buffer with appended data.
 
     # Override default constructor.
-    function DatasetFile(xdoc, path, compressed, Npts, gridType)
+    function DatasetFile(xdoc, path, gridType, Npts, compressed, appended)
         gridType_str =
             gridType == GRID_RECTILINEAR ? "RectilinearGrid" :
             gridType == GRID_STRUCTURED  ? "StructuredGrid"  :
             error("Grid type not supported...")
 
-        return new(xdoc, path, compressed, Npts, IOBuffer(),
-                   gridType, gridType_str)
+        if appended
+            buf = IOBuffer()
+        else
+            # In this case we don't need a buffer, so just use a closed one.
+            buf = IOBuffer(0)
+            close(buf)
+        end
+
+        return new(xdoc, path, gridType, gridType_str, Npts, compressed,
+                   appended, buf)
     end
 end
 
@@ -321,8 +331,8 @@ function vtk_grid{T<:FloatingPoint}(
 
     xvtk = XMLDocument()
 
-    vtk = DatasetFile(xvtk, filename_noext * file_ext, compress, Ni*Nj*Nk,
-                      grid_type)
+    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Ni*Nj*Nk,
+                      compress, APPEND)
 
     # -------------------------------------------------- #
     # VTKFile node
@@ -363,12 +373,12 @@ function vtk_grid{T<:FloatingPoint}(
     # DataArray node
     if vtk.gridType == GRID_STRUCTURED
         xyz = [x[:] y[:] z[:]]'         # shape: [3, Ni*Nj*Nk]
-        xDA = APPEND ?
+        xDA = vtk.appended ?
               data_to_xml(vtk.buf, xPoints, xyz, 3, "Points", vtk.compressed) :
               data_to_xml(xPoints, xyz, 3, "Points", vtk.compressed)
 
     elseif vtk.gridType == GRID_RECTILINEAR
-        if APPEND
+        if vtk.appended
             data_to_xml(vtk.buf, xPoints, x, 1, "x", vtk.compressed)
             data_to_xml(vtk.buf, xPoints, y, 1, "y", vtk.compressed)
             data_to_xml(vtk.buf, xPoints, z, 1, "z", vtk.compressed)
@@ -416,7 +426,7 @@ function vtk_point_data{T<:FloatingPoint}(
 
     # -------------------------------------------------- #
     # DataArray node
-    if APPEND
+    if vtk.appended
         xDA = data_to_xml(vtk.buf, xPD, data, Nc, name, vtk.compressed)
     else
         xDA = data_to_xml(xPD, data, Nc, name, vtk.compressed)
@@ -441,13 +451,12 @@ function vtk_save(vtm::MultiblockFile)
 end
 
 function vtk_save(vtk::DatasetFile)
-    if !APPEND
-        close(vtk.buf)  # Close append buffer, even if it wasn't used.
+    if !vtk.appended
         save_file(vtk.xdoc, vtk.path)
         return [vtk.path]::Vector{UTF8String}
     end
 
-    ## if APPEND:
+    ## if vtk.appended:
     # Write XML file manually, including appended data.
 
     # NOTE: this is not very clean, but I can't write raw binary data with the
