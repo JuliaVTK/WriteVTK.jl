@@ -18,6 +18,11 @@ import Zlib
 
 using Compat
 
+# More compatibility with Julia 0.3.
+if VERSION < v"0.4-"
+    const base64encode = base64::Function
+end
+
 # ====================================================================== #
 ## Constants ##
 const COMPRESSION_LEVEL = 6
@@ -123,7 +128,7 @@ function data_to_xml{T<:FloatingPoint}(
     When compress == true:
       * the data array is written in compressed form (obviously);
       * the header, written before the actual numerical data, is an array of
-        Uint32 values:
+        UInt32 values:
             [num_blocks, blocksize, last_blocksize, compressed_blocksizes]
         All the sizes are in bytes. The header itself is not compressed, only
         the data is.
@@ -132,7 +137,7 @@ function data_to_xml{T<:FloatingPoint}(
             http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats
       * note that VTK only allows compressing appended data, not inline data.
 
-    Otherwise, the header is just a single Uint32 value containing the size of
+    Otherwise, the header is just a single UInt32 value containing the size of
     the data array in bytes.
     ==========================================================================#
 
@@ -146,7 +151,6 @@ function data_to_xml{T<:FloatingPoint}(
         error("FloatingPoint subtype not supported: $T")
     end
 
-    # -------------------------------------------------- #
     # DataArray node
     xDA = new_child(xParent, "DataArray")
     atts = @compat Dict{UTF8String,UTF8String}(
@@ -158,11 +162,11 @@ function data_to_xml{T<:FloatingPoint}(
     set_attributes(xDA, atts)
 
     # Size of data array (in bytes).
-    const nb::Uint32 = sizeof(data)
+    const nb::UInt32 = sizeof(data)
 
     # Position in the append buffer where the previous record ends.
     const initpos = position(bapp)
-    header = zeros(Uint32, 4)
+    header = zeros(UInt32, 4)
 
     if compress
         # Write temporary array that will be replaced later by the real header.
@@ -190,10 +194,12 @@ end
 function data_to_xml{T<:FloatingPoint}(
     xParent::XMLElement, data::Array{T}, Nc::Integer, varname::AbstractString,
     compress::Bool)
-    # This variant of data_to_xml should be used when writing data "inline" into
-    # the XML file (not appended at the end).
-    # * xParent is the XML node under which the DataArray node will be created.
-    #   It is either a "Points" or a "PointData" node.
+    #==========================================================================
+    This variant of data_to_xml should be used when writing data "inline" into
+    the XML file (not appended at the end).
+
+    See the other variant of this function for more info.
+    ==========================================================================#
 
     @assert name(xParent) in ("Points", "PointData", "Coordinates")
 
@@ -205,42 +211,47 @@ function data_to_xml{T<:FloatingPoint}(
         error("FloatingPoint subtype not supported: $T")
     end
 
-    # -------------------------------------------------- #
     # DataArray node
     xDA = new_child(xParent, "DataArray")
     atts = @compat Dict{UTF8String,UTF8String}(
         "type"               => sType,
         "Name"               => varname,
         "NumberOfComponents" => "$Nc",
-        "format"             => "binary")
+        "format"             => "binary")   # here, binary means base64-encoded
     set_attributes(xDA, atts)
 
     # Number of bytes of data.
-    nb::Uint32 = sizeof(data)
+    const nb::UInt32 = sizeof(data)
 
     # Write data to an IOBuffer, which is then base64-encoded and added to the
     # XML document.
     buf = IOBuffer()
 
+    # Position in the append buffer where the previous record ends.
+    #= const initpos = position(buf)       # should be zero in this case =#
+    const header = zeros(UInt32, 4)     # only used when compressing
+
+    # NOTE: in the compressed case, the header and the data need to be
+    # base64-encoded separately!!
+    # That's why we don't use a single buffer that contains both, like in the
+    # other data_to_xml function.
     if compress
+        # Write compressed data.
         zWriter = Zlib.Writer(buf, COMPRESSION_LEVEL)
-        io = zWriter
-    else
-        io = buf
-        write(io, nb)       # header (uncompressed version)
-    end
-
-    write(io, data)
-
-    add_text(xDA, "\n")
-
-    if compress
+        write(zWriter, data)
         close(zWriter)
-        hdr = @compat Uint32([1, nb, nb, buf.size])
-        add_text(xDA, base64(hdr))
+    else
+        write(buf, nb)      # header (uncompressed version)
+        write(buf, data)
     end
 
-    add_text(xDA, base64(takebuf_string(buf)))
+    # Write buffer with data to XML document.
+    add_text(xDA, "\n")
+    if compress
+        header[:] = [1, nb, nb, buf.size]
+        add_text(xDA, base64encode(header))
+    end
+    add_text(xDA, base64encode(takebuf_string(buf)))
     add_text(xDA, "\n")
 
     close(buf)
