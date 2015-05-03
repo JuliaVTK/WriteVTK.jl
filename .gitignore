@@ -6,3 +6,6 @@
 *.vtr
 *.vtu
 *.vtm
+
+# Exuberant Ctags
+tags
