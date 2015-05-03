@@ -8,7 +8,7 @@ module WriteVTK
 #   * add support for cell data (not sure if this is easy though...).
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
-# - Remove support for inline (non-appended) data?
+# - Add tests for non-default cases (append=false, compress=false in vtk_grid).
 
 export VTKFile, MultiblockFile, DatasetFile
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
@@ -26,7 +26,6 @@ end
 # ====================================================================== #
 ## Constants ##
 const COMPRESSION_LEVEL = 6
-const APPEND = false         # FIXME this constant is temporary...
 
 # Grid types (maybe there's a better way of doing this?).
 const GRID_RECTILINEAR = 1
@@ -152,6 +151,7 @@ function data_to_xml{T<:FloatingPoint}(
 
     @assert name(xParent) in ("Points", "PointData", "Coordinates")
 
+    local sType::UTF8String
     if T === Float32
         sType = "Float32"
     elseif T === Float64
@@ -212,6 +212,7 @@ function data_to_xml{T<:FloatingPoint}(
 
     @assert name(xParent) in ("Points", "PointData", "Coordinates")
 
+    local sType::UTF8String
     if T === Float32
         sType = "Float32"
     elseif T === Float64
@@ -237,7 +238,6 @@ function data_to_xml{T<:FloatingPoint}(
     buf = IOBuffer()
 
     # Position in the append buffer where the previous record ends.
-    #= const initpos = position(buf)       # should be zero in this case =#
     const header = zeros(UInt32, 4)     # only used when compressing
 
     # NOTE: in the compressed case, the header and the data need to be
@@ -250,7 +250,6 @@ function data_to_xml{T<:FloatingPoint}(
         write(zWriter, data)
         close(zWriter)
     else
-        write(buf, nb)      # header (uncompressed version)
         write(buf, data)
     end
 
@@ -259,6 +258,8 @@ function data_to_xml{T<:FloatingPoint}(
     if compress
         header[:] = [1, nb, nb, buf.size]
         add_text(xDA, base64encode(header))
+    else
+        add_text(xDA, base64encode(nb))     # header (uncompressed version)
     end
     add_text(xDA, base64encode(takebuf_string(buf)))
     add_text(xDA, "\n")
@@ -293,7 +294,7 @@ end
 
 function vtk_grid{T<:FloatingPoint}(
     filename_noext::AbstractString, x::Array{T}, y::Array{T}, z::Array{T};
-    compress::Bool=true, append::Bool=APPEND)
+    compress::Bool=true, append::Bool=true)
     #==========================================================================#
     # Creates a new grid file with coordinates x, y, z.
     #
@@ -390,9 +391,11 @@ function vtk_grid{T<:FloatingPoint}(
             xyz[2, i, j, k] = y[i, j, k]
             xyz[3, i, j, k] = z[i, j, k]
         end
-        xDA = vtk.appended ?
-              data_to_xml(vtk.buf, xPoints, xyz, 3, "Points", vtk.compressed) :
-              data_to_xml(xPoints, xyz, 3, "Points", vtk.compressed)
+        if vtk.appended
+            data_to_xml(vtk.buf, xPoints, xyz, 3, "Points", vtk.compressed)
+        else
+            data_to_xml(xPoints, xyz, 3, "Points", vtk.compressed)
+        end
 
     elseif vtk.gridType == GRID_RECTILINEAR
         if vtk.appended
