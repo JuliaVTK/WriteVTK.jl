@@ -9,7 +9,6 @@ module WriteVTK
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
 # - Remove support for inline (non-appended) data?
-# - Maybe the VTKFile subtypes can be immutable??
 
 export VTKFile, MultiblockFile, DatasetFile
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
@@ -37,7 +36,7 @@ const GRID_STRUCTURED  = 2
 ## Types ##
 abstract VTKFile
 
-type DatasetFile <: VTKFile
+immutable DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::UTF8String
     gridType::Int       # One of the GRID_* constants.
@@ -67,7 +66,7 @@ type DatasetFile <: VTKFile
     end
 end
 
-type MultiblockFile <: VTKFile
+immutable MultiblockFile <: VTKFile
     xdoc::XMLDocument
     path::UTF8String
     blocks::Vector{VTKFile}
