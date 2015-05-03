@@ -1,7 +1,6 @@
 module WriteVTK
 
 # TODO
-# - Write some documentation!!
 # - Add better support for 2D datasets (slices).
 # - Reduce duplicate code: data_to_xml() variants...
 # - Generalise:
@@ -9,8 +8,7 @@ module WriteVTK
 #   * add support for cell data (not sure if this is easy though...).
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
-# - Replace String types with concrete types (ASCIIString, UTF8String?).
-# - Remove support for inline (non-appended) data.
+# - Remove support for inline (non-appended) data?
 
 export VTKFile, MultiblockFile, DatasetFile
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
@@ -18,8 +16,6 @@ export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
 using LightXML
 import Zlib
 
-# Use @compat macro to solve compatibility problems between Julia 0.3 and 0.4.
-# For example, the way of defining Dicts in 0.3 is deprecated in 0.4.
 using Compat
 
 # ====================================================================== #
@@ -68,13 +64,13 @@ end
 # ====================================================================== #
 ## Functions ##
 
-function vtk_multiblock(filename_noext::String)
+function vtk_multiblock(filename_noext::AbstractString)
     # Initialise VTK multiblock file (extension .vtm).
     # filename_noext: filename without the extension (.vtm).
 
     xvtm = XMLDocument()
     xroot = create_root(xvtm, "VTKFile")
-    atts = @compat Dict{String,String}(
+    atts = @compat Dict{UTF8String,UTF8String}(
         "type"       => "vtkMultiBlockDataSet",
         "version"    => "1.0",
         "byte_order" => "LittleEndian")
@@ -104,7 +100,8 @@ function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile)
     fname = splitdir(vtk.path)[2]
 
     xDataSet = new_child(xBlock, "DataSet")
-    atts = @compat Dict{String,String}("index" => "0", "file" => fname)
+    atts = @compat Dict{UTF8String,UTF8String}(
+                        "index" => "0", "file" => fname)
     set_attributes(xDataSet, atts)
 
     # -------------------------------------------------- #
@@ -116,7 +113,7 @@ end
 
 function data_to_xml{T<:FloatingPoint}(
     bapp::IOBuffer, xParent::XMLElement, data::Array{T}, Nc::Integer,
-    varname::String, compress::Bool)
+    varname::AbstractString, compress::Bool)
     #==========================================================================
     This variant of data_to_xml should be used when writing appended data.
       * bapp is the IOBuffer where the appended data is written.
@@ -152,7 +149,7 @@ function data_to_xml{T<:FloatingPoint}(
     # -------------------------------------------------- #
     # DataArray node
     xDA = new_child(xParent, "DataArray")
-    atts = @compat Dict{String,String}(
+    atts = @compat Dict{UTF8String,UTF8String}(
         "type"               => sType,
         "Name"               => varname,
         "NumberOfComponents" => "$Nc",
@@ -191,7 +188,7 @@ function data_to_xml{T<:FloatingPoint}(
 end
 
 function data_to_xml{T<:FloatingPoint}(
-    xParent::XMLElement, data::Array{T}, Nc::Integer, varname::String,
+    xParent::XMLElement, data::Array{T}, Nc::Integer, varname::AbstractString,
     compress::Bool)
     # This variant of data_to_xml should be used when writing data "inline" into
     # the XML file (not appended at the end).
@@ -211,7 +208,7 @@ function data_to_xml{T<:FloatingPoint}(
     # -------------------------------------------------- #
     # DataArray node
     xDA = new_child(xParent, "DataArray")
-    atts = @compat Dict{String,String}(
+    atts = @compat Dict{UTF8String,UTF8String}(
         "type"               => sType,
         "Name"               => varname,
         "NumberOfComponents" => "$Nc",
@@ -275,7 +272,7 @@ function vtk_grid{T<:FloatingPoint}(
 end
 
 function vtk_grid{T<:FloatingPoint}(
-    filename_noext::String, x::Array{T}, y::Array{T}, z::Array{T};
+    filename_noext::AbstractString, x::Array{T}, y::Array{T}, z::Array{T};
     compress::Bool=true)
     #==========================================================================#
     # Creates a new grid file with coordinates x, y, z.
@@ -320,7 +317,7 @@ function vtk_grid{T<:FloatingPoint}(
     # VTKFile node
     xroot = create_root(xvtk, "VTKFile")
 
-    atts = @compat Dict{String,String}(
+    atts = @compat Dict{UTF8String,UTF8String}(
         "type"       => vtk.gridType_str,
         "version"    => "1.0",
         "byte_order" => "LittleEndian")
@@ -377,7 +374,7 @@ end
 
 
 function vtk_point_data{T<:FloatingPoint}(
-    vtk::DatasetFile, data::Array{T}, name::String)
+    vtk::DatasetFile, data::Array{T}, name::AbstractString)
     #==================================================
     # Accepted shapes of data:
     #
