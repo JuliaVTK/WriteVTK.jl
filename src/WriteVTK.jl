@@ -384,7 +384,12 @@ function vtk_grid{T<:FloatingPoint}(
     # -------------------------------------------------- #
     # DataArray node
     if vtk.gridType == GRID_STRUCTURED
-        xyz = [x[:] y[:] z[:]]'         # shape: [3, Ni*Nj*Nk]
+        xyz = Array(T, 3, Ni, Nj, Nk)
+        for k = 1:Nk, j = 1:Nj, i = 1:Ni
+            xyz[1, i, j, k] = x[i, j, k]
+            xyz[2, i, j, k] = y[i, j, k]
+            xyz[3, i, j, k] = z[i, j, k]
+        end
         xDA = vtk.appended ?
               data_to_xml(vtk.buf, xPoints, xyz, 3, "Points", vtk.compressed) :
               data_to_xml(xPoints, xyz, 3, "Points", vtk.compressed)
