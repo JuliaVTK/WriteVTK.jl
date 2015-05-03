@@ -5,12 +5,21 @@ module WriteVTK
 # - Reduce duplicate code: data_to_xml() variants...
 # - Generalise:
 #   * add support for other types of grid.
-#   * add support for cell data (not sure if this is easy though...).
+#   * add support for cell data.
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
 # - Add tests for non-default cases (append=false, compress=false in vtk_grid).
+# - Add MeshCell constructors for common cell types (triangles, quads,
+#   tetrahedrons, hexahedrons, ...).
+#   That stuff should probably be included in a separate file.
+# - Move all multiblock stuff to a separate file (multiblock.jl).
+
+# All the code is based on the VTK file specification [1], plus some
+# undocumented stuff found around the internet...
+# [1] http://www.vtk.org/VTK/img/file-formats.pdf
 
 export VTKFile, MultiblockFile, DatasetFile
+export MeshCell
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
 
 using LightXML
@@ -28,8 +37,12 @@ end
 const COMPRESSION_LEVEL = 6
 
 # Grid types (maybe there's a better way of doing this?).
-const GRID_RECTILINEAR = 1
-const GRID_STRUCTURED  = 2
+const GRID_RECTILINEAR  = 1
+const GRID_STRUCTURED   = 2
+const GRID_UNSTRUCTURED = 3
+
+# Cell type definitions as in vtkCellType.h
+include("vtkCellType.jl")
 
 # ====================================================================== #
 ## Types ##
@@ -40,7 +53,7 @@ immutable DatasetFile <: VTKFile
     path::UTF8String
     gridType::Int       # One of the GRID_* constants.
     gridType_str::UTF8String
-    Npts::Int           # Number of grid points (= Ni*Nj*Nk).
+    Npts::Int           # Number of grid points.
     compressed::Bool    # Data is compressed?
     appended::Bool      # Data is appended? (or written inline, base64-encoded?)
     buf::IOBuffer       # Buffer with appended data.
@@ -48,8 +61,9 @@ immutable DatasetFile <: VTKFile
     # Override default constructor.
     function DatasetFile(xdoc, path, gridType, Npts, compressed, appended)
         gridType_str =
-            gridType == GRID_RECTILINEAR ? "RectilinearGrid" :
-            gridType == GRID_STRUCTURED  ? "StructuredGrid"  :
+            gridType == GRID_RECTILINEAR  ?  "RectilinearGrid" :
+            gridType == GRID_STRUCTURED   ?   "StructuredGrid" :
+            gridType == GRID_UNSTRUCTURED ? "UnstructuredGrid" :
             error("Grid type not supported...")
 
         if appended
@@ -72,6 +86,13 @@ immutable MultiblockFile <: VTKFile
 
     # Override default constructor.
     MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
+end
+
+# Cells in unstructured meshes.
+immutable MeshCell
+    ctype::UInt8                 # cell type identifier (see vtkCellType.jl)
+    connectivity::Vector{Int32}  # indices of points (one-based, like in Julia!!)
+    # offsets::Int32
 end
 
 # ====================================================================== #
@@ -124,7 +145,7 @@ function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile)
     return
 end
 
-function data_to_xml{T<:FloatingPoint}(
+function data_to_xml{T<:Real}(
     bapp::IOBuffer, xParent::XMLElement, data::Array{T}, Nc::Integer,
     varname::AbstractString, compress::Bool)
     #==========================================================================
@@ -149,15 +170,20 @@ function data_to_xml{T<:FloatingPoint}(
     the data array in bytes.
     ==========================================================================#
 
-    @assert name(xParent) in ("Points", "PointData", "Coordinates")
+    @assert name(xParent) in ("Points", "PointData", "Coordinates",
+                              "Cells", "CellData")
 
     local sType::UTF8String
     if T === Float32
         sType = "Float32"
     elseif T === Float64
         sType = "Float64"
+    elseif T === Int32
+        sType = "Int32"
+    elseif T === UInt8
+        sType = "UInt8"
     else
-        error("FloatingPoint subtype not supported: $T")
+        error("Real subtype not supported: $T")
     end
 
     # DataArray node
@@ -200,7 +226,7 @@ function data_to_xml{T<:FloatingPoint}(
     return xDA
 end
 
-function data_to_xml{T<:FloatingPoint}(
+function data_to_xml{T<:Real}(
     xParent::XMLElement, data::Array{T}, Nc::Integer, varname::AbstractString,
     compress::Bool)
     #==========================================================================
@@ -210,15 +236,20 @@ function data_to_xml{T<:FloatingPoint}(
     See the other variant of this function for more info.
     ==========================================================================#
 
-    @assert name(xParent) in ("Points", "PointData", "Coordinates")
+    @assert name(xParent) in ("Points", "PointData", "Coordinates",
+                              "Cells", "CellData")
 
     local sType::UTF8String
     if T === Float32
         sType = "Float32"
     elseif T === Float64
         sType = "Float64"
+    elseif T === Int32
+        sType = "Int32"
+    elseif T === UInt8
+        sType = "UInt8"
     else
-        error("FloatingPoint subtype not supported: $T")
+        error("Real subtype not supported: $T")
     end
 
     # DataArray node
@@ -408,6 +439,138 @@ function vtk_grid{T<:FloatingPoint}(
             data_to_xml(xPoints, z, 1, "z", vtk.compressed)
         end
 
+    end
+
+    return vtk::DatasetFile
+end
+
+
+function vtk_grid{T<:FloatingPoint}(
+    filename_noext::AbstractString, points::Array{T}, cells::Vector{MeshCell};
+    compress::Bool=true, append::Bool=true)
+    #==========================================================================#
+    # Create a new unstructured grid file.
+    #
+    # Parameters:
+    #   points      Array with the points of the mesh.
+    #               Its dimensions should be [3, num_points], although
+    #               "flattened" arrays are also accepted (i.e., 1-D arrays with
+    #               the same array ordering).
+    #
+    #   cells       MeshCell array with the cell definitions.
+    #               A cell is represented by a cell type (an integer value) and
+    #               its connectivity, i.e., an array of indices that correspond
+    #               to the cell points in the "points" array.
+    #
+    #               Note that the indices in the connectivity array are
+    #               one-based, to be consistent with the convention in Julia.
+    #
+    # For details on the other arguments, see the documentation of the other
+    # variants of vtk_grid.
+    #
+    #==========================================================================#
+
+    const grid_type = GRID_UNSTRUCTURED
+    const file_ext = ".vtu"
+
+    const Ncells = length(cells)
+    const Npts::Int = div(length(points), 3)
+
+    if 3*Npts != length(points)
+        error("Length of POINTS should be a multiple of 3.")
+    end
+
+    xvtk = XMLDocument()
+
+    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Npts,
+                      compress, append)
+
+    # -------------------------------------------------- #
+    # VTKFile node
+    xroot = create_root(xvtk, "VTKFile")
+
+    atts = @compat Dict{UTF8String,UTF8String}(
+        "type"       => vtk.gridType_str,
+        "version"    => "1.0",
+        "byte_order" => "LittleEndian")
+
+    if vtk.compressed
+        atts["compressor"] = "vtkZLibDataCompressor"
+        atts["header_type"] = "UInt32"
+    end
+
+    set_attributes(xroot, atts)
+
+    # -------------------------------------------------- #
+    # UnstructuredGrid node
+    xUG = new_child(xroot, vtk.gridType_str)
+
+    # -------------------------------------------------- #
+    # Piece node
+    xPiece = new_child(xUG, "Piece")
+    set_attribute(xPiece, "NumberOfPoints", vtk.Npts)
+    set_attribute(xPiece, "NumberOfCells", Ncells)
+
+    # -------------------------------------------------- #
+    # Points node
+    xPoints = new_child(xPiece, "Points")
+
+    # -------------------------------------------------- #
+    # DataArray node
+    if vtk.appended
+        data_to_xml(vtk.buf, xPoints, points, 3, "Points", vtk.compressed)
+    else
+        data_to_xml(xPoints, points, 3, "Points", vtk.compressed)
+    end
+
+    # -------------------------------------------------- #
+    # Cells node (below the Piece node)
+    xCells = new_child(xPiece, "Cells")
+
+    #=
+    offsets = Array(Int32, Ncells+1)    # the +1 is just for convenience
+    types = Array(UInt8, Ncells)
+
+    Nconn = 0   # length of the connectivity array
+    offsets[1] = 0
+
+    for n = 1:Ncells
+        c = cells[n]
+        Nconn_cell = length(c.connectivity)
+        Nconn += Nconn_cell
+        offsets[n+1] = offsets[n] + Nconn_cell
+        types[n] = c.ctype
+    end
+    =#
+
+    # Create data arrays.
+    types = [c.ctype for c in cells]::Vector{UInt8}
+
+    # TODO I'm sure that this is not very efficient...
+    conn = Int32[]
+    const ONE = one(Int32)
+    for c in cells
+        for i in c.connectivity
+            # Note: we transform to zero-based indexing, required by VTK.
+            push!(conn, i - ONE)
+        end
+    end
+
+    offsets = Array(Int32, Ncells)
+    offsets[1] = length(cells[1].connectivity)
+    for n = 2:Ncells
+        offsets[n] = offsets[n-1] + length(cells[n].connectivity)
+    end
+
+    # Add arrays to the XML file.
+    if vtk.appended
+        data_to_xml(vtk.buf, xCells, conn,    1, "connectivity", vtk.compressed)
+        data_to_xml(vtk.buf, xCells, offsets, 1, "offsets",      vtk.compressed)
+        data_to_xml(vtk.buf, xCells, types,   1, "types",        vtk.compressed)
+    else
+        data_to_xml(xCells, conn,    1, "Connectivity", vtk.compressed)
+        data_to_xml(xCells, offsets, 1, "offsets",      vtk.compressed)
+        data_to_xml(xCells, types,   1, "types",        vtk.compressed)
     end
 
     return vtk::DatasetFile
