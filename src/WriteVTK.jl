@@ -10,7 +10,6 @@ module WriteVTK
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
 # - Add tests for non-default cases (append=false, compress=false in vtk_grid).
 
-export VTKFile, MultiblockFile, DatasetFile
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
 
 using LightXML
