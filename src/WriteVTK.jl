@@ -5,7 +5,6 @@ module WriteVTK
 # - Reduce duplicate code: data_to_xml() variants...
 # - Generalise:
 #   * add support for other types of grid.
-#   * add support for cell data.
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
 # - Add tests for non-default cases (append=false, compress=false in vtk_grid).
@@ -13,6 +12,7 @@ module WriteVTK
 #   tetrahedrons, hexahedrons, ...).
 #   That stuff should probably be included in a separate file.
 # - Move all multiblock stuff to a separate file (multiblock.jl).
+# - Add unstructured mesh stuff to README (including cell data).
 
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
@@ -20,7 +20,7 @@ module WriteVTK
 
 export VTKFile, MultiblockFile, DatasetFile
 export MeshCell
-export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data
+export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 
 using LightXML
 import Zlib
@@ -54,12 +54,13 @@ immutable DatasetFile <: VTKFile
     gridType::Int       # One of the GRID_* constants.
     gridType_str::UTF8String
     Npts::Int           # Number of grid points.
+    Ncls::Int           # Number of cells.
     compressed::Bool    # Data is compressed?
     appended::Bool      # Data is appended? (or written inline, base64-encoded?)
     buf::IOBuffer       # Buffer with appended data.
 
     # Override default constructor.
-    function DatasetFile(xdoc, path, gridType, Npts, compressed, appended)
+    function DatasetFile(xdoc, path, gridType, Npts, Ncls, compressed, appended)
         gridType_str =
             gridType == GRID_RECTILINEAR  ?  "RectilinearGrid" :
             gridType == GRID_STRUCTURED   ?   "StructuredGrid" :
@@ -74,7 +75,11 @@ immutable DatasetFile <: VTKFile
             close(buf)
         end
 
-        return new(xdoc, path, gridType, gridType_str, Npts, compressed,
+        # Number of cells should be different than zero only for unstructured
+        # meshes.
+        @assert gridType == GRID_UNSTRUCTURED || Ncls == 0
+
+        return new(xdoc, path, gridType, gridType_str, Npts, Ncls, compressed,
                    appended, buf)
     end
 end
@@ -374,7 +379,7 @@ function vtk_grid{T<:FloatingPoint}(
 
     xvtk = XMLDocument()
 
-    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Ni*Nj*Nk,
+    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Ni*Nj*Nk, 0,
                       compress, append)
 
     # -------------------------------------------------- #
@@ -481,7 +486,7 @@ function vtk_grid{T<:FloatingPoint}(
 
     xvtk = XMLDocument()
 
-    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Npts,
+    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Npts, Ncells,
                       compress, append)
 
     # -------------------------------------------------- #
@@ -569,38 +574,22 @@ function vtk_grid{T<:FloatingPoint}(
     return vtk::DatasetFile
 end
 
+function vtk_point_or_cell_data{T<:FloatingPoint}(
+    vtk::DatasetFile, data::Array{T}, name::AbstractString,
+    nodetype::AbstractString, Nc::Int)
 
-function vtk_point_data{T<:FloatingPoint}(
-    vtk::DatasetFile, data::Array{T}, name::AbstractString)
-    #==================================================
-    # Accepted shapes of data:
-    #
-    #   Scalar          data[1:Ni, 1:Nj, 1:Nk]
-    #                   data[1:Npts]
-    #
-    #   Vector          data[1:Nc, 1:Ni, 1:Nj, 1:Nk]
-    #   (Nc <= 3)       data[1:Nc, 1:Npts]
-    ==================================================#
+    # Nc: number of components (defines whether data is scalar or vectorial).
+    @assert Nc in (1, 3)
 
-    # Number of components.
-    Nc = div(length(data), vtk.Npts)
-    @assert Nc*vtk.Npts == length(data)
-
-    if Nc > 3
-        error("Too many components: $Nc")
-    end
-
-    # -------------------------------------------------- #
     # Find Piece node.
     xroot = root(vtk.xdoc)
     xGrid = find_element(xroot, vtk.gridType_str)
     xPiece = find_element(xGrid, "Piece")
 
-    # Find or create PointData node.
-    xtmp = find_element(xPiece, "PointData")
-    xPD = (xtmp === nothing) ? new_child(xPiece, "PointData") : xtmp
+    # Find or create "nodetype" (PointData or CellData) node.
+    xtmp = find_element(xPiece, nodetype)
+    xPD = (xtmp === nothing) ? new_child(xPiece, nodetype) : xtmp
 
-    # -------------------------------------------------- #
     # DataArray node
     if vtk.appended
         xDA = data_to_xml(vtk.buf, xPD, data, Nc, name, vtk.compressed)
@@ -609,6 +598,20 @@ function vtk_point_data{T<:FloatingPoint}(
     end
 
     return
+end
+
+function vtk_point_data(vtk::DatasetFile, data::Array, name::AbstractString)
+    # Number of components.
+    Nc = div(length(data), vtk.Npts)
+    @assert Nc*vtk.Npts == length(data)
+    return vtk_point_or_cell_data(vtk, data, name, "PointData", Nc)
+end
+
+function vtk_cell_data(vtk::DatasetFile, data::Array, name::AbstractString)
+    # Number of components.
+    Nc = div(length(data), vtk.Ncls)
+    @assert Nc*vtk.Ncls == length(data)
+    return vtk_point_or_cell_data(vtk, data, name, "CellData", Nc)
 end
 
 function vtk_save(vtm::MultiblockFile)
