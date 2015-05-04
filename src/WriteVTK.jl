@@ -19,6 +19,7 @@ module WriteVTK
 # [1] http://www.vtk.org/VTK/img/file-formats.pdf
 
 export VTKFile, MultiblockFile, DatasetFile
+export VTKCellType
 export MeshCell
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 
@@ -32,6 +33,9 @@ if VERSION < v"0.4-"
     const base64encode = base64::Function
 end
 
+# Cell type definitions as in vtkCellType.h
+include("VTKCellType.jl")
+
 # ====================================================================== #
 ## Constants ##
 const COMPRESSION_LEVEL = 6
@@ -40,9 +44,6 @@ const COMPRESSION_LEVEL = 6
 const GRID_RECTILINEAR  = 1
 const GRID_STRUCTURED   = 2
 const GRID_UNSTRUCTURED = 3
-
-# Cell type definitions as in vtkCellType.h
-include("vtkCellType.jl")
 
 # ====================================================================== #
 ## Types ##

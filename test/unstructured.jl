@@ -26,6 +26,7 @@ function mesh_data()
     end
 
     # Create cells (all hexahedrons in this case) and cell data.
+    const celltype = VTKCellType.VTK_HEXAHEDRON
     cells = MeshCell[]
     cdata = FloatType[]
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
@@ -41,7 +42,7 @@ function mesh_data()
         inds[8] = sub2ind(dims, i-1, j  , k  )
 
         # Define cell.
-        c = MeshCell(WriteVTK.VTK_HEXAHEDRON, inds)
+        c = MeshCell(celltype, inds)
 
         push!(cells, c)
         push!(cdata, i*j*k)
