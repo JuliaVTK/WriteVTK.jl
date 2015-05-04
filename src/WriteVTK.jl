@@ -92,7 +92,6 @@ end
 immutable MeshCell
     ctype::UInt8                 # cell type identifier (see vtkCellType.jl)
     connectivity::Vector{Int32}  # indices of points (one-based, like in Julia!!)
-    # offsets::Int32
 end
 
 # ====================================================================== #
@@ -527,39 +526,33 @@ function vtk_grid{T<:FloatingPoint}(
     # Cells node (below the Piece node)
     xCells = new_child(xPiece, "Cells")
 
-    #=
-    offsets = Array(Int32, Ncells+1)    # the +1 is just for convenience
+    # Create data arrays.
+    offsets = Array(Int32, Ncells)
     types = Array(UInt8, Ncells)
 
     Nconn = 0   # length of the connectivity array
-    offsets[1] = 0
+    offsets[1] = length(cells[1].connectivity)
 
     for n = 1:Ncells
         c = cells[n]
-        Nconn_cell = length(c.connectivity)
-        Nconn += Nconn_cell
-        offsets[n+1] = offsets[n] + Nconn_cell
+        Npts_cell = length(c.connectivity)
+        Nconn += Npts_cell
         types[n] = c.ctype
-    end
-    =#
-
-    # Create data arrays.
-    types = [c.ctype for c in cells]::Vector{UInt8}
-
-    # TODO I'm sure that this is not very efficient...
-    conn = Int32[]
-    const ONE = one(Int32)
-    for c in cells
-        for i in c.connectivity
-            # Note: we transform to zero-based indexing, required by VTK.
-            push!(conn, i - ONE)
+        if n >= 2
+            offsets[n] = offsets[n-1] + Npts_cell
         end
     end
 
-    offsets = Array(Int32, Ncells)
-    offsets[1] = length(cells[1].connectivity)
-    for n = 2:Ncells
-        offsets[n] = offsets[n-1] + length(cells[n].connectivity)
+    # Create connectivity array.
+    conn = Array(Int32, Nconn)
+    const ONE = one(Int32)
+    n = 1
+    for c in cells
+        for i in c.connectivity
+            # We transform to zero-based indexing, required by VTK.
+            conn[n] = i - ONE
+            n += 1
+        end
     end
 
     # Add arrays to the XML file.
@@ -568,7 +561,7 @@ function vtk_grid{T<:FloatingPoint}(
         data_to_xml(vtk.buf, xCells, offsets, 1, "offsets",      vtk.compressed)
         data_to_xml(vtk.buf, xCells, types,   1, "types",        vtk.compressed)
     else
-        data_to_xml(xCells, conn,    1, "Connectivity", vtk.compressed)
+        data_to_xml(xCells, conn,    1, "connectivity", vtk.compressed)
         data_to_xml(xCells, offsets, 1, "offsets",      vtk.compressed)
         data_to_xml(xCells, types,   1, "types",        vtk.compressed)
     end
