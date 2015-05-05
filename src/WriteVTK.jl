@@ -3,15 +3,18 @@ module WriteVTK
 # TODO
 # - Add better support for 2D datasets (slices).
 # - Reduce duplicate code: data_to_xml() variants...
-# - Generalise:
-#   * add support for other types of grid.
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
 # - Add tests for non-default cases (append=false, compress=false in vtk_grid).
 # - Add MeshCell constructors for common cell types (triangles, quads,
 #   tetrahedrons, hexahedrons, ...).
 #   That stuff should probably be included in a separate file.
-# - Add unstructured mesh stuff to README (including cell data).
+# - Point definition between structured and unstructured grids is inconsistent!!
+#   (There's no reason why their definitions should be different...)
+# - It's probably better to break vtk_grid into functions for each grid type.
+#   (The name doesn't need to change though!)
+#   Right now, I'm not really sure why I'm not getting errors because of
+#   ambiguity of function definitions...
 
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
@@ -315,9 +318,9 @@ function data_to_xml_inline{T<:Real}(
     return xDA
 end
 
-function vtk_grid{T<:FloatingPoint}(
-    vtm::MultiblockFile, x::Array{T}, y::Array{T}, z::Array{T};
-    compress::Bool=true, append::Bool=true)
+# Variant of vtk_grid for multiblock + structured (or rectilinear) grids.
+function vtk_grid(vtm::MultiblockFile, x::Array, y::Array, z::Array;
+                  compress::Bool=true, append::Bool=true)
     #==========================================================================#
     # Creates a new grid file with coordinates x, y, z; and this file is
     # referenced as a block in the vtm file.
@@ -330,11 +333,22 @@ function vtk_grid{T<:FloatingPoint}(
 
     # Dataset file without the extension
     vtsFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
-
-    vtk = vtk_grid(vtsFilename_noext, x, y, z, compress=compress)
-
+    vtk = vtk_grid(vtsFilename_noext, x, y, z, nothing;
+                   compress=compress, append=append)
     multiblock_add_block(vtm, vtk)
 
+    return vtk::DatasetFile
+end
+
+
+# Variant of vtk_grid for multiblock + unstructured grids.
+function vtk_grid(vtm::MultiblockFile, points::Array, cells::Vector{MeshCell};
+                  compress=true, append=true)
+    path_base = splitext(vtm.path)[1]
+    vtsFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
+    vtk = vtk_grid(vtsFilename_noext, points, nothing, nothing, cells;
+                   compress=compress, append=append)
+    multiblock_add_block(vtm, vtk)
     return vtk::DatasetFile
 end
 
