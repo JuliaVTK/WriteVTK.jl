@@ -11,8 +11,9 @@ module WriteVTK
 # - Add MeshCell constructors for common cell types (triangles, quads,
 #   tetrahedrons, hexahedrons, ...).
 #   That stuff should probably be included in a separate file.
-# - Move all multiblock stuff to a separate file (multiblock.jl).
 # - Add unstructured mesh stuff to README (including cell data).
+# - Simplify definition of function data_to_xml, giving it direct access to the
+#   DatasetFile object.
 
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
@@ -328,8 +329,10 @@ function vtk_grid{T<:FloatingPoint}(
     return vtk::DatasetFile
 end
 
+# General vtk_grid variant, that handles all supported types of grid.
 function vtk_grid{T<:FloatingPoint}(
-    filename_noext::AbstractString, x::Array{T}, y::Array{T}, z::Array{T};
+    filename_noext::AbstractString,
+    x::Array{T}, y=nothing, z=nothing, cells=nothing;
     compress::Bool=true, append::Bool=true)
     #==========================================================================#
     # Creates a new grid file with coordinates x, y, z.
@@ -340,10 +343,20 @@ function vtk_grid{T<:FloatingPoint}(
     #
     # Accepted grid types:
     #   * Rectilinear grid      x, y, z are 1D arrays with possibly different
-    #                           lengths
+    #                           lengths.
     #
-    #   * Structured grid       x, y, z are 3D arrays with the same dimensions
+    #   * Structured grid       x, y, z are 3D arrays with the same dimensions.
+    #                           TODO: also allow a single "4D" array, just like
+    #                           for unstructured grids, which would give a
+    #                           better performance.
     #
+    #   * Unstructured grid     x is an array with all the points, with
+    #                           dimensions [3, num_points].
+    #                           cells is a MeshCell array with all the cells.
+    #
+    #                           NOTE: for convenience, there's also a separate
+    #                           vtk_grid function specifically made for
+    #                           unstructured grids.
     #
     # Optional parameters:
     # * If compress is true, written data is first compressed using Zlib.
@@ -361,16 +374,31 @@ function vtk_grid{T<:FloatingPoint}(
     #
     #==========================================================================#
 
-    if length(size(x)) == 1
-        const grid_type = GRID_RECTILINEAR::Int
+    if cells !== nothing
+        @assert y === z === nothing
+        @assert typeof(cells) == Vector{MeshCell}
+        const grid_type = GRID_UNSTRUCTURED::Int
+        const Npts::Int = div(length(x), 3)
+        const Ncells = length(cells)
+        const file_ext = ".vtu"
+        if 3*Npts != length(x)
+            error("Length of POINTS should be a multiple of 3.")
+        end
+
+    elseif length(size(x)) == 1
         @assert length(size(y)) == length(size(z)) == 1
+        const grid_type = GRID_RECTILINEAR::Int
         const Ni, Nj, Nk = length(x), length(y), length(z)
+        const Npts = Ni*Nj*Nk
+        const Ncells = 0
         const file_ext = ".vtr"
 
     elseif length(size(x)) == 3
-        const grid_type = GRID_STRUCTURED::Int
         @assert size(x) == size(y) == size(z)
+        const grid_type = GRID_STRUCTURED::Int
         const Ni, Nj, Nk = size(x)
+        const Npts = Ni*Nj*Nk
+        const Ncells = 0
         const file_ext = ".vts"
 
     else
@@ -380,10 +408,9 @@ function vtk_grid{T<:FloatingPoint}(
 
     xvtk = XMLDocument()
 
-    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Ni*Nj*Nk, 0,
+    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Npts, Ncells,
                       compress, append)
 
-    # -------------------------------------------------- #
     # VTKFile node
     xroot = create_root(xvtk, "VTKFile")
 
@@ -399,28 +426,38 @@ function vtk_grid{T<:FloatingPoint}(
 
     set_attributes(xroot, atts)
 
-    # -------------------------------------------------- #
     # StructuredGrid node (or equivalent)
     xSG = new_child(xroot, vtk.gridType_str)
-    extent = "1 $Ni 1 $Nj 1 $Nk"
-    set_attribute(xSG, "WholeExtent", extent)
+    if vtk.gridType in (GRID_RECTILINEAR, GRID_STRUCTURED)
+        extent = "1 $Ni 1 $Nj 1 $Nk"
+        set_attribute(xSG, "WholeExtent", extent)
+    end
 
-    # -------------------------------------------------- #
     # Piece node
     xPiece = new_child(xSG, "Piece")
-    set_attribute(xPiece, "Extent", extent)
+    if vtk.gridType in (GRID_RECTILINEAR, GRID_STRUCTURED)
+        set_attribute(xPiece, "Extent", extent)
+    elseif vtk.gridType == GRID_UNSTRUCTURED
+        set_attribute(xPiece, "NumberOfPoints", vtk.Npts)
+        set_attribute(xPiece, "NumberOfCells",  vtk.Ncls)
+    end
 
-    # -------------------------------------------------- #
     # Points (or Coordinates) node
-    if vtk.gridType == GRID_STRUCTURED
+    if vtk.gridType in (GRID_STRUCTURED, GRID_UNSTRUCTURED)
         xPoints = new_child(xPiece, "Points")
     elseif vtk.gridType == GRID_RECTILINEAR
         xPoints = new_child(xPiece, "Coordinates")
     end
 
-    # -------------------------------------------------- #
     # DataArray node
-    if vtk.gridType == GRID_STRUCTURED
+    if vtk.gridType == GRID_UNSTRUCTURED
+        if vtk.appended
+            data_to_xml(vtk.buf, xPoints, x, 3, "Points", vtk.compressed)
+        else
+            data_to_xml(xPoints, x, 3, "Points", vtk.compressed)
+        end
+
+    elseif vtk.gridType == GRID_STRUCTURED
         xyz = Array(T, 3, Ni, Nj, Nk)
         for k = 1:Nk, j = 1:Nj, i = 1:Ni
             xyz[1, i, j, k] = x[i, j, k]
@@ -446,10 +483,56 @@ function vtk_grid{T<:FloatingPoint}(
 
     end
 
+    # Cells node (below the Piece node)
+    if vtk.gridType == GRID_UNSTRUCTURED
+        xCells = new_child(xPiece, "Cells")
+
+        # Create data arrays.
+        offsets = Array(Int32, Ncells)
+        types = Array(UInt8, Ncells)
+
+        Nconn = 0   # length of the connectivity array
+        offsets[1] = length(cells[1].connectivity)
+
+        for n = 1:Ncells
+            c = cells[n]
+            Npts_cell = length(c.connectivity)
+            Nconn += Npts_cell
+            types[n] = c.ctype
+            if n >= 2
+                offsets[n] = offsets[n-1] + Npts_cell
+            end
+        end
+
+        # Create connectivity array.
+        conn = Array(Int32, Nconn)
+        const ONE = one(Int32)
+        n = 1
+        for c in cells
+            for i in c.connectivity
+                # We transform to zero-based indexing, required by VTK.
+                conn[n] = i - ONE
+                n += 1
+            end
+        end
+
+        # Add arrays to the XML file.
+        if vtk.appended
+            data_to_xml(vtk.buf, xCells, conn,    1, "connectivity", vtk.compressed)
+            data_to_xml(vtk.buf, xCells, offsets, 1, "offsets",      vtk.compressed)
+            data_to_xml(vtk.buf, xCells, types,   1, "types",        vtk.compressed)
+        else
+            data_to_xml(xCells, conn,    1, "connectivity", vtk.compressed)
+            data_to_xml(xCells, offsets, 1, "offsets",      vtk.compressed)
+            data_to_xml(xCells, types,   1, "types",        vtk.compressed)
+        end
+    end     # GRID_UNSTRUCTURED
+
     return vtk::DatasetFile
 end
 
 
+# Variant of vtk_grid for unstructured meshes.
 function vtk_grid{T<:FloatingPoint}(
     filename_noext::AbstractString, points::Array{T}, cells::Vector{MeshCell};
     compress::Bool=true, append::Bool=true)
@@ -475,104 +558,8 @@ function vtk_grid{T<:FloatingPoint}(
     #
     #==========================================================================#
 
-    const grid_type = GRID_UNSTRUCTURED
-    const file_ext = ".vtu"
-
-    const Ncells = length(cells)
-    const Npts::Int = div(length(points), 3)
-
-    if 3*Npts != length(points)
-        error("Length of POINTS should be a multiple of 3.")
-    end
-
-    xvtk = XMLDocument()
-
-    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Npts, Ncells,
-                      compress, append)
-
-    # -------------------------------------------------- #
-    # VTKFile node
-    xroot = create_root(xvtk, "VTKFile")
-
-    atts = @compat Dict{UTF8String,UTF8String}(
-        "type"       => vtk.gridType_str,
-        "version"    => "1.0",
-        "byte_order" => "LittleEndian")
-
-    if vtk.compressed
-        atts["compressor"] = "vtkZLibDataCompressor"
-        atts["header_type"] = "UInt32"
-    end
-
-    set_attributes(xroot, atts)
-
-    # -------------------------------------------------- #
-    # UnstructuredGrid node
-    xUG = new_child(xroot, vtk.gridType_str)
-
-    # -------------------------------------------------- #
-    # Piece node
-    xPiece = new_child(xUG, "Piece")
-    set_attribute(xPiece, "NumberOfPoints", vtk.Npts)
-    set_attribute(xPiece, "NumberOfCells", Ncells)
-
-    # -------------------------------------------------- #
-    # Points node
-    xPoints = new_child(xPiece, "Points")
-
-    # -------------------------------------------------- #
-    # DataArray node
-    if vtk.appended
-        data_to_xml(vtk.buf, xPoints, points, 3, "Points", vtk.compressed)
-    else
-        data_to_xml(xPoints, points, 3, "Points", vtk.compressed)
-    end
-
-    # -------------------------------------------------- #
-    # Cells node (below the Piece node)
-    xCells = new_child(xPiece, "Cells")
-
-    # Create data arrays.
-    offsets = Array(Int32, Ncells)
-    types = Array(UInt8, Ncells)
-
-    Nconn = 0   # length of the connectivity array
-    offsets[1] = length(cells[1].connectivity)
-
-    for n = 1:Ncells
-        c = cells[n]
-        Npts_cell = length(c.connectivity)
-        Nconn += Npts_cell
-        types[n] = c.ctype
-        if n >= 2
-            offsets[n] = offsets[n-1] + Npts_cell
-        end
-    end
-
-    # Create connectivity array.
-    conn = Array(Int32, Nconn)
-    const ONE = one(Int32)
-    n = 1
-    for c in cells
-        for i in c.connectivity
-            # We transform to zero-based indexing, required by VTK.
-            conn[n] = i - ONE
-            n += 1
-        end
-    end
-
-    # Add arrays to the XML file.
-    if vtk.appended
-        data_to_xml(vtk.buf, xCells, conn,    1, "connectivity", vtk.compressed)
-        data_to_xml(vtk.buf, xCells, offsets, 1, "offsets",      vtk.compressed)
-        data_to_xml(vtk.buf, xCells, types,   1, "types",        vtk.compressed)
-    else
-        data_to_xml(xCells, conn,    1, "connectivity", vtk.compressed)
-        data_to_xml(xCells, offsets, 1, "offsets",      vtk.compressed)
-        data_to_xml(xCells, types,   1, "types",        vtk.compressed)
-    end
-
-    return vtk::DatasetFile
+    return vtk_grid(filename_noext, points, nothing, nothing, cells;
+                    compress=compress, append=append)
 end
 
 function vtk_point_or_cell_data{T<:FloatingPoint}(
