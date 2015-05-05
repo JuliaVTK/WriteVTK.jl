@@ -8,11 +8,10 @@ with [ParaView](http://www.paraview.org/).
 The data is written compressed by default, using the
 [Zlib](https://github.com/dcjones/Zlib.jl) package.
 
-For the moment, only rectilinear (.vtr) and structured (.vts) grids are
-supported.
+For the moment, rectilinear (.vtr), structured (.vts) and unstructured (.vtu)
+grids are supported.
 Multiblock files (.vtm), which can point to multiple VTK files, can also be
 exported.
-Support for unstructured meshes is planned.
 
 ## Installation
 
@@ -22,7 +21,7 @@ From the Julia REPL:
 Pkg.clone("git@github.com:jipolanco/WriteVTK.jl.git")
 ```
 
-## Usage
+## Usage: rectilinear and structured meshes
 
 ### Create a grid
 
@@ -69,6 +68,73 @@ outfiles = vtk_save(vtkfile)
 `outfiles` is an array of strings with the paths to the generated files.
 In this case, the array is obviously of length 1, but that changes when working
 with multiblock files.
+
+## Usage: unstructured meshes
+
+An unstructured mesh is defined by a set of points in space and a set of cells
+that connect those points.
+
+### Defining cells
+
+In WriteVTK, a cell is defined using the MeshCell type:
+
+```julia
+cell = MeshCell(cell_type, connectivity)
+```
+
+- `cell_type` is an integer value that determines the type of the cell, as
+  defined in the
+  [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf).
+  For convenience, WriteVTK includes a `VTKCellType` module that contains these
+  definitions.
+  For example, a triangle is associated to the value
+  `cell_type = VTKCellType.VTK_TRIANGLE`.
+
+- `connectivity` is a vector of indices that determine the mesh points that are
+  connected by the cell.
+  In the case of a triangle, this would be an integer array of length 3.
+
+  Note that the indices are one-based (as opposed to
+  [zero-based](https://en.wikipedia.org/wiki/Zero-based_numbering)),
+  following the convention in Julia.
+
+### Create an unstructured VTK file
+
+First, initialise the file:
+
+```julia
+vtkfile = vtk_grid("my_vtk_file", points, cells)
+```
+
+- `points` is an array with the point locations, of dimensions
+  `[3, num_points]` (possibly flattened).
+
+- `cells` is a MeshCell array that contains all the cells of the mesh.
+  For example:
+
+  ```julia
+  # Supposing that the mesh is made of 5 points:
+  cells = [MeshCell(VTKCellType.VTK_TRIANGLE, [1, 4, 2]),
+           MeshCell(VTKCellType.VTK_QUAD,     [2, 4, 3, 5])]
+  ```
+
+Now add some data to the file.
+It is possible to add both point data and cell data:
+
+```julia
+vtk_point_data(vtkfile, pdata, "my_point_data")
+vtk_cell_data(vtkfile, cdata, "my_cell_data")
+```
+
+The `pdata` and `cdata` arrays must have sizes consistent with the number of
+points and cells respectively.
+Just like in the structured case, the arrays can contain scalar and vectorial data.
+
+Finally, close the file:
+
+```julia
+outfiles = vtk_save(vtkfile)
+```
 
 ## Multiblock files
 
