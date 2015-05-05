@@ -18,7 +18,7 @@ end
 
 # Run the test scripts.
 for test in tests
-    outfiles = evalfile(test)::Vector{UTF8String}
+    @time outfiles = evalfile(test)::Vector{UTF8String}
 
     # Check that the generated files match the stored checksums.
     for file in outfiles
