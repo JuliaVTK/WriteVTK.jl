@@ -12,8 +12,6 @@ module WriteVTK
 #   tetrahedrons, hexahedrons, ...).
 #   That stuff should probably be included in a separate file.
 # - Add unstructured mesh stuff to README (including cell data).
-# - Simplify definition of function data_to_xml, giving it direct access to the
-#   DatasetFile object.
 
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
@@ -152,15 +150,15 @@ function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile)
 end
 
 function data_to_xml{T<:Real}(
-    bapp::IOBuffer, xParent::XMLElement, data::Array{T}, Nc::Integer,
-    varname::AbstractString, compress::Bool)
+    vtk::DatasetFile, xParent::XMLElement, data::Array{T}, Nc::Integer,
+    varname::AbstractString)
     #==========================================================================
     This variant of data_to_xml should be used when writing appended data.
       * bapp is the IOBuffer where the appended data is written.
       * xParent is the XML node under which the DataArray node will be created.
         It is either a "Points" or a "PointData" node.
 
-    When compress == true:
+    When vtk.compressed == true:
       * the data array is written in compressed form (obviously);
       * the header, written before the actual numerical data, is an array of
         UInt32 values:
@@ -175,6 +173,14 @@ function data_to_xml{T<:Real}(
     Otherwise, the header is just a single UInt32 value containing the size of
     the data array in bytes.
     ==========================================================================#
+
+    if !vtk.appended
+        # Redirect to the inline version of this function.
+        return data_to_xml_inline(vtk, xParent, data, Nc, varname)
+    end
+
+    const bapp = vtk.buf    # append buffer
+    const compress = vtk.compressed
 
     @assert name(xParent) in ("Points", "PointData", "Coordinates",
                               "Cells", "CellData")
@@ -232,9 +238,9 @@ function data_to_xml{T<:Real}(
     return xDA
 end
 
-function data_to_xml{T<:Real}(
-    xParent::XMLElement, data::Array{T}, Nc::Integer, varname::AbstractString,
-    compress::Bool)
+function data_to_xml_inline{T<:Real}(
+    vtk::DatasetFile, xParent::XMLElement, data::Array{T}, Nc::Integer,
+    varname::AbstractString)
     #==========================================================================
     This variant of data_to_xml should be used when writing data "inline" into
     the XML file (not appended at the end).
@@ -242,8 +248,11 @@ function data_to_xml{T<:Real}(
     See the other variant of this function for more info.
     ==========================================================================#
 
+    @assert !vtk.appended
     @assert name(xParent) in ("Points", "PointData", "Coordinates",
                               "Cells", "CellData")
+
+    const compress = vtk.compressed
 
     local sType::UTF8String
     if T === Float32
@@ -451,11 +460,7 @@ function vtk_grid{T<:FloatingPoint}(
 
     # DataArray node
     if vtk.gridType == GRID_UNSTRUCTURED
-        if vtk.appended
-            data_to_xml(vtk.buf, xPoints, x, 3, "Points", vtk.compressed)
-        else
-            data_to_xml(xPoints, x, 3, "Points", vtk.compressed)
-        end
+        data_to_xml(vtk, xPoints, x, 3, "Points")
 
     elseif vtk.gridType == GRID_STRUCTURED
         xyz = Array(T, 3, Ni, Nj, Nk)
@@ -464,22 +469,12 @@ function vtk_grid{T<:FloatingPoint}(
             xyz[2, i, j, k] = y[i, j, k]
             xyz[3, i, j, k] = z[i, j, k]
         end
-        if vtk.appended
-            data_to_xml(vtk.buf, xPoints, xyz, 3, "Points", vtk.compressed)
-        else
-            data_to_xml(xPoints, xyz, 3, "Points", vtk.compressed)
-        end
+        data_to_xml(vtk, xPoints, xyz, 3, "Points")
 
     elseif vtk.gridType == GRID_RECTILINEAR
-        if vtk.appended
-            data_to_xml(vtk.buf, xPoints, x, 1, "x", vtk.compressed)
-            data_to_xml(vtk.buf, xPoints, y, 1, "y", vtk.compressed)
-            data_to_xml(vtk.buf, xPoints, z, 1, "z", vtk.compressed)
-        else
-            data_to_xml(xPoints, x, 1, "x", vtk.compressed)
-            data_to_xml(xPoints, y, 1, "y", vtk.compressed)
-            data_to_xml(xPoints, z, 1, "z", vtk.compressed)
-        end
+        data_to_xml(vtk, xPoints, x, 1, "x")
+        data_to_xml(vtk, xPoints, y, 1, "y")
+        data_to_xml(vtk, xPoints, z, 1, "z")
 
     end
 
@@ -517,15 +512,10 @@ function vtk_grid{T<:FloatingPoint}(
         end
 
         # Add arrays to the XML file.
-        if vtk.appended
-            data_to_xml(vtk.buf, xCells, conn,    1, "connectivity", vtk.compressed)
-            data_to_xml(vtk.buf, xCells, offsets, 1, "offsets",      vtk.compressed)
-            data_to_xml(vtk.buf, xCells, types,   1, "types",        vtk.compressed)
-        else
-            data_to_xml(xCells, conn,    1, "connectivity", vtk.compressed)
-            data_to_xml(xCells, offsets, 1, "offsets",      vtk.compressed)
-            data_to_xml(xCells, types,   1, "types",        vtk.compressed)
-        end
+        data_to_xml(vtk, xCells, conn,    1, "connectivity")
+        data_to_xml(vtk, xCells, offsets, 1, "offsets"     )
+        data_to_xml(vtk, xCells, types,   1, "types"       )
+
     end     # GRID_UNSTRUCTURED
 
     return vtk::DatasetFile
@@ -579,11 +569,7 @@ function vtk_point_or_cell_data{T<:FloatingPoint}(
     xPD = (xtmp === nothing) ? new_child(xPiece, nodetype) : xtmp
 
     # DataArray node
-    if vtk.appended
-        xDA = data_to_xml(vtk.buf, xPD, data, Nc, name, vtk.compressed)
-    else
-        xDA = data_to_xml(xPD, data, Nc, name, vtk.compressed)
-    end
+    xDA = data_to_xml(vtk, xPD, data, Nc, name)
 
     return
 end
