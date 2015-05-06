@@ -20,7 +20,6 @@ module WriteVTK
 # undocumented stuff found around the internet...
 # [1] http://www.vtk.org/VTK/img/file-formats.pdf
 
-export VTKFile, MultiblockFile, DatasetFile
 export VTKCellType
 export MeshCell
 export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
