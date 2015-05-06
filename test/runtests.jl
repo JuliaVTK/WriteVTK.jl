@@ -1,7 +1,10 @@
 using WriteVTK
 using Base.Test
 
-tests = ["./rectilinear.jl", "./structured.jl", "./multiblock.jl"]
+tests = ["./rectilinear.jl",
+         "./structured.jl",
+         "./multiblock.jl",
+         "./unstructured.jl"]
 
 # Only toggle to generate new checksums, if new tests are added.
 OVERWRITE_CHECKSUMS = false
@@ -15,7 +18,7 @@ end
 
 # Run the test scripts.
 for test in tests
-    outfiles = evalfile(test)::Vector{UTF8String}
+    @time outfiles = evalfile(test)::Vector{UTF8String}
 
     # Check that the generated files match the stored checksums.
     for file in outfiles
