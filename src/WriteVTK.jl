@@ -22,7 +22,8 @@ module WriteVTK
 
 export VTKCellType
 export MeshCell
-export vtk_multiblock, vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
+export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
+export vtk_multiblock
 
 using LightXML
 import Zlib
@@ -86,70 +87,17 @@ immutable DatasetFile <: VTKFile
     end
 end
 
-immutable MultiblockFile <: VTKFile
-    xdoc::XMLDocument
-    path::UTF8String
-    blocks::Vector{VTKFile}
-
-    # Override default constructor.
-    MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
-end
-
 # Cells in unstructured meshes.
 immutable MeshCell
     ctype::UInt8                 # cell type identifier (see vtkCellType.jl)
     connectivity::Vector{Int32}  # indices of points (one-based, like in Julia!!)
 end
 
+# Multiblock types and functions.
+include("multiblock.jl")
+
 # ====================================================================== #
 ## Functions ##
-
-function vtk_multiblock(filename_noext::AbstractString)
-    # Initialise VTK multiblock file (extension .vtm).
-    # filename_noext: filename without the extension (.vtm).
-
-    xvtm = XMLDocument()
-    xroot = create_root(xvtm, "VTKFile")
-    atts = @compat Dict{UTF8String,UTF8String}(
-        "type"       => "vtkMultiBlockDataSet",
-        "version"    => "1.0",
-        "byte_order" => "LittleEndian")
-    set_attributes(xroot, atts)
-
-    xMBDS = new_child(xroot, "vtkMultiBlockDataSet")
-
-    return MultiblockFile(xvtm, string(filename_noext, ".vtm"))
-end
-
-function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile)
-    # Add VTK file as a new block to a multiblock file.
-
-    # -------------------------------------------------- #
-    xroot = root(vtm.xdoc)
-    xMBDS = find_element(xroot, "vtkMultiBlockDataSet")
-
-    # -------------------------------------------------- #
-    # Block node
-    xBlock = new_child(xMBDS, "Block")
-    nblock = length(vtm.blocks)
-    set_attribute(xBlock, "index", "$nblock")
-
-    # -------------------------------------------------- #
-    # DataSet node
-    # This splits the filename and the directory name.
-    fname = splitdir(vtk.path)[2]
-
-    xDataSet = new_child(xBlock, "DataSet")
-    atts = @compat Dict{UTF8String,UTF8String}(
-                        "index" => "0", "file" => fname)
-    set_attributes(xDataSet, atts)
-
-    # -------------------------------------------------- #
-    # Add the block file to vtm.
-    push!(vtm.blocks, vtk)
-
-    return
-end
 
 function data_to_xml{T<:Real}(
     vtk::DatasetFile, xParent::XMLElement, data::Array{T}, Nc::Integer,
@@ -315,40 +263,6 @@ function data_to_xml_inline{T<:Real}(
     close(buf)
 
     return xDA
-end
-
-# Variant of vtk_grid for multiblock + structured (or rectilinear) grids.
-function vtk_grid(vtm::MultiblockFile, x::Array, y::Array, z::Array;
-                  compress::Bool=true, append::Bool=true)
-    #==========================================================================#
-    # Creates a new grid file with coordinates x, y, z; and this file is
-    # referenced as a block in the vtm file.
-    #
-    # See the documentation for the other variant of vtk_grid.
-    #==========================================================================#
-
-    # Multiblock file without the extension
-    path_base = splitext(vtm.path)[1]
-
-    # Dataset file without the extension
-    vtsFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
-    vtk = vtk_grid(vtsFilename_noext, x, y, z, nothing;
-                   compress=compress, append=append)
-    multiblock_add_block(vtm, vtk)
-
-    return vtk::DatasetFile
-end
-
-
-# Variant of vtk_grid for multiblock + unstructured grids.
-function vtk_grid(vtm::MultiblockFile, points::Array, cells::Vector{MeshCell};
-                  compress=true, append=true)
-    path_base = splitext(vtm.path)[1]
-    vtsFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
-    vtk = vtk_grid(vtsFilename_noext, points, nothing, nothing, cells;
-                   compress=compress, append=append)
-    multiblock_add_block(vtm, vtk)
-    return vtk::DatasetFile
 end
 
 # General vtk_grid variant, that handles all supported types of grid.
@@ -599,21 +513,6 @@ function vtk_cell_data(vtk::DatasetFile, data::Array, name::AbstractString)
     Nc = div(length(data), vtk.Ncls)
     @assert Nc*vtk.Ncls == length(data)
     return vtk_point_or_cell_data(vtk, data, name, "CellData", Nc)
-end
-
-function vtk_save(vtm::MultiblockFile)
-    # Saves VTK multiblock file (.vtm).
-    # Also saves the contained block files (vtm.blocks) recursively.
-
-    outfiles = [vtm.path]::Vector{UTF8String}
-
-    for vtk in vtm.blocks
-        push!(outfiles, vtk_save(vtk)...)
-    end
-
-    save_file(vtm.xdoc, vtm.path)
-
-    return outfiles::Vector{UTF8String}
 end
 
 function vtk_save(vtk::DatasetFile)
