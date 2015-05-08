@@ -109,13 +109,11 @@ function data_to_xml{T<:Real}(
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
-    atts = @compat Dict{UTF8String,UTF8String}(
-        "type"               => sType,
-        "Name"               => varname,
-        "NumberOfComponents" => "$Nc",
-        "format"             => "appended",
-        "offset"             => "$(bapp.size)")
-    set_attributes(xDA, atts)
+    set_attribute(xDA, "type",   sType)
+    set_attribute(xDA, "Name",   varname)
+    set_attribute(xDA, "format", "appended")
+    set_attribute(xDA, "offset", "$(bapp.size)")
+    set_attribute(xDA, "NumberOfComponents", "$Nc")
 
     # Size of data array (in bytes).
     const nb::UInt32 = sizeof(data)
@@ -178,12 +176,10 @@ function data_to_xml_inline{T<:Real}(
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
-    atts = @compat Dict{UTF8String,UTF8String}(
-        "type"               => sType,
-        "Name"               => varname,
-        "NumberOfComponents" => "$Nc",
-        "format"             => "binary")   # here, binary means base64-encoded
-    set_attributes(xDA, atts)
+    set_attribute(xDA, "type",   sType)
+    set_attribute(xDA, "Name",   varname)
+    set_attribute(xDA, "format", "binary")   # here, binary means base64-encoded
+    set_attribute(xDA, "NumberOfComponents", "$Nc")
 
     # Number of bytes of data.
     const nb::UInt32 = sizeof(data)

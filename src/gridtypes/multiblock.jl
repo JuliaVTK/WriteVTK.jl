@@ -16,11 +16,9 @@ function vtk_multiblock(filename_noext::AbstractString)
 
     xvtm = XMLDocument()
     xroot = create_root(xvtm, "VTKFile")
-    atts = @compat Dict{UTF8String,UTF8String}(
-        "type"       => "vtkMultiBlockDataSet",
-        "version"    => "1.0",
-        "byte_order" => "LittleEndian")
-    set_attributes(xroot, atts)
+    set_attribute(xroot, "type",       "vtkMultiBlockDataSet")
+    set_attribute(xroot, "version",    "1.0")
+    set_attribute(xroot, "byte_order", "LittleEndian")
 
     xMBDS = new_child(xroot, "vtkMultiBlockDataSet")
 
@@ -61,9 +59,8 @@ function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile)
     fname = splitdir(vtk.path)[2]
 
     xDataSet = new_child(xBlock, "DataSet")
-    atts = @compat Dict{UTF8String,UTF8String}(
-                        "index" => "0", "file" => fname)
-    set_attributes(xDataSet, atts)
+    set_attribute(xDataSet, "index", "0")
+    set_attribute(xDataSet, "file",  fname)
 
     # Add the block file to vtm.
     push!(vtm.blocks, vtk)
