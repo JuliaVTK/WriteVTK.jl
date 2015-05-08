@@ -15,6 +15,9 @@ module WriteVTK
 #   (The name doesn't need to change though!)
 #   Right now, I'm not really sure why I'm not getting errors because of
 #   ambiguity of function definitions...
+# - Maybe it's better to break the type DatasetFile into different types for
+#   every kind of grid. DatasetFile can be an abstract type, and each grid type
+#   is a subtype.
 
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
@@ -118,7 +121,6 @@ function data_to_xml{T<:Real}(
         See also:
             http://public.kitware.com/pipermail/paraview/2005-April/001391.html
             http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats
-      * note that VTK only allows compressing appended data, not inline data.
 
     Otherwise, the header is just a single UInt32 value containing the size of
     the data array in bytes.
@@ -126,7 +128,7 @@ function data_to_xml{T<:Real}(
 
     if !vtk.appended
         # Redirect to the inline version of this function.
-        return data_to_xml_inline(vtk, xParent, data, Nc, varname)
+        return data_to_xml_inline(vtk, xParent, data, Nc, varname)::XMLElement
     end
 
     const bapp = vtk.buf    # append buffer
@@ -185,7 +187,7 @@ function data_to_xml{T<:Real}(
         write(bapp, data)
     end
 
-    return xDA
+    return xDA::XMLElement
 end
 
 function data_to_xml_inline{T<:Real}(
@@ -262,7 +264,7 @@ function data_to_xml_inline{T<:Real}(
 
     close(buf)
 
-    return xDA
+    return xDA::XMLElement
 end
 
 # General vtk_grid variant, that handles all supported types of grid.

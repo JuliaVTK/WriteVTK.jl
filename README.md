@@ -8,8 +8,8 @@ with [ParaView](http://www.paraview.org/).
 The data is written compressed by default, using the
 [Zlib](https://github.com/dcjones/Zlib.jl) package.
 
-For the moment, rectilinear (.vtr), structured (.vts) and unstructured (.vtu)
-grids are supported.
+Rectilinear (.vtr), structured (.vts) and unstructured (.vtu) grids are
+supported.
 Multiblock files (.vtm), which can point to multiple VTK files, can also be
 exported.
 
@@ -87,7 +87,7 @@ cell = MeshCell(cell_type, connectivity)
   [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf).
   For convenience, WriteVTK includes a `VTKCellType` module that contains these
   definitions.
-  For example, a triangle is associated to the value
+  For instance, a triangle is associated to the value
   `cell_type = VTKCellType.VTK_TRIANGLE`.
 
 - `connectivity` is a vector of indices that determine the mesh points that are
@@ -98,7 +98,7 @@ cell = MeshCell(cell_type, connectivity)
   [zero-based](https://en.wikipedia.org/wiki/Zero-based_numbering)),
   following the convention in Julia.
 
-### Create an unstructured VTK file
+### Generating an unstructured VTK file
 
 First, initialise the file:
 
