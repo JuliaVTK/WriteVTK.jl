@@ -11,10 +11,6 @@ module WriteVTK
 #   That stuff should probably be included in a separate file.
 # - Point definition between structured and unstructured grids is inconsistent!!
 #   (There's no reason why their definitions should be different...)
-# - It's probably better to break vtk_grid into functions for each grid type.
-#   (The name doesn't need to change though!)
-#   Right now, I'm not really sure why I'm not getting errors because of
-#   ambiguity of function definitions...
 
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
@@ -47,81 +43,18 @@ const COMPRESSION_LEVEL = 6
 abstract VTKFile
 abstract DatasetFile <: VTKFile
 
-immutable UnstructuredFile <: DatasetFile
-    xdoc::XMLDocument
-    path::UTF8String
-    gridType_str::UTF8String
-    Npts::Int           # Number of grid points.
-    Ncls::Int           # Number of cells.
-    compressed::Bool    # Data is compressed?
-    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
-    buf::IOBuffer       # Buffer with appended data.
-
-    # Override default constructor.
-    function UnstructuredFile(xdoc, path, Npts, Ncls, compressed, appended)
-        gridType_str = "UnstructuredGrid"
-        if appended
-            buf = IOBuffer()
-        else
-            # In this case we don't need a buffer, so just use a closed one.
-            buf = IOBuffer(0)
-            close(buf)
-        end
-        return new(xdoc, path, gridType_str, Npts, Ncls, compressed,
-                   appended, buf)
-    end
-end
-
-immutable StructuredFile <: DatasetFile
-    xdoc::XMLDocument
-    path::UTF8String
-    gridType_str::UTF8String
-    Npts::Int           # Number of grid points.
-    compressed::Bool    # Data is compressed?
-    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
-    buf::IOBuffer       # Buffer with appended data.
-    function StructuredFile(xdoc, path, Npts, compressed, appended)
-        gridType_str = "StructuredGrid"
-        if appended
-            buf = IOBuffer()
-        else
-            buf = IOBuffer(0)
-            close(buf)
-        end
-        return new(xdoc, path, gridType_str, Npts, compressed,
-                   appended, buf)
-    end
-end
-
-immutable RectilinearFile <: DatasetFile
-    xdoc::XMLDocument
-    path::UTF8String
-    gridType_str::UTF8String
-    Npts::Int           # Number of grid points.
-    compressed::Bool    # Data is compressed?
-    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
-    buf::IOBuffer       # Buffer with appended data.
-    function RectilinearFile(xdoc, path, Npts, compressed, appended)
-        gridType_str = "RectilinearGrid"
-        if appended
-            buf = IOBuffer()
-        else
-            buf = IOBuffer(0)
-            close(buf)
-        end
-        return new(xdoc, path, gridType_str, Npts, compressed,
-                   appended, buf)
-    end
-end
-
 # Cells in unstructured meshes.
+# TODO move to unstructured.jl?
 immutable MeshCell
     ctype::UInt8                 # cell type identifier (see vtkCellType.jl)
     connectivity::Vector{Int32}  # indices of points (one-based, like in Julia!!)
 end
 
-# Multiblock types and functions.
-include("multiblock.jl")
+include("gridtypes/multiblock.jl")
+
+include("gridtypes/structured.jl")
+include("gridtypes/unstructured.jl")
+include("gridtypes/rectilinear.jl")
 
 # ====================================================================== #
 ## Functions ##
@@ -291,217 +224,46 @@ function data_to_xml_inline{T<:Real}(
     return xDA::XMLElement
 end
 
-# General vtk_grid variant, that handles all supported types of grid.
-function vtk_grid{T<:FloatingPoint}(
-    filename_noext::AbstractString,
-    x::Array{T}, y=nothing, z=nothing, cells=nothing;
-    compress::Bool=true, append::Bool=true)
-    #==========================================================================#
-    # Creates a new grid file with coordinates x, y, z.
-    #
-    # The saved file has the name given by filename_noext, and its extension
-    # depends on the type of grid, which is determined by the shape of the
-    # arrays x, y, z.
-    #
-    # Accepted grid types:
-    #   * Rectilinear grid      x, y, z are 1D arrays with possibly different
-    #                           lengths.
-    #
-    #   * Structured grid       x, y, z are 3D arrays with the same dimensions.
-    #                           TODO: also allow a single "4D" array, just like
-    #                           for unstructured grids, which would give a
-    #                           better performance.
-    #
-    #   * Unstructured grid     x is an array with all the points, with
-    #                           dimensions [3, num_points].
-    #                           cells is a MeshCell array with all the cells.
-    #
-    #                           NOTE: for convenience, there's also a separate
-    #                           vtk_grid function specifically made for
-    #                           unstructured grids.
-    #
-    # Optional parameters:
-    # * If compress is true, written data is first compressed using Zlib.
-    #   Set to false if you don't care about file size, or if speed is really
-    #   important.
-    #
-    # * If append is true, data is appended at the end of the XML file as raw
-    #   binary data.
-    #   Otherwise, data is written inline, base-64 encoded. This is usually
-    #   slower than writing raw binary data, and also results in larger files.
-    #   Try disabling this if there are issues (for example with portability?),
-    #   or if it's really important to follow the XML specifications.
-    #
-    #   Note that all combinations of compress and append are supported.
-    #
-    #==========================================================================#
-
-    xvtk = XMLDocument()
-
-    if cells !== nothing
-        @assert y === z === nothing
-        @assert typeof(cells) == Vector{MeshCell}
-        const Npts::Int = div(length(x), 3)
-        const Ncells = length(cells)
-        if 3*Npts != length(x)
-            error("Length of POINTS should be a multiple of 3.")
-        end
-        vtk = UnstructuredFile(xvtk, filename_noext*".vtu", Npts, Ncells,
-                               compress, append)
-
-    elseif length(size(x)) == 1
-        @assert length(size(y)) == length(size(z)) == 1
-        const Ni, Nj, Nk = length(x), length(y), length(z)
-        const Npts = Ni*Nj*Nk
-        vtk = RectilinearFile(xvtk, filename_noext*".vtr", Npts,
-                              compress, append)
-
-    elseif length(size(x)) == 3
-        @assert size(x) == size(y) == size(z)
-        const Ni, Nj, Nk = size(x)
-        const Npts = Ni*Nj*Nk
-        vtk = StructuredFile(xvtk, filename_noext*".vts", Npts,
-                             compress, append)
-
-    else
-        error("Wrong dimensions of grid coordinates x, y, z.")
-
-    end
-
-    typealias vtktype typeof(vtk)   # a subtype of DatasetFile
-
-    # VTKFile node
-    xroot = create_root(xvtk, "VTKFile")
-
-    atts = @compat Dict{UTF8String,UTF8String}(
-        "type"       => vtk.gridType_str,
-        "version"    => "1.0",
-        "byte_order" => "LittleEndian")
-
-    if vtk.compressed
-        atts["compressor"] = "vtkZLibDataCompressor"
-        atts["header_type"] = "UInt32"
-    end
-
-    set_attributes(xroot, atts)
-
-    # StructuredGrid node (or equivalent)
-    xSG = new_child(xroot, vtk.gridType_str)
-    # if vtk.gridType in (GRID_RECTILINEAR, GRID_STRUCTURED)
-    if vtktype in (StructuredFile, RectilinearFile)
-        extent = "1 $Ni 1 $Nj 1 $Nk"
-        set_attribute(xSG, "WholeExtent", extent)
-    end
-
-    # Piece node
-    xPiece = new_child(xSG, "Piece")
-    if vtktype in (StructuredFile, RectilinearFile)
-        set_attribute(xPiece, "Extent", extent)
-    elseif vtktype == UnstructuredFile
-        set_attribute(xPiece, "NumberOfPoints", vtk.Npts)
-        set_attribute(xPiece, "NumberOfCells",  vtk.Ncls)
-    end
-
-    # Points (or Coordinates) node
-    if vtktype in (StructuredFile, UnstructuredFile)
-        xPoints = new_child(xPiece, "Points")
-    elseif vtktype == RectilinearFile
-        xPoints = new_child(xPiece, "Coordinates")
-    end
-
-    # DataArray node
-    if vtktype == UnstructuredFile
-        data_to_xml(vtk, xPoints, x, 3, "Points")
-
-    elseif vtktype == StructuredFile
-        xyz = Array(T, 3, Ni, Nj, Nk)
-        for k = 1:Nk, j = 1:Nj, i = 1:Ni
-            xyz[1, i, j, k] = x[i, j, k]
-            xyz[2, i, j, k] = y[i, j, k]
-            xyz[3, i, j, k] = z[i, j, k]
-        end
-        data_to_xml(vtk, xPoints, xyz, 3, "Points")
-
-    elseif vtktype == RectilinearFile
-        data_to_xml(vtk, xPoints, x, 1, "x")
-        data_to_xml(vtk, xPoints, y, 1, "y")
-        data_to_xml(vtk, xPoints, z, 1, "z")
-
-    end
-
-    # Cells node (below the Piece node)
-    if vtktype == UnstructuredFile
-        xCells = new_child(xPiece, "Cells")
-
-        # Create data arrays.
-        offsets = Array(Int32, Ncells)
-        types = Array(UInt8, Ncells)
-
-        Nconn = 0   # length of the connectivity array
-        offsets[1] = length(cells[1].connectivity)
-
-        for n = 1:Ncells
-            c = cells[n]
-            Npts_cell = length(c.connectivity)
-            Nconn += Npts_cell
-            types[n] = c.ctype
-            if n >= 2
-                offsets[n] = offsets[n-1] + Npts_cell
-            end
-        end
-
-        # Create connectivity array.
-        conn = Array(Int32, Nconn)
-        const ONE = one(Int32)
-        n = 1
-        for c in cells
-            for i in c.connectivity
-                # We transform to zero-based indexing, required by VTK.
-                conn[n] = i - ONE
-                n += 1
-            end
-        end
-
-        # Add arrays to the XML file.
-        data_to_xml(vtk, xCells, conn,    1, "connectivity")
-        data_to_xml(vtk, xCells, offsets, 1, "offsets"     )
-        data_to_xml(vtk, xCells, types,   1, "types"       )
-
-    end     # GRID_UNSTRUCTURED
-
-    return vtk::DatasetFile
-end
-
-
-# Variant of vtk_grid for unstructured meshes.
-function vtk_grid{T<:FloatingPoint}(
-    filename_noext::AbstractString, points::Array{T}, cells::Vector{MeshCell};
-    compress::Bool=true, append::Bool=true)
-    #==========================================================================#
-    # Create a new unstructured grid file.
-    #
-    # Parameters:
-    #   points      Array with the points of the mesh.
-    #               Its dimensions should be [3, num_points], although
-    #               "flattened" arrays are also accepted (i.e., 1-D arrays with
-    #               the same array ordering).
-    #
-    #   cells       MeshCell array with the cell definitions.
-    #               A cell is represented by a cell type (an integer value) and
-    #               its connectivity, i.e., an array of indices that correspond
-    #               to the cell points in the "points" array.
-    #
-    #               Note that the indices in the connectivity array are
-    #               one-based, to be consistent with the convention in Julia.
-    #
-    # For details on the other arguments, see the documentation of the other
-    # variants of vtk_grid.
-    #
-    #==========================================================================#
-
-    return vtk_grid(filename_noext, points, nothing, nothing, cells;
-                    compress=compress, append=append)
-end
+# TODO move this documentation!!
+#==========================================================================#
+# Creates a new grid file with coordinates x, y, z.
+#
+# The saved file has the name given by filename_noext, and its extension
+# depends on the type of grid, which is determined by the shape of the
+# arrays x, y, z.
+#
+# Accepted grid types:
+#   * Rectilinear grid      x, y, z are 1D arrays with possibly different
+#                           lengths.
+#
+#   * Structured grid       x, y, z are 3D arrays with the same dimensions.
+#                           TODO: also allow a single "4D" array, just like
+#                           for unstructured grids, which would give a
+#                           better performance.
+#
+#   * Unstructured grid     x is an array with all the points, with
+#                           dimensions [3, num_points].
+#                           cells is a MeshCell array with all the cells.
+#
+#                           NOTE: for convenience, there's also a separate
+#                           vtk_grid function specifically made for
+#                           unstructured grids.
+#
+# Optional parameters:
+# * If compress is true, written data is first compressed using Zlib.
+#   Set to false if you don't care about file size, or if speed is really
+#   important.
+#
+# * If append is true, data is appended at the end of the XML file as raw
+#   binary data.
+#   Otherwise, data is written inline, base-64 encoded. This is usually
+#   slower than writing raw binary data, and also results in larger files.
+#   Try disabling this if there are issues (for example with portability?),
+#   or if it's really important to follow the XML specifications.
+#
+#   Note that all combinations of compress and append are supported.
+#
+#==========================================================================#
 
 function vtk_point_or_cell_data{T<:FloatingPoint}(
     vtk::DatasetFile, data::Array{T}, name::AbstractString,
@@ -532,6 +294,7 @@ function vtk_point_data(vtk::DatasetFile, data::Array, name::AbstractString)
     return vtk_point_or_cell_data(vtk, data, name, "PointData", Nc)
 end
 
+# TODO move to unstructured.jl?
 function vtk_cell_data(vtk::UnstructuredFile, data::Array, name::AbstractString)
     # Number of components.
     Nc = div(length(data), vtk.Ncls)

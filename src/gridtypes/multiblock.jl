@@ -28,41 +28,6 @@ function vtk_multiblock(filename_noext::AbstractString)
 end
 
 
-# Variant of vtk_grid for multiblock + structured (or rectilinear) grids.
-function vtk_grid(vtm::MultiblockFile, x::Array, y::Array, z::Array;
-                  compress::Bool=true, append::Bool=true)
-    #==========================================================================#
-    # Creates a new grid file with coordinates x, y, z; and this file is
-    # referenced as a block in the vtm file.
-    #
-    # See the documentation for the other variants of vtk_grid.
-    #==========================================================================#
-
-    # Multiblock file without the extension
-    path_base = splitext(vtm.path)[1]
-
-    # Dataset file without the extension
-    vtsFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
-    vtk = vtk_grid(vtsFilename_noext, x, y, z, nothing;
-                   compress=compress, append=append)
-    multiblock_add_block(vtm, vtk)
-
-    return vtk::DatasetFile
-end
-
-
-# Variant of vtk_grid for multiblock + unstructured grids.
-function vtk_grid(vtm::MultiblockFile, points::Array, cells::Vector{MeshCell};
-                  compress=true, append=true)
-    path_base = splitext(vtm.path)[1]
-    vtsFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
-    vtk = vtk_grid(vtsFilename_noext, points, nothing, nothing, cells;
-                   compress=compress, append=append)
-    multiblock_add_block(vtm, vtk)
-    return vtk::DatasetFile
-end
-
-
 function vtk_save(vtm::MultiblockFile)
     # Saves VTK multiblock file (.vtm).
     # Also saves the contained block files (vtm.blocks) recursively.
