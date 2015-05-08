@@ -15,9 +15,6 @@ module WriteVTK
 #   (The name doesn't need to change though!)
 #   Right now, I'm not really sure why I'm not getting errors because of
 #   ambiguity of function definitions...
-# - Maybe it's better to break the type DatasetFile into different types for
-#   every kind of grid. DatasetFile can be an abstract type, and each grid type
-#   is a subtype.
 
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
@@ -45,19 +42,14 @@ include("VTKCellType.jl")
 ## Constants ##
 const COMPRESSION_LEVEL = 6
 
-# Grid types (maybe there's a better way of doing this?).
-const GRID_RECTILINEAR  = 1
-const GRID_STRUCTURED   = 2
-const GRID_UNSTRUCTURED = 3
-
 # ====================================================================== #
 ## Types ##
 abstract VTKFile
+abstract DatasetFile <: VTKFile
 
-immutable DatasetFile <: VTKFile
+immutable UnstructuredFile <: DatasetFile
     xdoc::XMLDocument
     path::UTF8String
-    gridType::Int       # One of the GRID_* constants.
     gridType_str::UTF8String
     Npts::Int           # Number of grid points.
     Ncls::Int           # Number of cells.
@@ -66,13 +58,8 @@ immutable DatasetFile <: VTKFile
     buf::IOBuffer       # Buffer with appended data.
 
     # Override default constructor.
-    function DatasetFile(xdoc, path, gridType, Npts, Ncls, compressed, appended)
-        gridType_str =
-            gridType == GRID_RECTILINEAR  ?  "RectilinearGrid" :
-            gridType == GRID_STRUCTURED   ?   "StructuredGrid" :
-            gridType == GRID_UNSTRUCTURED ? "UnstructuredGrid" :
-            error("Grid type not supported...")
-
+    function UnstructuredFile(xdoc, path, Npts, Ncls, compressed, appended)
+        gridType_str = "UnstructuredGrid"
         if appended
             buf = IOBuffer()
         else
@@ -80,12 +67,49 @@ immutable DatasetFile <: VTKFile
             buf = IOBuffer(0)
             close(buf)
         end
+        return new(xdoc, path, gridType_str, Npts, Ncls, compressed,
+                   appended, buf)
+    end
+end
 
-        # Number of cells should be different than zero only for unstructured
-        # meshes.
-        @assert gridType == GRID_UNSTRUCTURED || Ncls == 0
+immutable StructuredFile <: DatasetFile
+    xdoc::XMLDocument
+    path::UTF8String
+    gridType_str::UTF8String
+    Npts::Int           # Number of grid points.
+    compressed::Bool    # Data is compressed?
+    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
+    buf::IOBuffer       # Buffer with appended data.
+    function StructuredFile(xdoc, path, Npts, compressed, appended)
+        gridType_str = "StructuredGrid"
+        if appended
+            buf = IOBuffer()
+        else
+            buf = IOBuffer(0)
+            close(buf)
+        end
+        return new(xdoc, path, gridType_str, Npts, compressed,
+                   appended, buf)
+    end
+end
 
-        return new(xdoc, path, gridType, gridType_str, Npts, Ncls, compressed,
+immutable RectilinearFile <: DatasetFile
+    xdoc::XMLDocument
+    path::UTF8String
+    gridType_str::UTF8String
+    Npts::Int           # Number of grid points.
+    compressed::Bool    # Data is compressed?
+    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
+    buf::IOBuffer       # Buffer with appended data.
+    function RectilinearFile(xdoc, path, Npts, compressed, appended)
+        gridType_str = "RectilinearGrid"
+        if appended
+            buf = IOBuffer()
+        else
+            buf = IOBuffer(0)
+            close(buf)
+        end
+        return new(xdoc, path, gridType_str, Npts, compressed,
                    appended, buf)
     end
 end
@@ -312,42 +336,39 @@ function vtk_grid{T<:FloatingPoint}(
     #
     #==========================================================================#
 
+    xvtk = XMLDocument()
+
     if cells !== nothing
         @assert y === z === nothing
         @assert typeof(cells) == Vector{MeshCell}
-        const grid_type = GRID_UNSTRUCTURED::Int
         const Npts::Int = div(length(x), 3)
         const Ncells = length(cells)
-        const file_ext = ".vtu"
         if 3*Npts != length(x)
             error("Length of POINTS should be a multiple of 3.")
         end
+        vtk = UnstructuredFile(xvtk, filename_noext*".vtu", Npts, Ncells,
+                               compress, append)
 
     elseif length(size(x)) == 1
         @assert length(size(y)) == length(size(z)) == 1
-        const grid_type = GRID_RECTILINEAR::Int
         const Ni, Nj, Nk = length(x), length(y), length(z)
         const Npts = Ni*Nj*Nk
-        const Ncells = 0
-        const file_ext = ".vtr"
+        vtk = RectilinearFile(xvtk, filename_noext*".vtr", Npts,
+                              compress, append)
 
     elseif length(size(x)) == 3
         @assert size(x) == size(y) == size(z)
-        const grid_type = GRID_STRUCTURED::Int
         const Ni, Nj, Nk = size(x)
         const Npts = Ni*Nj*Nk
-        const Ncells = 0
-        const file_ext = ".vts"
+        vtk = StructuredFile(xvtk, filename_noext*".vts", Npts,
+                             compress, append)
 
     else
         error("Wrong dimensions of grid coordinates x, y, z.")
 
     end
 
-    xvtk = XMLDocument()
-
-    vtk = DatasetFile(xvtk, filename_noext * file_ext, grid_type, Npts, Ncells,
-                      compress, append)
+    typealias vtktype typeof(vtk)   # a subtype of DatasetFile
 
     # VTKFile node
     xroot = create_root(xvtk, "VTKFile")
@@ -366,32 +387,33 @@ function vtk_grid{T<:FloatingPoint}(
 
     # StructuredGrid node (or equivalent)
     xSG = new_child(xroot, vtk.gridType_str)
-    if vtk.gridType in (GRID_RECTILINEAR, GRID_STRUCTURED)
+    # if vtk.gridType in (GRID_RECTILINEAR, GRID_STRUCTURED)
+    if vtktype in (StructuredFile, RectilinearFile)
         extent = "1 $Ni 1 $Nj 1 $Nk"
         set_attribute(xSG, "WholeExtent", extent)
     end
 
     # Piece node
     xPiece = new_child(xSG, "Piece")
-    if vtk.gridType in (GRID_RECTILINEAR, GRID_STRUCTURED)
+    if vtktype in (StructuredFile, RectilinearFile)
         set_attribute(xPiece, "Extent", extent)
-    elseif vtk.gridType == GRID_UNSTRUCTURED
+    elseif vtktype == UnstructuredFile
         set_attribute(xPiece, "NumberOfPoints", vtk.Npts)
         set_attribute(xPiece, "NumberOfCells",  vtk.Ncls)
     end
 
     # Points (or Coordinates) node
-    if vtk.gridType in (GRID_STRUCTURED, GRID_UNSTRUCTURED)
+    if vtktype in (StructuredFile, UnstructuredFile)
         xPoints = new_child(xPiece, "Points")
-    elseif vtk.gridType == GRID_RECTILINEAR
+    elseif vtktype == RectilinearFile
         xPoints = new_child(xPiece, "Coordinates")
     end
 
     # DataArray node
-    if vtk.gridType == GRID_UNSTRUCTURED
+    if vtktype == UnstructuredFile
         data_to_xml(vtk, xPoints, x, 3, "Points")
 
-    elseif vtk.gridType == GRID_STRUCTURED
+    elseif vtktype == StructuredFile
         xyz = Array(T, 3, Ni, Nj, Nk)
         for k = 1:Nk, j = 1:Nj, i = 1:Ni
             xyz[1, i, j, k] = x[i, j, k]
@@ -400,7 +422,7 @@ function vtk_grid{T<:FloatingPoint}(
         end
         data_to_xml(vtk, xPoints, xyz, 3, "Points")
 
-    elseif vtk.gridType == GRID_RECTILINEAR
+    elseif vtktype == RectilinearFile
         data_to_xml(vtk, xPoints, x, 1, "x")
         data_to_xml(vtk, xPoints, y, 1, "y")
         data_to_xml(vtk, xPoints, z, 1, "z")
@@ -408,7 +430,7 @@ function vtk_grid{T<:FloatingPoint}(
     end
 
     # Cells node (below the Piece node)
-    if vtk.gridType == GRID_UNSTRUCTURED
+    if vtktype == UnstructuredFile
         xCells = new_child(xPiece, "Cells")
 
         # Create data arrays.
@@ -510,7 +532,7 @@ function vtk_point_data(vtk::DatasetFile, data::Array, name::AbstractString)
     return vtk_point_or_cell_data(vtk, data, name, "PointData", Nc)
 end
 
-function vtk_cell_data(vtk::DatasetFile, data::Array, name::AbstractString)
+function vtk_cell_data(vtk::UnstructuredFile, data::Array, name::AbstractString)
     # Number of components.
     Nc = div(length(data), vtk.Ncls)
     @assert Nc*vtk.Ncls == length(data)
