@@ -244,3 +244,17 @@ function vtk_save(vtk::DatasetFile)
 
     return [vtk.path]::Vector{UTF8String}
 end
+
+
+function vtk_xml_write_header(vtk::DatasetFile)
+    xroot = create_root(vtk.xdoc, "VTKFile")
+    set_attribute(xroot, "type", vtk.gridType_str)
+    set_attribute(xroot, "version", "1.0")
+    set_attribute(xroot, "byte_order", "LittleEndian")
+    if vtk.compressed
+        set_attribute(xroot, "compressor", "vtkZLibDataCompressor")
+        set_attribute(xroot, "header_type", "UInt32")
+    end
+    return xroot::XMLElement
+end
+

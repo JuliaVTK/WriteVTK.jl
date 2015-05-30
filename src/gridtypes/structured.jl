@@ -35,18 +35,8 @@ function vtk_grid{T<:FloatingPoint}(
     vtk = StructuredFile(xvtk, filename_noext*".vts", Npts,
                          compress, append)
 
-    # TODO create a xml_write_header, that is common to all grid types,
-    # to reduce duplicate code.
-
     # VTKFile node
-    xroot = create_root(xvtk, "VTKFile")
-    set_attribute(xroot, "type",    vtk.gridType_str)
-    set_attribute(xroot, "version", "1.0")
-    set_attribute(xroot, "byte_order", "LittleEndian")
-    if vtk.compressed
-        set_attribute(xroot, "compressor", "vtkZLibDataCompressor")
-        set_attribute(xroot, "header_type", "UInt32")
-    end
+    xroot = vtk_xml_write_header(vtk)
 
     # StructuredGrid node
     xGrid = new_child(xroot, vtk.gridType_str)
