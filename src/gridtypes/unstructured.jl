@@ -26,9 +26,10 @@ immutable UnstructuredFile <: DatasetFile
 end
 
 
-function vtk_grid{T<:FloatingPoint}(filename_noext::AbstractString,
-                                    points::Array{T}, cells::Vector{MeshCell};
-                                    compress::Bool=true, append::Bool=true)
+function vtk_grid{T<:FloatingPoint}(
+        filename_noext::AbstractString,
+        points::Array{T}, cells::Vector{MeshCell};
+        compress::Bool=true, append::Bool=true)
     xvtk = XMLDocument()
 
     Npts = div(length(points), 3)
@@ -66,8 +67,7 @@ function vtk_grid{T<:FloatingPoint}(filename_noext::AbstractString,
     Nconn = 0   # length of the connectivity array
     offsets[1] = length(cells[1].connectivity)
 
-    for n = 1:Ncells
-        c = cells[n]
+    for (n, c) in enumerate(cells)
         Npts_cell = length(c.connectivity)
         Nconn += Npts_cell
         types[n] = c.ctype
@@ -98,9 +98,10 @@ end
 
 
 # Multiblock variant of vtk_grid.
-function vtk_grid(vtm::MultiblockFile,
-                  points::Array, cells::Vector{MeshCell};
-                  compress::Bool=true, append::Bool=true)
+function vtk_grid{T<:FloatingPoint}(
+        vtm::MultiblockFile,
+        points::Array{T}, cells::Vector{MeshCell};
+        compress::Bool=true, append::Bool=true)
     path_base = splitext(vtm.path)[1]
     vtkFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
     vtk = vtk_grid(vtkFilename_noext, points, cells;

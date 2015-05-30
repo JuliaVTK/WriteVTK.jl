@@ -22,10 +22,10 @@ immutable StructuredFile <: DatasetFile
 end
 
 
+# Variant of vtk_grid with 4-D array xyz.
 function vtk_grid{T<:FloatingPoint}(
-    filename_noext::AbstractString,
-    xyz::Array{T,4};
-    compress::Bool=true, append::Bool=true)
+        filename_noext::AbstractString, xyz::Array{T,4};
+        compress::Bool=true, append::Bool=true)
 
     Ncomp, Ni, Nj, Nk = size(xyz)
     @assert Ncomp == 3  # three components (x, y, z)
@@ -58,11 +58,11 @@ function vtk_grid{T<:FloatingPoint}(
 end
 
 
+# Variant of vtk_grid with 3-D arrays x, y, z.
 function vtk_grid{T<:FloatingPoint}(
-    filename_noext::AbstractString,
-    x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
-    compress::Bool=true, append::Bool=true)
-
+        filename_noext::AbstractString,
+        x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
+        compress::Bool=true, append::Bool=true)
     @assert size(x) == size(y) == size(z)
     Ni, Nj, Nk = size(x)
     xyz = Array(T, 3, Ni, Nj, Nk)
@@ -75,26 +75,26 @@ function vtk_grid{T<:FloatingPoint}(
 end
 
 
-# Multiblock variant of vtk_grid.
-function vtk_grid{T}(vtm::MultiblockFile,
-                     xyz::Array{T,4};
-                     compress::Bool=true, append::Bool=true)
+# Multiblock variant of vtk_grid, with 4-D array xyz.
+function vtk_grid{T<:FloatingPoint}(
+        vtm::MultiblockFile, xyz::Array{T,4};
+        compress::Bool=true, append::Bool=true)
     path_base = splitext(vtm.path)[1]
     vtkFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
-    vtk = vtk_grid(vtkFilename_noext, xyz;
-                   compress=compress, append=append)
+    vtk = vtk_grid(vtkFilename_noext, xyz; compress=compress, append=append)
     multiblock_add_block(vtm, vtk)
     return vtk::DatasetFile
 end
 
 
-function vtk_grid{T}(vtm::MultiblockFile,
-                     x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
-                     compress::Bool=true, append::Bool=true)
+# Multiblock variant of vtk_grid, with 3-D arrays x, y, z.
+function vtk_grid{T<:FloatingPoint}(
+        vtm::MultiblockFile,
+        x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
+        compress::Bool=true, append::Bool=true)
     path_base = splitext(vtm.path)[1]
     vtkFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
-    vtk = vtk_grid(vtkFilename_noext, x, y, z;
-                   compress=compress, append=append)
+    vtk = vtk_grid(vtkFilename_noext, x, y, z; compress=compress, append=append)
     multiblock_add_block(vtm, vtk)
     return vtk::DatasetFile
 end
