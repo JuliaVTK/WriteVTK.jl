@@ -55,7 +55,7 @@ function vtk_grid{T<:FloatingPoint}(
     xPoints = new_child(xPiece, "Points")
 
     # DataArray node
-    data_to_xml(vtk, xPoints, points, 3, "Points")
+    data_to_xml(vtk, xPoints, points, "Points", 3)
 
     # Cells node (below the Piece node)
     xCells = new_child(xPiece, "Cells")
@@ -89,9 +89,9 @@ function vtk_grid{T<:FloatingPoint}(
     end
 
     # Add arrays to the XML file (DataArray nodes).
-    data_to_xml(vtk, xCells, conn,    1, "connectivity")
-    data_to_xml(vtk, xCells, offsets, 1, "offsets"     )
-    data_to_xml(vtk, xCells, types,   1, "types"       )
+    data_to_xml(vtk, xCells, conn,    "connectivity")
+    data_to_xml(vtk, xCells, offsets, "offsets"     )
+    data_to_xml(vtk, xCells, types,   "types"       )
 
     return vtk::UnstructuredFile
 end

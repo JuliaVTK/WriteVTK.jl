@@ -52,7 +52,7 @@ function vtk_grid{T<:FloatingPoint}(
     xPoints = new_child(xPiece, "Points")
 
     # DataArray node
-    data_to_xml(vtk, xPoints, xyz, 3, "Points")
+    data_to_xml(vtk, xPoints, xyz, "Points", 3)
 
     return vtk::StructuredFile
 end

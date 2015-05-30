@@ -50,9 +50,9 @@ function vtk_grid{T<:FloatingPoint}(
     xPoints = new_child(xPiece, "Coordinates")
 
     # DataArray node
-    data_to_xml(vtk, xPoints, x, 1, "x")
-    data_to_xml(vtk, xPoints, y, 1, "y")
-    data_to_xml(vtk, xPoints, z, 1, "z")
+    data_to_xml(vtk, xPoints, x, "x")
+    data_to_xml(vtk, xPoints, y, "y")
+    data_to_xml(vtk, xPoints, z, "z")
 
     return vtk::RectilinearFile
 end

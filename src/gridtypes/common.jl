@@ -1,8 +1,8 @@
 # Contains common functions for all grid types.
 
 function data_to_xml{T<:Real}(
-    vtk::DatasetFile, xParent::XMLElement, data::Array{T}, Nc::Integer,
-    varname::AbstractString)
+        vtk::DatasetFile, xParent::XMLElement, data::Array{T},
+        varname::AbstractString, Nc::Integer=1)
     #==========================================================================
     This variant of data_to_xml should be used when writing appended data.
       * bapp is the IOBuffer where the appended data is written.
@@ -26,7 +26,7 @@ function data_to_xml{T<:Real}(
 
     if !vtk.appended
         # Redirect to the inline version of this function.
-        return data_to_xml_inline(vtk, xParent, data, Nc, varname)::XMLElement
+        return data_to_xml_inline(vtk, xParent, data, varname, Nc)::XMLElement
     end
 
     const bapp = vtk.buf    # append buffer
@@ -81,8 +81,8 @@ end
 
 
 function data_to_xml_inline{T<:Real}(
-    vtk::DatasetFile, xParent::XMLElement, data::Array{T}, Nc::Integer,
-    varname::AbstractString)
+        vtk::DatasetFile, xParent::XMLElement, data::Array{T},
+        varname::AbstractString, Nc::Integer=1)
     #==========================================================================
     This variant of data_to_xml should be used when writing data "inline" into
     the XML file (not appended at the end).
@@ -150,8 +150,8 @@ end
 
 
 function vtk_point_or_cell_data{T<:FloatingPoint}(
-    vtk::DatasetFile, data::Array{T}, name::AbstractString,
-    nodetype::AbstractString, Nc::Int)
+        vtk::DatasetFile, data::Array{T}, name::AbstractString,
+        nodetype::AbstractString, Nc::Integer)
 
     # Nc: number of components (defines whether data is scalar or vectorial).
     @assert Nc in (1, 3)
@@ -166,7 +166,7 @@ function vtk_point_or_cell_data{T<:FloatingPoint}(
     xPD = (xtmp === nothing) ? new_child(xPiece, nodetype) : xtmp
 
     # DataArray node
-    xDA = data_to_xml(vtk, xPD, data, Nc, name)
+    xDA = data_to_xml(vtk, xPD, data, name, Nc)
 
     return
 end
