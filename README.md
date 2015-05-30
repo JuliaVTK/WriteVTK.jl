@@ -43,8 +43,7 @@ Required array shapes for each grid type:
 
 ### Add some data to the file
 
-The function `vtk_point_data` adds point data to the file (note: cell data is
-not supported for now).
+The function `vtk_point_data` adds point data to the file.
 The required input is a VTK file object created by `vtk_grid`, an array and a
 string:
 
