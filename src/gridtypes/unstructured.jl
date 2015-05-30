@@ -26,6 +26,10 @@ immutable UnstructuredFile <: DatasetFile
 end
 
 
+# Variant of vtk_grid with 2-D array "points".
+# Size: (3, num_points)
+# Note that reshaped arrays are also accepted (as long as they have the correct
+# ordering).
 function vtk_grid{T<:FloatingPoint}(
         filename_noext::AbstractString,
         points::Array{T}, cells::Vector{MeshCell};
@@ -97,7 +101,26 @@ function vtk_grid{T<:FloatingPoint}(
 end
 
 
-# Multiblock variant of vtk_grid.
+# Variant of vtk_grid with 1-D arrays x, y, z.
+# Size of each array: (num_points)
+function vtk_grid{T<:FloatingPoint}(
+        filename_noext::AbstractString,
+        x::Array{T}, y::Array{T}, z::Array{T}, cells::Vector{MeshCell};
+        compress::Bool=true, append::Bool=true)
+    @assert length(x) == length(y) == length(z)
+    Npts = length(x)
+    points = Array(T, 3, Npts)
+    for n = 1:Npts
+        points[1, n] = x[n]
+        points[2, n] = y[n]
+        points[3, n] = z[n]
+    end
+    return vtk_grid(filename_noext, points, cells;
+                    compress=compress, append=append)::UnstructuredFile
+end
+
+
+# Multiblock variant of vtk_grid, with 2-D array "points"
 function vtk_grid{T<:FloatingPoint}(
         vtm::MultiblockFile,
         points::Array{T}, cells::Vector{MeshCell};
@@ -105,6 +128,19 @@ function vtk_grid{T<:FloatingPoint}(
     path_base = splitext(vtm.path)[1]
     vtkFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
     vtk = vtk_grid(vtkFilename_noext, points, cells;
+                   compress=compress, append=append)
+    multiblock_add_block(vtm, vtk)
+    return vtk::DatasetFile
+end
+
+# Multiblock variant of vtk_grid, with 1-D arrays x, y, z.
+function vtk_grid{T<:FloatingPoint}(
+        vtm::MultiblockFile,
+        x::Array{T}, y::Array{T}, z::Array{T}, cells::Vector{MeshCell};
+        compress::Bool=true, append::Bool=true)
+    path_base = splitext(vtm.path)[1]
+    vtkFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
+    vtk = vtk_grid(vtkFilename_noext, x, y, z, cells;
                    compress=compress, append=append)
     multiblock_add_block(vtm, vtk)
     return vtk::DatasetFile

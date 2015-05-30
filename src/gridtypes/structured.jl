@@ -71,7 +71,8 @@ function vtk_grid{T<:FloatingPoint}(
         xyz[2, i, j, k] = y[i, j, k]
         xyz[3, i, j, k] = z[i, j, k]
     end
-    return vtk_grid(filename_noext, xyz; compress=compress, append=append)
+    return vtk_grid(filename_noext, xyz;
+                    compress=compress, append=append)::StructuredFile
 end
 
 
