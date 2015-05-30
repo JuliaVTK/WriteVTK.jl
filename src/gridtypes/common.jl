@@ -35,18 +35,11 @@ function data_to_xml{T<:Real}(
     @assert name(xParent) in ("Points", "PointData", "Coordinates",
                               "Cells", "CellData")
 
-    local sType::UTF8String
-    if T === Float32
-        sType = "Float32"
-    elseif T === Float64
-        sType = "Float64"
-    elseif T === Int32
-        sType = "Int32"
-    elseif T === UInt8
-        sType = "UInt8"
-    else
-        error("Real subtype not supported: $T")
-    end
+    sType = T === Float32 ? "Float32" :
+            T === Float64 ? "Float64" :
+            T === Int32   ? "Int32"   :
+            T === UInt8   ? "UInt8"   :
+            error("Real subtype not supported: $T")
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
@@ -103,18 +96,11 @@ function data_to_xml_inline{T<:Real}(
 
     const compress = vtk.compressed
 
-    local sType::UTF8String
-    if T === Float32
-        sType = "Float32"
-    elseif T === Float64
-        sType = "Float64"
-    elseif T === Int32
-        sType = "Int32"
-    elseif T === UInt8
-        sType = "UInt8"
-    else
-        error("Real subtype not supported: $T")
-    end
+    sType = T === Float32 ? "Float32" :
+            T === Float64 ? "Float64" :
+            T === Int32   ? "Int32"   :
+            T === UInt8   ? "UInt8"   :
+            error("Real subtype not supported: $T")
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
