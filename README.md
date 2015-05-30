@@ -19,6 +19,7 @@ exported.
 - [Rectilinear and structured meshes](#usage-rectilinear-and-structured-meshes)
 - [Unstructured meshes](#usage-unstructured-meshes)
 - [Multiblock files](#multiblock-files)
+- [Additional options](#additional-options)
 - [Examples](#examples)
 
 ## Installation
@@ -175,8 +176,8 @@ First, a multiblock file must be initialised:
 vtmfile = vtk_multiblock("my_vtm_file")
 ```
 
-Then, multiple grids can be generated with `vtk_grid` using the `vtmfile`
-object as the first argument:
+Then, each subgrid can be generated with `vtk_grid` using the `vtmfile` object
+as the first argument:
 
 ```julia
 # First block.
@@ -197,6 +198,31 @@ outfiles = vtk_save(vtmfile)
 Assuming that the two blocks are structured grids, this generates the files
 `my_vtm_file.vtm`, `my_vtm_file.z01.vts` and `my_vtm_file.z02.vts`, where the
 `vtm` file points to the two `vts` files.
+
+## Additional options
+
+By default, numerical data is written to the XML files as compressed raw binary
+data.
+This can be changed using the optional `compress` and `append` parameters of
+the `vtk_grid` functions.
+
+For instance, to disable both compressing and appending raw data in the case of
+unstructured meshes:
+
+```julia
+vtkfile = vtk_grid("my_vtk_file", points, cells; compress=false, append=false)
+```
+
+- If `append` is `true` (default), data is written appended at the end of the
+  XML file as raw binary data.
+  Note that this is not allowed by the XML specification.
+
+  Otherwise, if `append` is `false`, data is written "inline", and base-64
+  encoded instead of raw.
+  This is usually slower than writing raw binary data, and also results in
+  larger files, but is valid according to the XML specification.
+
+- If `compress` is `true` (default), data is first compressed using Zlib.
 
 ## Examples
 
