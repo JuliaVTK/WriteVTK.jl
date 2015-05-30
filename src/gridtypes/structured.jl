@@ -24,13 +24,14 @@ end
 
 function vtk_grid{T<:FloatingPoint}(
     filename_noext::AbstractString,
-    x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
+    xyz::Array{T,4};
     compress::Bool=true, append::Bool=true)
 
-    @assert size(x) == size(y) == size(z)
+    Ncomp, Ni, Nj, Nk = size(xyz)
+    @assert Ncomp == 3  # three components (x, y, z)
+
     xvtk = XMLDocument()
 
-    Ni, Nj, Nk = size(x)
     Npts = Ni*Nj*Nk
     vtk = StructuredFile(xvtk, filename_noext*".vts", Npts,
                          compress, append)
@@ -51,20 +52,42 @@ function vtk_grid{T<:FloatingPoint}(
     xPoints = new_child(xPiece, "Points")
 
     # DataArray node
-    # TODO this can probably be optimised (avoid temp. arrays!!)?
-    xyz = Array(T, 3, Ni, Nj, Nk)
-    for k = 1:Nk, j = 1:Nj, i = 1:Ni
-        xyz[1, i, j, k] = x[i, j, k]
-        xyz[2, i, j, k] = y[i, j, k]
-        xyz[3, i, j, k] = z[i, j, k]
-    end
     data_to_xml(vtk, xPoints, xyz, 3, "Points")
 
     return vtk::StructuredFile
 end
 
 
+function vtk_grid{T<:FloatingPoint}(
+    filename_noext::AbstractString,
+    x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
+    compress::Bool=true, append::Bool=true)
+
+    @assert size(x) == size(y) == size(z)
+    Ni, Nj, Nk = size(x)
+    xyz = Array(T, 3, Ni, Nj, Nk)
+    for k = 1:Nk, j = 1:Nj, i = 1:Ni
+        xyz[1, i, j, k] = x[i, j, k]
+        xyz[2, i, j, k] = y[i, j, k]
+        xyz[3, i, j, k] = z[i, j, k]
+    end
+    return vtk_grid(filename_noext, xyz; compress=compress, append=append)
+end
+
+
 # Multiblock variant of vtk_grid.
+function vtk_grid{T}(vtm::MultiblockFile,
+                     xyz::Array{T,4};
+                     compress::Bool=true, append::Bool=true)
+    path_base = splitext(vtm.path)[1]
+    vtkFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
+    vtk = vtk_grid(vtkFilename_noext, xyz;
+                   compress=compress, append=append)
+    multiblock_add_block(vtm, vtk)
+    return vtk::DatasetFile
+end
+
+
 function vtk_grid{T}(vtm::MultiblockFile,
                      x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
                      compress::Bool=true, append::Bool=true)

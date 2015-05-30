@@ -34,11 +34,9 @@ end
 # Cell type definitions as in vtkCellType.h
 include("VTKCellType.jl")
 
-# ====================================================================== #
 ## Constants ##
 const COMPRESSION_LEVEL = 6
 
-# ====================================================================== #
 ## Types ##
 abstract VTKFile
 abstract DatasetFile <: VTKFile
@@ -49,12 +47,15 @@ immutable MeshCell
     connectivity::Vector{Int32}  # indices of points (one-based, like in Julia!!)
 end
 
+# Multiblock-specific functions and types.
 include("gridtypes/multiblock.jl")
 
+# Grid-specific functions and types.
 include("gridtypes/structured.jl")
 include("gridtypes/unstructured.jl")
 include("gridtypes/rectilinear.jl")
 
+# Common functions.
 include("gridtypes/common.jl")
 
 # TODO move this documentation!!
