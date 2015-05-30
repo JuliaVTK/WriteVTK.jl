@@ -215,7 +215,7 @@ vtkfile = vtk_grid("my_vtk_file", points, cells; compress=false, append=false)
 
 - If `append` is `true` (default), data is written appended at the end of the
   XML file as raw binary data.
-  Note that this is not allowed by the XML specification.
+  Note that this violates the XML specification, although it is allowed by VTK.
 
   Otherwise, if `append` is `false`, data is written "inline", and base-64
   encoded instead of raw.
