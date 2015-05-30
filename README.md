@@ -13,6 +13,14 @@ supported.
 Multiblock files (.vtm), which can point to multiple VTK files, can also be
 exported.
 
+## Contents
+
+- [Installation](#installation)
+- [Rectilinear and structured meshes](#usage-rectilinear-and-structured-meshes)
+- [Unstructured meshes](#usage-unstructured-meshes)
+- [Multiblock files](#multiblock-files)
+- [Examples](#examples)
+
 ## Installation
 
 From the Julia REPL:
@@ -23,7 +31,7 @@ Pkg.clone("git@github.com:jipolanco/WriteVTK.jl.git")
 
 ## Usage: rectilinear and structured meshes
 
-### Create a grid
+### Define a grid
 
 The function `vtk_grid` initialises the VTK file.
 This function requires a filename with no extension, and the grid coordinates.
@@ -38,8 +46,19 @@ vtkfile = vtk_grid("my_vtk_file", x, y, z)
 
 Required array shapes for each grid type:
 
-- Rectilinear grid: `x`, `y`, `z` are 1D arrays with different lengths in general.
-- Structured grid: `x`, `y`, `z` are 3D arrays with the same shape.
+- Rectilinear grid: `x`, `y`, `z` are 1-D arrays with different lengths in
+  general.
+- Structured grid: `x`, `y`, `z` are 3-D arrays with the same shape
+  `[Ni, Nj, Nk]`.
+
+Alternatively, in the case of structured grids, the grid points can be defined
+from a single 4-D array `xyz`, of dimensions `[3, Ni, Nj, Nk]`:
+
+```julia
+vtkfile = vtk_grid("my_vtk_file", xyz)
+```
+
+This is actually more efficient than the previous formulation.
 
 ### Add some data to the file
 
@@ -106,7 +125,7 @@ vtkfile = vtk_grid("my_vtk_file", points, cells)
 ```
 
 - `points` is an array with the point locations, of dimensions
-  `[3, num_points]` (possibly flattened).
+  `[3, num_points]` (can be also flattened or reshaped).
 
 - `cells` is a MeshCell array that contains all the cells of the mesh.
   For example:
@@ -117,6 +136,11 @@ vtkfile = vtk_grid("my_vtk_file", points, cells)
            MeshCell(VTKCellType.VTK_QUAD,     [2, 4, 3, 5])]
   ```
 
+Alternatively, the grid points can be defined from three 1-D arrays `x`, `y`,
+`z`, of equal lengths, as in
+`vtkfile = vtk_grid("my_vtk_file", x, y, z, cells)`.
+This is less efficient though.
+
 Now add some data to the file.
 It is possible to add both point data and cell data:
 
@@ -126,8 +150,9 @@ vtk_cell_data(vtkfile, cdata, "my_cell_data")
 ```
 
 The `pdata` and `cdata` arrays must have sizes consistent with the number of
-points and cells respectively.
-Just like in the structured case, the arrays can contain scalar and vectorial data.
+points and cells in the mesh, respectively.
+The arrays can contain scalar and vectorial data (see
+[here](Add-some-data-to-the-file)).
 
 Finally, close the file:
 
@@ -142,7 +167,7 @@ files.
 They can be useful when working with complex geometries that are composed of
 multiple subdomains.
 In order to generate multiblock files, the `vtk_multiblock` function must be used.
-The previously introduced functions are then used with some small modifications.
+The functions introduced above are then used with some small modifications.
 
 First, a multiblock file must be initialised:
 
