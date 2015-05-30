@@ -14,18 +14,19 @@ function mesh_data()
     # Based on the structured.jl example.
     const Ni, Nj, Nk = 40, 50, 20
     const dims = [Ni, Nj, Nk]
+    const Npts = prod(dims)
 
     # Create points and point data.
-    pts = Array(FloatType, 3, Ni, Nj, Nk)
-    pdata = Array(FloatType, Ni, Nj, Nk)
+    pts_ijk = Array(FloatType, 3, Ni, Nj, Nk)
+    pdata_ijk = Array(FloatType, Ni, Nj, Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         r = 1 + (i - 1)/(Ni - 1)
         th = 3*pi/4 * (j - 1)/(Nj - 1)
-        pts[1, i, j, k] = r * cos(th)
-        pts[2, i, j, k] = r * sin(th)
-        pts[3, i, j, k] = (k - 1)/(Nk - 1)
-        pdata[i, j, k] = i*i + k*sqrt(j)
+        pts_ijk[1, i, j, k] = r * cos(th)
+        pts_ijk[2, i, j, k] = r * sin(th)
+        pts_ijk[3, i, j, k] = (k - 1)/(Nk - 1)
+        pdata_ijk[i, j, k] = i*i + k*sqrt(j)
     end
 
     # Create cells (all hexahedrons in this case) and cell data.
@@ -51,6 +52,9 @@ function mesh_data()
         push!(cells, c)
         push!(cdata, i*j*k)
     end
+
+    pts = reshape(pts_ijk, 3, Npts)
+    pdata = reshape(pdata_ijk, Npts)
 
     return pts, cells, pdata, cdata
 end
