@@ -152,7 +152,7 @@ vtk_cell_data(vtkfile, cdata, "my_cell_data")
 The `pdata` and `cdata` arrays must have sizes consistent with the number of
 points and cells in the mesh, respectively.
 The arrays can contain scalar and vectorial data (see
-[here](Add-some-data-to-the-file)).
+[here](#add-some-data-to-the-file)).
 
 Finally, close the file:
 
