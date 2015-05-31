@@ -30,6 +30,12 @@ From the Julia REPL:
 Pkg.clone("git@github.com:jipolanco/WriteVTK.jl.git")
 ```
 
+Then load the module in Julia with:
+
+```julia
+using WriteVTK
+```
+
 ## Usage: rectilinear and structured meshes
 
 ### Define a grid
@@ -40,8 +46,6 @@ Depending on the shape of the arrays `x`, `y` and `z`, either a rectilinear or
 structured grid is created.
 
 ```julia
-using WriteVTK
-
 vtkfile = vtk_grid("my_vtk_file", x, y, z)
 ```
 
