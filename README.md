@@ -27,7 +27,7 @@ exported.
 From the Julia REPL:
 
 ```julia
-Pkg.clone("git@github.com:jipolanco/WriteVTK.jl.git")
+Pkg.add("WriteVTK")
 ```
 
 Then load the module in Julia with:
