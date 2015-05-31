@@ -10,14 +10,12 @@ function main()
     # Define grid.
     const Ni, Nj, Nk = 20, 30, 40
 
-    x = zeros(FloatType, Ni, Nj, Nk)
-    y = zeros(FloatType, Ni, Nj, Nk)
-    z = zeros(FloatType, Ni, Nj, Nk)
+    xyz = zeros(FloatType, 3, Ni, Nj, Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
-        x[i, j, k] = i/Ni * cos(3*pi/2 * (j-1) / (Nj-1))
-        y[i, j, k] = i/Ni * sin(3*pi/2 * (j-1) / (Nj-1))
-        z[i, j, k] = (k-1) / Nk
+        xyz[1, i, j, k] = i/Ni * cos(3*pi/2 * (j-1) / (Nj-1))
+        xyz[2, i, j, k] = i/Ni * sin(3*pi/2 * (j-1) / (Nj-1))
+        xyz[3, i, j, k] = (k-1) / Nk
     end
 
     # Create some scalar and vectorial data.
@@ -34,7 +32,10 @@ function main()
     end
 
     # Initialise new vts file (structured grid).
-    vtk = vtk_grid(vtk_filename_noext, x, y, z)
+    vtk = vtk_grid(vtk_filename_noext, xyz)
+
+    # This is also accepted:
+    # vtk = vtk_grid(vtk_filename_noext, xyz[1, :], xyz[2, :], xyz[3, :])
 
     # Add data.
     vtk_point_data(vtk, p, "p_values")
