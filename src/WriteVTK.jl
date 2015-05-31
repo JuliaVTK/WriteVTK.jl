@@ -2,15 +2,9 @@ module WriteVTK
 
 # TODO
 # - Add better support for 2D datasets (slices).
-# - Reduce duplicate code: data_to_xml() variants...
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
 # - Add tests for non-default cases (append=false, compress=false in vtk_grid).
-# - Add MeshCell constructors for common cell types (triangles, quads,
-#   tetrahedrons, hexahedrons, ...).
-#   That stuff should probably be included in a separate file.
-# - Point definition between structured and unstructured grids is inconsistent!!
-#   (There's no reason why their definitions should be different...)
 
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
