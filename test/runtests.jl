@@ -1,3 +1,5 @@
+#!/usr/bin/env julia
+
 using WriteVTK
 using Base.Test
 

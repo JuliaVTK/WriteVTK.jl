@@ -1,5 +1,9 @@
 #!/usr/bin/env julia
 
+# This file tests generation of multiblock VTK files.
+# It also tests the non-default values of the optional parameters of vtk_grid,
+# i.e., compress=false and append=false.
+
 using WriteVTK
 typealias FloatType Float32
 const vtm_filename_noext = "multiblock"
@@ -98,17 +102,17 @@ function main()
 
     # Create first block.
     x, y, z, q = first_block_data()
-    vtk = vtk_grid(vtm, x, y, z)
+    vtk = vtk_grid(vtm, x, y, z; compress=false, append=false)
     vtk_point_data(vtk, q, "q_values")
 
     # Create second block.
     x, y, z, q = second_block_data()
-    vtk = vtk_grid(vtm, x, y, z)
+    vtk = vtk_grid(vtm, x, y, z; compress=false, append=true)
     vtk_point_data(vtk, q, "q_values")
 
     # Create third block.
     points, cells, q, c = third_block_data()
-    vtk = vtk_grid(vtm, points, cells)
+    vtk = vtk_grid(vtm, points, cells; compress=true, append=false)
     vtk_point_data(vtk, q, "q_values")
     vtk_cell_data(vtk, c, "c_values")
 
