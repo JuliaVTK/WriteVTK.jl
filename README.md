@@ -52,7 +52,7 @@ vtkfile = vtk_grid("my_vtk_file", x, y, z)
 Required array shapes for each grid type:
 
 - Rectilinear grid: `x`, `y`, `z` are 1-D arrays with different lengths in
-  general.
+  general (`Ni`, `Nj` and `Nk` respectively).
 - Structured grid: `x`, `y`, `z` are 3-D arrays with the same shape
   `[Ni, Nj, Nk]`.
 
@@ -79,6 +79,16 @@ vtk_point_data(vtkfile, vel, "Velocity")
 
 The array can represent either scalar or vectorial data.
 In the latter case, the shape of the array should be `[3, Ni, Nj, Nk]`.
+
+Cell data can also be added, using `vtk_cell_data`:
+
+```julia
+vtk_cell_data(vtkfile, T, "Temperature")
+```
+
+Note that in rectilinear and structured meshes, the cell resolution is
+necessarily `[Ni-1, Nj-1, Nk-1]`, and the dimensions of the data arrays should
+be consistent with that resolution.
 
 ### Save the file
 
