@@ -1,28 +1,5 @@
 # Included in WriteVTK.jl.
 
-immutable StructuredFile <: DatasetFile
-    xdoc::XMLDocument
-    path::UTF8String
-    gridType_str::UTF8String
-    Npts::Int           # Number of grid points.
-    Ncls::Int           # Number of cells.
-    compressed::Bool    # Data is compressed?
-    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
-    buf::IOBuffer       # Buffer with appended data.
-    function StructuredFile(xdoc, path, Npts, Ncls, compressed, appended)
-        gridType_str = "StructuredGrid"
-        if appended
-            buf = IOBuffer()
-        else
-            buf = IOBuffer(0)
-            close(buf)
-        end
-        return new(xdoc, path, gridType_str, Npts, Ncls, compressed,
-                   appended, buf)
-    end
-end
-
-
 # Variant of vtk_grid with 4-D array xyz.
 function vtk_grid{T<:FloatingPoint}(
         filename_noext::AbstractString, xyz::Array{T,4};
@@ -35,8 +12,8 @@ function vtk_grid{T<:FloatingPoint}(
 
     Npts = Ni*Nj*Nk
     Ncls = (Ni - 1) * (Nj - 1) * (Nk - 1)
-    vtk = StructuredFile(xvtk, filename_noext*".vts", Npts, Ncls,
-                         compress, append)
+    vtk = DatasetFile(xvtk, filename_noext*".vts", "StructuredGrid",
+                      Npts, Ncls, compress, append)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)
@@ -56,7 +33,7 @@ function vtk_grid{T<:FloatingPoint}(
     # DataArray node
     data_to_xml(vtk, xPoints, xyz, "Points", 3)
 
-    return vtk::StructuredFile
+    return vtk::DatasetFile
 end
 
 
@@ -74,7 +51,7 @@ function vtk_grid{T<:FloatingPoint}(
         xyz[3, i, j, k] = z[i, j, k]
     end
     return vtk_grid(filename_noext, xyz;
-                    compress=compress, append=append)::StructuredFile
+                    compress=compress, append=append)::DatasetFile
 end
 
 

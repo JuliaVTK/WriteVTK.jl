@@ -1,15 +1,5 @@
 # Included in WriteVTK.jl
 
-immutable MultiblockFile <: VTKFile
-    xdoc::XMLDocument
-    path::UTF8String
-    blocks::Vector{VTKFile}
-
-    # Override default constructor.
-    MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
-end
-
-
 function vtk_multiblock(filename_noext::AbstractString)
     # Initialise VTK multiblock file (extension .vtm).
     # filename_noext: filename without the extension (.vtm).

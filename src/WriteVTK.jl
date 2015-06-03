@@ -1,13 +1,5 @@
 module WriteVTK
 
-# TODO
-# - Merge all the different subtypes of DatasetFile??
-#   (They're all the same...)
-# - Support PVD files for ParaView?
-# - Add better support for 2D datasets (slices).
-# - Allow AbstractArray types.
-#   NOTE: using SubArrays/ArrayViews can be significantly slower!!
-
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
 # [1] http://www.vtk.org/VTK/img/file-formats.pdf
@@ -35,7 +27,37 @@ const COMPRESSION_LEVEL = 6
 
 ## Types ##
 abstract VTKFile
-abstract DatasetFile <: VTKFile
+
+immutable DatasetFile <: VTKFile
+    xdoc::XMLDocument
+    path::UTF8String
+    gridType_str::UTF8String
+    Npts::Int           # Number of grid points.
+    Ncls::Int           # Number of cells.
+    compressed::Bool    # Data is compressed?
+    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
+    buf::IOBuffer       # Buffer with appended data.
+    function DatasetFile(xdoc, path, gridType_str, Npts, Ncls,
+                         compressed, appended)
+        if appended
+            buf = IOBuffer()
+        else
+            buf = IOBuffer(0)
+            close(buf)
+        end
+        return new(xdoc, path, gridType_str, Npts, Ncls,
+                   compressed, appended, buf)
+    end
+end
+
+immutable MultiblockFile <: VTKFile
+    xdoc::XMLDocument
+    path::UTF8String
+    blocks::Vector{VTKFile}
+
+    # Override default constructor.
+    MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
+end
 
 # Cells in unstructured meshes.
 immutable MeshCell

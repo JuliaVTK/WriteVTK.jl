@@ -1,28 +1,5 @@
 # Included in WriteVTK.jl.
 
-immutable RectilinearFile <: DatasetFile
-    xdoc::XMLDocument
-    path::UTF8String
-    gridType_str::UTF8String
-    Npts::Int           # Number of grid points.
-    Ncls::Int           # Number of cells.
-    compressed::Bool    # Data is compressed?
-    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
-    buf::IOBuffer       # Buffer with appended data.
-    function RectilinearFile(xdoc, path, Npts, Ncls, compressed, appended)
-        gridType_str = "RectilinearGrid"
-        if appended
-            buf = IOBuffer()
-        else
-            buf = IOBuffer(0)
-            close(buf)
-        end
-        return new(xdoc, path, gridType_str, Npts, Ncls, compressed,
-                   appended, buf)
-    end
-end
-
-
 function vtk_grid{T<:FloatingPoint}(
         filename_noext::AbstractString,
         x::Array{T,1}, y::Array{T,1}, z::Array{T,1};
@@ -33,8 +10,8 @@ function vtk_grid{T<:FloatingPoint}(
     Ni, Nj, Nk = length(x), length(y), length(z)
     Npts = Ni*Nj*Nk
     Ncls = (Ni - 1) * (Nj - 1) * (Nk - 1)
-    vtk = RectilinearFile(xvtk, filename_noext*".vtr", Npts, Ncls,
-                          compress, append)
+    vtk = DatasetFile(xvtk, filename_noext*".vtr", "RectilinearGrid",
+                      Npts, Ncls, compress, append)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)
@@ -56,7 +33,7 @@ function vtk_grid{T<:FloatingPoint}(
     data_to_xml(vtk, xPoints, y, "y")
     data_to_xml(vtk, xPoints, z, "z")
 
-    return vtk::RectilinearFile
+    return vtk::DatasetFile
 end
 
 

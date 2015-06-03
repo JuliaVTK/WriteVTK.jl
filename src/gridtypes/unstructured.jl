@@ -1,31 +1,5 @@
 # Included in WriteVTK.jl.
 
-immutable UnstructuredFile <: DatasetFile
-    xdoc::XMLDocument
-    path::UTF8String
-    gridType_str::UTF8String
-    Npts::Int           # Number of grid points.
-    Ncls::Int           # Number of cells.
-    compressed::Bool    # Data is compressed?
-    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
-    buf::IOBuffer       # Buffer with appended data.
-
-    # Override default constructor.
-    function UnstructuredFile(xdoc, path, Npts, Ncls, compressed, appended)
-        gridType_str = "UnstructuredGrid"
-        if appended
-            buf = IOBuffer()
-        else
-            # In this case we don't need a buffer, so just use a closed one.
-            buf = IOBuffer(0)
-            close(buf)
-        end
-        return new(xdoc, path, gridType_str, Npts, Ncls, compressed,
-                   appended, buf)
-    end
-end
-
-
 # Variant of vtk_grid with 2-D array "points".
 # Size: (3, num_points)
 # Note that reshaped arrays are also accepted (as long as they have the correct
@@ -37,12 +11,12 @@ function vtk_grid{T<:FloatingPoint}(
     xvtk = XMLDocument()
 
     Npts = div(length(points), 3)
-    Ncells = length(cells)
+    Ncls = length(cells)
     if 3*Npts != length(points)
         error("Length of POINTS should be a multiple of 3.")
     end
-    vtk = UnstructuredFile(xvtk, filename_noext*".vtu", Npts, Ncells,
-                           compress, append)
+    vtk = DatasetFile(xvtk, filename_noext*".vtu", "UnstructuredGrid",
+                      Npts, Ncls, compress, append)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)
@@ -65,8 +39,8 @@ function vtk_grid{T<:FloatingPoint}(
     xCells = new_child(xPiece, "Cells")
 
     # Create data arrays.
-    offsets = Array(Int32, Ncells)
-    types = Array(UInt8, Ncells)
+    offsets = Array(Int32, Ncls)
+    types = Array(UInt8, Ncls)
 
     Nconn = 0   # length of the connectivity array
     offsets[1] = length(cells[1].connectivity)
@@ -97,7 +71,7 @@ function vtk_grid{T<:FloatingPoint}(
     data_to_xml(vtk, xCells, offsets, "offsets"     )
     data_to_xml(vtk, xCells, types,   "types"       )
 
-    return vtk::UnstructuredFile
+    return vtk::DatasetFile
 end
 
 
@@ -116,7 +90,7 @@ function vtk_grid{T<:FloatingPoint}(
         points[3, n] = z[n]
     end
     return vtk_grid(filename_noext, points, cells;
-                    compress=compress, append=append)::UnstructuredFile
+                    compress=compress, append=append)::DatasetFile
 end
 
 
