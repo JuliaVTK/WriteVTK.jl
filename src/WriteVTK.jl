@@ -1,10 +1,12 @@
 module WriteVTK
 
 # TODO
+# - Merge all the different subtypes of DatasetFile??
+#   (They're all the same...)
+# - Support PVD files for ParaView?
 # - Add better support for 2D datasets (slices).
 # - Allow AbstractArray types.
 #   NOTE: using SubArrays/ArrayViews can be significantly slower!!
-# - Add tests for non-default cases (append=false, compress=false in vtk_grid).
 
 # All the code is based on the VTK file specification [1], plus some
 # undocumented stuff found around the internet...
@@ -37,7 +39,7 @@ abstract DatasetFile <: VTKFile
 
 # Cells in unstructured meshes.
 immutable MeshCell
-    ctype::UInt8                 # cell type identifier (see vtkCellType.jl)
+    ctype::UInt8                 # cell type identifier (see VTKCellType.jl)
     connectivity::Vector{Int32}  # indices of points (one-based, like in Julia!!)
 end
 

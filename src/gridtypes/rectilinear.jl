@@ -5,10 +5,11 @@ immutable RectilinearFile <: DatasetFile
     path::UTF8String
     gridType_str::UTF8String
     Npts::Int           # Number of grid points.
+    Ncls::Int           # Number of cells.
     compressed::Bool    # Data is compressed?
     appended::Bool      # Data is appended? (or written inline, base64-encoded?)
     buf::IOBuffer       # Buffer with appended data.
-    function RectilinearFile(xdoc, path, Npts, compressed, appended)
+    function RectilinearFile(xdoc, path, Npts, Ncls, compressed, appended)
         gridType_str = "RectilinearGrid"
         if appended
             buf = IOBuffer()
@@ -16,7 +17,7 @@ immutable RectilinearFile <: DatasetFile
             buf = IOBuffer(0)
             close(buf)
         end
-        return new(xdoc, path, gridType_str, Npts, compressed,
+        return new(xdoc, path, gridType_str, Npts, Ncls, compressed,
                    appended, buf)
     end
 end
@@ -31,7 +32,8 @@ function vtk_grid{T<:FloatingPoint}(
 
     Ni, Nj, Nk = length(x), length(y), length(z)
     Npts = Ni*Nj*Nk
-    vtk = RectilinearFile(xvtk, filename_noext*".vtr", Npts,
+    Ncls = (Ni - 1) * (Nj - 1) * (Nk - 1)
+    vtk = RectilinearFile(xvtk, filename_noext*".vtr", Npts, Ncls,
                           compress, append)
 
     # VTKFile node

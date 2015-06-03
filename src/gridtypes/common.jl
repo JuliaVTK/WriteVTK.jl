@@ -180,7 +180,7 @@ function vtk_point_data(vtk::DatasetFile, data::Array, name::AbstractString)
 end
 
 
-function vtk_cell_data(vtk::UnstructuredFile, data::Array, name::AbstractString)
+function vtk_cell_data(vtk::DatasetFile, data::Array, name::AbstractString)
     # Number of components.
     Nc = div(length(data), vtk.Ncls)
     @assert Nc*vtk.Ncls == length(data)

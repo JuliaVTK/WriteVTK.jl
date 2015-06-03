@@ -5,10 +5,11 @@ immutable StructuredFile <: DatasetFile
     path::UTF8String
     gridType_str::UTF8String
     Npts::Int           # Number of grid points.
+    Ncls::Int           # Number of cells.
     compressed::Bool    # Data is compressed?
     appended::Bool      # Data is appended? (or written inline, base64-encoded?)
     buf::IOBuffer       # Buffer with appended data.
-    function StructuredFile(xdoc, path, Npts, compressed, appended)
+    function StructuredFile(xdoc, path, Npts, Ncls, compressed, appended)
         gridType_str = "StructuredGrid"
         if appended
             buf = IOBuffer()
@@ -16,7 +17,7 @@ immutable StructuredFile <: DatasetFile
             buf = IOBuffer(0)
             close(buf)
         end
-        return new(xdoc, path, gridType_str, Npts, compressed,
+        return new(xdoc, path, gridType_str, Npts, Ncls, compressed,
                    appended, buf)
     end
 end
@@ -33,7 +34,8 @@ function vtk_grid{T<:FloatingPoint}(
     xvtk = XMLDocument()
 
     Npts = Ni*Nj*Nk
-    vtk = StructuredFile(xvtk, filename_noext*".vts", Npts,
+    Ncls = (Ni - 1) * (Nj - 1) * (Nk - 1)
+    vtk = StructuredFile(xvtk, filename_noext*".vts", Npts, Ncls,
                          compress, append)
 
     # VTKFile node
