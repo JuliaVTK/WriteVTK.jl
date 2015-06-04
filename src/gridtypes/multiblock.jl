@@ -16,18 +16,25 @@ function vtk_multiblock(filename_noext::AbstractString)
 end
 
 
+function vtk_grid(vtm::MultiblockFile, griddata...; kwargs...)
+    # Creates new dataset file that is added to the multiblock file.
+    # "griddata" can be any combination of arrays that define a VTK grid.
+    path_base = splitext(vtm.path)[1]
+    vtkFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
+    vtk = vtk_grid(vtkFilename_noext, griddata...; kwargs...)
+    multiblock_add_block(vtm, vtk)
+    return vtk::DatasetFile
+end
+
+
 function vtk_save(vtm::MultiblockFile)
     # Saves VTK multiblock file (.vtm).
     # Also saves the contained block files (vtm.blocks) recursively.
-
     outfiles = [vtm.path]::Vector{UTF8String}
-
     for vtk in vtm.blocks
         push!(outfiles, vtk_save(vtk)...)
     end
-
     save_file(vtm.xdoc, vtm.path)
-
     return outfiles::Vector{UTF8String}
 end
 

@@ -107,12 +107,12 @@ function main()
 
     # Create second block.
     x, y, z, q = second_block_data()
-    vtk = vtk_grid(vtm, x, y, z; compress=false, append=true)
+    vtk = vtk_grid(vtm, x, y, z; compress=false)
     vtk_point_data(vtk, q, "q_values")
 
     # Create third block.
     points, cells, q, c = third_block_data()
-    vtk = vtk_grid(vtm, points, cells; compress=true, append=false)
+    vtk = vtk_grid(vtm, points, cells; append=false)
     vtk_point_data(vtk, q, "q_values")
     vtk_cell_data(vtk, c, "c_values")
 

@@ -87,7 +87,7 @@ vtk_cell_data(vtkfile, T, "Temperature")
 ```
 
 Note that in rectilinear and structured meshes, the cell resolution is
-necessarily `[Ni-1, Nj-1, Nk-1]`, and the dimensions of the data arrays should
+always `[Ni-1, Nj-1, Nk-1]`, and the dimensions of the data arrays should
 be consistent with that resolution.
 
 ### Save the file

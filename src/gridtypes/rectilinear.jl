@@ -35,18 +35,3 @@ function vtk_grid{T<:FloatingPoint}(
 
     return vtk::DatasetFile
 end
-
-
-# Multiblock variant of vtk_grid.
-function vtk_grid{T<:FloatingPoint}(
-        vtm::MultiblockFile,
-        x::Array{T,1}, y::Array{T,1}, z::Array{T,1};
-        compress::Bool=true, append::Bool=true)
-    path_base = splitext(vtm.path)[1]
-    vtkFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
-    vtk = vtk_grid(vtkFilename_noext, x, y, z;
-                   compress=compress, append=append)
-    multiblock_add_block(vtm, vtk)
-    return vtk::DatasetFile
-end
-

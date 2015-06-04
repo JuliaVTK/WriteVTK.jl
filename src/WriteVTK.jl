@@ -42,6 +42,7 @@ immutable DatasetFile <: VTKFile
         if appended
             buf = IOBuffer()
         else
+            # In this case we don't need a buffer, so just define a closed one.
             buf = IOBuffer(0)
             close(buf)
         end
