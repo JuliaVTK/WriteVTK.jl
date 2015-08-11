@@ -7,6 +7,8 @@
 # In the future, this module should be replaced by an Enum, once it's properly
 # supported by Julia (in version 0.4?).
 
+VERSION >= v"0.4.0-dev+6521" && __precompile__()
+
 module VTKCellType
 
 using Compat: UInt8

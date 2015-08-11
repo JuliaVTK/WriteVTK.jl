@@ -1,3 +1,5 @@
+VERSION >= v"0.4.0-dev+6521" && __precompile__()
+
 module WriteVTK
 
 # All the code is based on the VTK file specification [1], plus some
