@@ -26,6 +26,7 @@ include("VTKCellType.jl")
 
 ## Constants ##
 const COMPRESSION_LEVEL = 6
+const IS_LITTLE_ENDIAN = (ENDIAN_BOM == 0x04030201)  # see the documentation for ENDIAN_BOM
 
 ## Types ##
 abstract VTKFile

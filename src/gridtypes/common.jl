@@ -236,7 +236,11 @@ function vtk_xml_write_header(vtk::DatasetFile)
     xroot = create_root(vtk.xdoc, "VTKFile")
     set_attribute(xroot, "type", vtk.gridType_str)
     set_attribute(xroot, "version", "1.0")
-    set_attribute(xroot, "byte_order", "LittleEndian")
+    if IS_LITTLE_ENDIAN
+        set_attribute(xroot, "byte_order", "LittleEndian")
+    else
+        set_attribute(xroot, "byte_order", "BigEndian")
+    end
     if vtk.compressed
         set_attribute(xroot, "compressor", "vtkZLibDataCompressor")
         set_attribute(xroot, "header_type", "UInt32")
