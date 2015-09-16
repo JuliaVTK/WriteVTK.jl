@@ -3,7 +3,7 @@
 # Variant of vtk_grid with 4-D array xyz.
 function vtk_grid{T<:FloatingPoint}(
         filename_noext::AbstractString, xyz::Array{T,4};
-        compress::Bool=true, append::Bool=true)
+        compress::Bool=true, append::Bool=true, extent=nothing)
 
     Ncomp, Ni, Nj, Nk = size(xyz)
     @assert Ncomp == 3  # three components (x, y, z)
@@ -12,6 +12,9 @@ function vtk_grid{T<:FloatingPoint}(
 
     Npts = Ni*Nj*Nk
     Ncls = (Ni - 1) * (Nj - 1) * (Nk - 1)
+
+    ext = extent_attribute(Ni, Nj, Nk, extent)
+
     vtk = DatasetFile(xvtk, filename_noext*".vts", "StructuredGrid",
                       Npts, Ncls, compress, append)
 
@@ -20,12 +23,11 @@ function vtk_grid{T<:FloatingPoint}(
 
     # StructuredGrid node
     xGrid = new_child(xroot, vtk.gridType_str)
-    extent = "1 $Ni 1 $Nj 1 $Nk"
-    set_attribute(xGrid, "WholeExtent", extent)
+    set_attribute(xGrid, "WholeExtent", ext)
 
     # Piece node
     xPiece = new_child(xGrid, "Piece")
-    set_attribute(xPiece, "Extent", extent)
+    set_attribute(xPiece, "Extent", ext)
 
     # Points node
     xPoints = new_child(xPiece, "Points")
@@ -41,7 +43,7 @@ end
 function vtk_grid{T<:FloatingPoint}(
         filename_noext::AbstractString,
         x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
-        compress::Bool=true, append::Bool=true)
+        compress::Bool=true, append::Bool=true, extent=nothing)
     @assert size(x) == size(y) == size(z)
     Ni, Nj, Nk = size(x)
     xyz = Array(T, 3, Ni, Nj, Nk)
@@ -51,5 +53,6 @@ function vtk_grid{T<:FloatingPoint}(
         xyz[3, i, j, k] = z[i, j, k]
     end
     return vtk_grid(filename_noext, xyz;
-                    compress=compress, append=append)::DatasetFile
+                    compress=compress, append=append,
+                    extent=extent)::DatasetFile
 end

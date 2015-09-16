@@ -1,15 +1,21 @@
 # Included in WriteVTK.jl.
 
+# TODO
+# - Document extent option.
+
+# extent should be a vector of integers of length 6.
 function vtk_grid{T<:FloatingPoint}(
         filename_noext::AbstractString,
         x::Array{T,1}, y::Array{T,1}, z::Array{T,1};
-        compress::Bool=true, append::Bool=true)
-
+        compress::Bool=true, append::Bool=true, extent=nothing)
     xvtk = XMLDocument()
 
     Ni, Nj, Nk = length(x), length(y), length(z)
     Npts = Ni*Nj*Nk
     Ncls = (Ni - 1) * (Nj - 1) * (Nk - 1)
+
+    ext = extent_attribute(Ni, Nj, Nk, extent)
+
     vtk = DatasetFile(xvtk, filename_noext*".vtr", "RectilinearGrid",
                       Npts, Ncls, compress, append)
 
@@ -18,12 +24,11 @@ function vtk_grid{T<:FloatingPoint}(
 
     # RectilinearGrid node
     xGrid = new_child(xroot, vtk.gridType_str)
-    extent = "1 $Ni 1 $Nj 1 $Nk"
-    set_attribute(xGrid, "WholeExtent", extent)
+    set_attribute(xGrid, "WholeExtent", ext)
 
     # Piece node
     xPiece = new_child(xGrid, "Piece")
-    set_attribute(xPiece, "Extent", extent)
+    set_attribute(xPiece, "Extent", ext)
 
     # Coordinates node
     xPoints = new_child(xPiece, "Coordinates")

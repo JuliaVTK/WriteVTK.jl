@@ -248,3 +248,23 @@ function vtk_xml_write_header(vtk::DatasetFile)
     return xroot::XMLElement
 end
 
+
+# Returns the "extent" attribute required for structured (including rectilinear)
+# grids.
+function extent_attribute(Ni, Nj, Nk, extent=nothing)
+    if extent == nothing
+        ext = "1 $Ni 1 $Nj 1 $Nk"
+    else
+        @assert eltype(extent) <: Integer
+        (extent[2] - extent[1] + 1 == Ni) &&
+        (extent[4] - extent[3] + 1 == Nj) &&
+        (extent[6] - extent[5] + 1 == Nk) ||
+        error("extent is not consistent with dataset dimensions")
+        ext = string(extent[1])
+        for n = 2:6
+            ext *= " " * string(extent[n])
+        end
+    end
+    return ext
+end
+
