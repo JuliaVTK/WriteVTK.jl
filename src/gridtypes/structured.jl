@@ -1,7 +1,7 @@
 # Included in WriteVTK.jl.
 
 # Variant of vtk_grid with 4-D array xyz.
-function vtk_grid{T<:FloatingPoint}(
+function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString, xyz::Array{T,4};
         compress::Bool=true, append::Bool=true, extent=nothing)
 
@@ -40,7 +40,7 @@ end
 
 
 # Variant of vtk_grid with 3-D arrays x, y, z.
-function vtk_grid{T<:FloatingPoint}(
+function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         x::Array{T,3}, y::Array{T,3}, z::Array{T,3};
         compress::Bool=true, append::Bool=true, extent=nothing)

@@ -149,7 +149,7 @@ function data_to_xml_inline{T<:Real}(
 end
 
 
-function vtk_point_or_cell_data{T<:FloatingPoint}(
+function vtk_point_or_cell_data{T<:AbstractFloat}(
         vtk::DatasetFile, data::Array{T}, name::AbstractString,
         nodetype::AbstractString, Nc::Integer)
 

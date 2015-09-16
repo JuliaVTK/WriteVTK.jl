@@ -4,7 +4,7 @@
 # - Document extent option.
 
 # extent should be a vector of integers of length 6.
-function vtk_grid{T<:FloatingPoint}(
+function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         x::Array{T,1}, y::Array{T,1}, z::Array{T,1};
         compress::Bool=true, append::Bool=true, extent=nothing)

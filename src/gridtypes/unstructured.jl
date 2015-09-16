@@ -4,7 +4,7 @@
 # Size: (3, num_points)
 # Note that reshaped arrays are also accepted (as long as they have the correct
 # ordering).
-function vtk_grid{T<:FloatingPoint}(
+function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         points::Array{T}, cells::Vector{MeshCell};
         compress::Bool=true, append::Bool=true)
@@ -77,7 +77,7 @@ end
 
 # Variant of vtk_grid with 1-D arrays x, y, z.
 # Size of each array: (num_points)
-function vtk_grid{T<:FloatingPoint}(
+function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         x::Array{T}, y::Array{T}, z::Array{T}, cells::Vector{MeshCell};
         compress::Bool=true, append::Bool=true)
