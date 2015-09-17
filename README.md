@@ -6,7 +6,7 @@ This module allows to write VTK XML files, that can be visualised for example
 with [ParaView](http://www.paraview.org/).
 
 The data is written compressed by default, using the
-[Zlib](https://github.com/dcjones/Zlib.jl) package.
+[Libz](https://github.com/BioJulia/Libz.jl) package.
 
 Rectilinear (.vtr), structured (.vts) and unstructured (.vtu) grids are
 supported.
@@ -236,7 +236,7 @@ vtkfile = vtk_grid("my_vtk_file", points, cells; compress=false, append=false)
   This is usually slower than writing raw binary data, and also results in
   larger files, but is valid according to the XML specification.
 
-- If `compress` is `true` (default), data is first compressed using Zlib.
+- If `compress` is `true` (default), data is first compressed using zlib.
 
 ## Examples
 

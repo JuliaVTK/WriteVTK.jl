@@ -1,5 +1,9 @@
 VERSION >= v"0.4.0-dev+6521" && __precompile__()
 
+# FIXME
+# There's a warning about an ambiguous definition in the BufferedStreams
+# package...
+
 module WriteVTK
 
 # All the code is based on the VTK file specification [1], plus some
@@ -12,14 +16,7 @@ export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
 
 using LightXML
-import Zlib
-
-using Compat
-
-# More compatibility with Julia 0.3.
-if VERSION < v"0.4-"
-    const base64encode = base64::Function
-end
+using Libz: ZlibDeflateOutputStream
 
 # Cell type definitions as in vtkCellType.h
 include("VTKCellType.jl")
