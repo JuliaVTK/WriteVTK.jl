@@ -5,7 +5,7 @@ function data_to_xml{T<:Real}(
         varname::AbstractString, Nc::Integer=1)
     #==========================================================================
     This variant of data_to_xml should be used when writing appended data.
-      * bapp is the IOBuffer where the appended data is written.
+      * buf is the IOBuffer where the appended data is written.
       * xParent is the XML node under which the DataArray node will be created.
         It is either a "Points" or a "PointData" node.
 
@@ -29,7 +29,7 @@ function data_to_xml{T<:Real}(
         return data_to_xml_inline(vtk, xParent, data, varname, Nc)::XMLElement
     end
 
-    const bapp = vtk.buf    # append buffer
+    const buf = vtk.buf    # append buffer
     const compress = vtk.compressed
 
     @assert name(xParent) in ("Points", "PointData", "Coordinates",
@@ -46,34 +46,34 @@ function data_to_xml{T<:Real}(
     set_attribute(xDA, "type",   sType)
     set_attribute(xDA, "Name",   varname)
     set_attribute(xDA, "format", "appended")
-    set_attribute(xDA, "offset", "$(bapp.size)")
+    set_attribute(xDA, "offset", "$(buf.size)")
     set_attribute(xDA, "NumberOfComponents", "$Nc")
 
     # Size of data array (in bytes).
     const nb::UInt32 = sizeof(data)
 
     # Position in the append buffer where the previous record ends.
-    const initpos = position(bapp)
+    const initpos = position(buf)
     header = zeros(UInt32, 4)
 
     if compress
         # Write temporary array that will be replaced later by the real header.
-        write(bapp, header)
+        write(buf, header)
 
         # Write compressed data.
-        zWriter = Zlib.Writer(bapp, COMPRESSION_LEVEL)
-        write(zWriter, data)
-        close(zWriter)
+        zbuf = Zlib.Writer(buf, COMPRESSION_LEVEL)
+        write(zbuf, data)
+        close(zbuf)
 
         # Write real header.
-        compbytes = position(bapp) - initpos - sizeof(header)
+        compbytes = position(buf) - initpos - sizeof(header)
         header[:] = [1, nb, nb, compbytes]
-        seek(bapp, initpos)
-        write(bapp, header)
-        seekend(bapp)
+        seek(buf, initpos)
+        write(buf, header)
+        seekend(buf)
     else
-        write(bapp, nb)       # header (uncompressed version)
-        write(bapp, data)
+        write(buf, nb)       # header (uncompressed version)
+        write(buf, data)
     end
 
     return xDA::XMLElement
@@ -125,9 +125,9 @@ function data_to_xml_inline{T<:Real}(
     # other data_to_xml function.
     if compress
         # Write compressed data.
-        zWriter = Zlib.Writer(buf, COMPRESSION_LEVEL)
-        write(zWriter, data)
-        close(zWriter)
+        zbuf = Zlib.Writer(buf, COMPRESSION_LEVEL)
+        write(zbuf, data)
+        close(zbuf)
     else
         write(buf, data)
     end
