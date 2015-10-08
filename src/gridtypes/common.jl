@@ -152,9 +152,7 @@ end
 function vtk_point_or_cell_data{T<:AbstractFloat}(
         vtk::DatasetFile, data::Array{T}, name::AbstractString,
         nodetype::AbstractString, Nc::Integer)
-
-    # Nc: number of components (defines whether data is scalar or vectorial).
-    @assert Nc in (1, 3)
+    # Nc: number of components (Nc >= 1)
 
     # Find Piece node.
     xroot = root(vtk.xdoc)
