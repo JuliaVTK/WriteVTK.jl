@@ -1,5 +1,8 @@
 # Contains common functions for all grid types.
 
+ZlibCompressStream(buf::IOBuffer) =
+    ZlibDeflateOutputStream(buf; gzip=false, level=COMPRESSION_LEVEL)
+
 function data_to_xml{T<:Real}(
         vtk::DatasetFile, xParent::XMLElement, data::Array{T},
         varname::AbstractString, Nc::Integer=1)
@@ -61,9 +64,9 @@ function data_to_xml{T<:Real}(
         write(buf, header)
 
         # Write compressed data.
-        zbuf = Zlib.Writer(buf, COMPRESSION_LEVEL)
-        write(zbuf, data)
-        close(zbuf)
+        zWriter = ZlibCompressStream(bapp)
+        write(zWriter, data)
+        close(zWriter)
 
         # Write real header.
         compbytes = position(buf) - initpos - sizeof(header)
@@ -125,9 +128,9 @@ function data_to_xml_inline{T<:Real}(
     # other data_to_xml function.
     if compress
         # Write compressed data.
-        zbuf = Zlib.Writer(buf, COMPRESSION_LEVEL)
-        write(zbuf, data)
-        close(zbuf)
+        zWriter = ZlibCompressStream(buf)
+        write(zWriter, data)
+        close(zWriter)
     else
         write(buf, data)
     end

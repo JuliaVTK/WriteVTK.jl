@@ -3,15 +3,10 @@
 # Definitions copied from the vtkCellType.h file of the VTK source code:
 # https://github.com/Kitware/VTK/blob/master/Common/DataModel/vtkCellType.h
 
-# TODO
-# In the future, this module should be replaced by an Enum, once it's properly
-# supported by Julia (in version 0.4?).
-
 VERSION >= v"0.4.0-dev+6521" && __precompile__()
 
 module VTKCellType
 
-using Compat: UInt8
 toUInt8(x) = convert(UInt8, x)
 
 # Linear cells

@@ -12,14 +12,7 @@ export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
 
 using LightXML
-import Zlib
-
-using Compat
-
-# More compatibility with Julia 0.3.
-if VERSION < v"0.4-"
-    const base64encode = base64::Function
-end
+using Libz: ZlibDeflateOutputStream
 
 # Cell type definitions as in vtkCellType.h
 include("VTKCellType.jl")
@@ -38,7 +31,7 @@ immutable DatasetFile <: VTKFile
     Npts::Int           # Number of grid points.
     Ncls::Int           # Number of cells.
     compressed::Bool    # Data is compressed?
-    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
+    appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     buf::IOBuffer       # Buffer with appended data.
     function DatasetFile(xdoc, path, gridType_str, Npts, Ncls,
                          compressed, appended)
@@ -66,7 +59,7 @@ end
 # Cells in unstructured meshes.
 immutable MeshCell
     ctype::UInt8                 # cell type identifier (see VTKCellType.jl)
-    connectivity::Vector{Int32}  # indices of points (one-based, like in Julia!!)
+    connectivity::Vector{Int32}  # indices of points (one-based, following the convention in Julia)
 end
 
 # Multiblock-specific functions and types.
