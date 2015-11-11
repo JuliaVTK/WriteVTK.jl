@@ -6,8 +6,8 @@ function vtk_multiblock(filename_noext::AbstractString)
 
     xvtm = XMLDocument()
     xroot = create_root(xvtm, "VTKFile")
-    set_attribute(xroot, "type",       "vtkMultiBlockDataSet")
-    set_attribute(xroot, "version",    "1.0")
+    set_attribute(xroot, "type", "vtkMultiBlockDataSet")
+    set_attribute(xroot, "version", "1.0")
     if IS_LITTLE_ENDIAN
         set_attribute(xroot, "byte_order", "LittleEndian")
     else

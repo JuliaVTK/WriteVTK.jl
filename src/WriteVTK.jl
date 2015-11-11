@@ -1,9 +1,5 @@
 VERSION >= v"0.4.0-dev+6521" && __precompile__()
 
-# FIXME
-# There's a warning about an ambiguous definition in the BufferedStreams
-# package...
-
 module WriteVTK
 
 # All the code is based on the VTK file specification [1], plus some
@@ -35,7 +31,7 @@ immutable DatasetFile <: VTKFile
     Npts::Int           # Number of grid points.
     Ncls::Int           # Number of cells.
     compressed::Bool    # Data is compressed?
-    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
+    appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     buf::IOBuffer       # Buffer with appended data.
     function DatasetFile(xdoc, path, gridType_str, Npts, Ncls,
                          compressed, appended)
@@ -63,7 +59,7 @@ end
 # Cells in unstructured meshes.
 immutable MeshCell
     ctype::UInt8                 # cell type identifier (see VTKCellType.jl)
-    connectivity::Vector{Int32}  # indices of points (one-based, like in Julia!!)
+    connectivity::Vector{Int32}  # indices of points (one-based, following the convention in Julia)
 end
 
 # Multiblock-specific functions and types.
