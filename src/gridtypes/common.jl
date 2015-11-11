@@ -64,7 +64,7 @@ function data_to_xml{T<:Real}(
         write(buf, header)
 
         # Write compressed data.
-        zWriter = ZlibCompressStream(bapp)
+        zWriter = ZlibCompressStream(buf)
         write(zWriter, data)
         close(zWriter)
 
