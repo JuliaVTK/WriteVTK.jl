@@ -78,7 +78,9 @@ vtk_point_data(vtkfile, vel, "Velocity")
 ```
 
 The array can represent either scalar or vectorial data.
-In the latter case, the shape of the array should be `[3, Ni, Nj, Nk]`.
+The shape of the array should be `[Ni, Nj, Nk]` for scalars, and
+`[Ncomp, Ni, Nj, Nk]` for vectors, where `Ncomp` is the number of components of
+the vector.
 
 Cell data can also be added, using `vtk_cell_data`:
 
@@ -99,8 +101,8 @@ outfiles = vtk_save(vtkfile)
 ```
 
 `outfiles` is an array of strings with the paths to the generated files.
-In this case, the array is obviously of length 1, but that changes when working
-with multiblock files.
+In this case, the array is of length 1, but that changes when working
+with [multiblock files](#multiblock-files).
 
 ## Usage: unstructured meshes
 
@@ -117,7 +119,8 @@ cell = MeshCell(cell_type, connectivity)
 
 - `cell_type` is an integer value that determines the type of the cell, as
   defined in the
-  [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf).
+  [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf)
+  (see figures 2 and 3 in that document).
   For convenience, WriteVTK includes a `VTKCellType` module that contains these
   definitions.
   For instance, a triangle is associated to the value
@@ -127,7 +130,7 @@ cell = MeshCell(cell_type, connectivity)
   connected by the cell.
   In the case of a triangle, this would be an integer array of length 3.
 
-  Note that the indices are one-based (as opposed to
+  Note that the connectivity indices are one-based (as opposed to
   [zero-based](https://en.wikipedia.org/wiki/Zero-based_numbering)),
   following the convention in Julia.
 
