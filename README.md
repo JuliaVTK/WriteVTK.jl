@@ -15,24 +15,24 @@ exported.
 
 ## Contents
 
-- [Installation](#installation)
-- [Rectilinear and structured meshes](#usage-rectilinear-and-structured-meshes)
-- [Unstructured meshes](#usage-unstructured-meshes)
-- [Multiblock files](#multiblock-files)
-- [Additional options](#additional-options)
-- [Examples](#examples)
+  - [Installation](#installation)
+  - [Rectilinear and structured meshes](#usage-rectilinear-and-structured-meshes)
+  - [Unstructured meshes](#usage-unstructured-meshes)
+  - [Multiblock files](#multiblock-files)
+  - [Additional options](#additional-options)
+  - [Examples](#examples)
 
 ## Installation
 
 From the Julia REPL:
 
-```julia
+``` julia
 Pkg.add("WriteVTK")
 ```
 
 Then load the module in Julia with:
 
-```julia
+``` julia
 using WriteVTK
 ```
 
@@ -45,21 +45,21 @@ This function requires a filename with no extension, and the grid coordinates.
 Depending on the shape of the arrays `x`, `y` and `z`, either a rectilinear or
 structured grid is created.
 
-```julia
+``` julia
 vtkfile = vtk_grid("my_vtk_file", x, y, z)
 ```
 
 Required array shapes for each grid type:
 
-- Rectilinear grid: `x`, `y`, `z` are 1-D arrays with different lengths in
-  general (`Ni`, `Nj` and `Nk` respectively).
-- Structured grid: `x`, `y`, `z` are 3-D arrays with the same shape
-  `[Ni, Nj, Nk]`.
+  - Rectilinear grid: `x`, `y`, `z` are 1-D arrays with different lengths in
+    general (`Ni`, `Nj` and `Nk` respectively).
+  - Structured grid: `x`, `y`, `z` are 3-D arrays with the same
+    shape `[Ni, Nj, Nk]`.
 
 Alternatively, in the case of structured grids, the grid points can be defined
 from a single 4-D array `xyz`, of dimensions `[3, Ni, Nj, Nk]`:
 
-```julia
+``` julia
 vtkfile = vtk_grid("my_vtk_file", xyz)
 ```
 
@@ -71,7 +71,7 @@ The function `vtk_point_data` adds point data to the file.
 The required input is a VTK file object created by `vtk_grid`, an array and a
 string:
 
-```julia
+``` julia
 vtk_point_data(vtkfile, p, "Pressure")
 vtk_point_data(vtkfile, C, "Concentration")
 vtk_point_data(vtkfile, vel, "Velocity")
@@ -84,7 +84,7 @@ the vector.
 
 Cell data can also be added, using `vtk_cell_data`:
 
-```julia
+``` julia
 vtk_cell_data(vtkfile, T, "Temperature")
 ```
 
@@ -96,7 +96,7 @@ be consistent with that resolution.
 
 Finally, close and save the file with `vtk_save`:
 
-```julia
+``` julia
 outfiles = vtk_save(vtkfile)
 ```
 
@@ -113,46 +113,46 @@ that connect those points.
 
 In WriteVTK, a cell is defined using the MeshCell type:
 
-```julia
+``` julia
 cell = MeshCell(cell_type, connectivity)
 ```
 
-- `cell_type` is an integer value that determines the type of the cell, as
-  defined in the
-  [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf)
-  (see figures 2 and 3 in that document).
-  For convenience, WriteVTK includes a `VTKCellType` module that contains these
-  definitions.
-  For instance, a triangle is associated to the value
-  `cell_type = VTKCellType.VTK_TRIANGLE`.
+  - `cell_type` is an integer value that determines the type of the cell, as
+    defined in the
+    [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf) (see
+    figures 2 and 3 in that document).
+    For convenience, WriteVTK includes a `VTKCellType` module that contains these
+    definitions.
+    For instance, a triangle is associated to the
+    value `cell_type = VTKCellType.VTK_TRIANGLE`.
 
-- `connectivity` is a vector of indices that determine the mesh points that are
-  connected by the cell.
-  In the case of a triangle, this would be an integer array of length 3.
+  - `connectivity` is a vector of indices that determine the mesh points that are
+    connected by the cell.
+    In the case of a triangle, this would be an integer array of length 3.
 
-  Note that the connectivity indices are one-based (as opposed to
-  [zero-based](https://en.wikipedia.org/wiki/Zero-based_numbering)),
-  following the convention in Julia.
+    Note that the connectivity indices are one-based (as opposed to
+    [zero-based](https://en.wikipedia.org/wiki/Zero-based_numbering)),
+    following the convention in Julia.
 
 ### Generating an unstructured VTK file
 
 First, initialise the file:
 
-```julia
+``` julia
 vtkfile = vtk_grid("my_vtk_file", points, cells)
 ```
 
-- `points` is an array with the point locations, of dimensions
-  `[3, num_points]` (can be also flattened or reshaped).
+  - `points` is an array with the point locations, of
+    dimensions `[3, num_points]` (can be also flattened or reshaped).
 
-- `cells` is a MeshCell array that contains all the cells of the mesh.
-  For example:
+  - `cells` is a MeshCell array that contains all the cells of the mesh.
+    For example:
 
-  ```julia
-  # Supposing that the mesh is made of 5 points:
-  cells = [MeshCell(VTKCellType.VTK_TRIANGLE, [1, 4, 2]),
-           MeshCell(VTKCellType.VTK_QUAD,     [2, 4, 3, 5])]
-  ```
+    ``` julia
+    # Supposing that the mesh is made of 5 points:
+    cells = [MeshCell(VTKCellType.VTK_TRIANGLE, [1, 4, 2]),
+             MeshCell(VTKCellType.VTK_QUAD,     [2, 4, 3, 5])]
+    ```
 
 Alternatively, the grid points can be defined from three 1-D arrays `x`, `y`,
 `z`, of equal lengths, as in
@@ -162,7 +162,7 @@ This is less efficient though.
 Now add some data to the file.
 It is possible to add both point data and cell data:
 
-```julia
+``` julia
 vtk_point_data(vtkfile, pdata, "my_point_data")
 vtk_cell_data(vtkfile, cdata, "my_cell_data")
 ```
@@ -174,7 +174,7 @@ The arrays can contain scalar and vectorial data (see
 
 Finally, close the file:
 
-```julia
+``` julia
 outfiles = vtk_save(vtkfile)
 ```
 
@@ -189,14 +189,14 @@ The functions introduced above are then used with some small modifications.
 
 First, a multiblock file must be initialised:
 
-```julia
+``` julia
 vtmfile = vtk_multiblock("my_vtm_file")
 ```
 
 Then, each subgrid can be generated with `vtk_grid` using the `vtmfile` object
 as the first argument:
 
-```julia
+``` julia
 # First block.
 vtkfile = vtk_grid(vtmfile, x1, y1, z1)
 vtk_point_data(vtkfile, p1, "Pressure")
@@ -208,7 +208,7 @@ vtk_point_data(vtkfile, p2, "Pressure")
 
 Finally, only the multiblock file needs to be saved explicitely:
 
-```julia
+``` julia
 outfiles = vtk_save(vtmfile)
 ```
 
@@ -226,20 +226,20 @@ the `vtk_grid` functions.
 For instance, to disable both compressing and appending raw data in the case of
 unstructured meshes:
 
-```julia
+``` julia
 vtkfile = vtk_grid("my_vtk_file", points, cells; compress=false, append=false)
 ```
 
-- If `append` is `true` (default), data is written appended at the end of the
-  XML file as raw binary data.
-  Note that this violates the XML specification, although it is allowed by VTK.
+  - If `append` is `true` (default), data is written appended at the end of the
+    XML file as raw binary data.
+    Note that this violates the XML specification, although it is allowed by VTK.
 
-  Otherwise, if `append` is `false`, data is written "inline", and base-64
-  encoded instead of raw.
-  This is usually slower than writing raw binary data, and also results in
-  larger files, but is valid according to the XML specification.
+    Otherwise, if `append` is `false`, data is written "inline", and base-64
+    encoded instead of raw.
+    This is usually slower than writing raw binary data, and also results in
+    larger files, but is valid according to the XML specification.
 
-- If `compress` is `true` (default), data is first compressed using zlib.
+  - If `compress` is `true` (default), data is first compressed using zlib.
 
 ## Examples
 
