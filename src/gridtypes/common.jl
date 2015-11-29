@@ -152,7 +152,7 @@ function data_to_xml_inline{T<:Real}(
 end
 
 
-function vtk_point_or_cell_data{T<:AbstractFloat}(
+function vtk_point_or_cell_data{T<:Real}(
         vtk::DatasetFile, data::Array{T}, name::AbstractString,
         nodetype::AbstractString, Nc::Integer)
     # Nc: number of components (Nc >= 1)
