@@ -42,8 +42,10 @@ function vtk_grid{T<:AbstractFloat}(
     offsets = Array(Int32, Ncls)
     types = Array(UInt8, Ncls)
 
-    Nconn = 0   # length of the connectivity array
-    offsets[1] = length(cells[1].connectivity)
+    Nconn = 0     # length of the connectivity array
+    if Ncls >= 1  # it IS possible to have no cells
+        offsets[1] = length(cells[1].connectivity)
+    end
 
     for (n, c) in enumerate(cells)
         Npts_cell = length(c.connectivity)
