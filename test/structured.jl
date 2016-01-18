@@ -39,8 +39,11 @@ function main()
         cdata[i, j, k] = 2i + 3k * sin(3*pi * (j-1) / (Nj-2))
     end
 
+    # Test extents (this is optional!!)
+    ext = [0, Ni-1, 0, Nj-1, 0, Nk-1]
+
     # Initialise new vts file (structured grid).
-    vtk = vtk_grid(vtk_filename_noext, xyz)
+    vtk = vtk_grid(vtk_filename_noext, xyz; extent=ext)
 
     # This is also accepted:
     # vtk = vtk_grid(vtk_filename_noext, xyz[1, :], xyz[2, :], xyz[3, :])

@@ -1,3 +1,5 @@
+__precompile__()
+
 module WriteVTK
 
 # All the code is based on the VTK file specification [1], plus some
@@ -11,20 +13,14 @@ export vtk_multiblock
 export paraview_collection,collection_add_timestep#,VTKFile
 
 using LightXML
-import Zlib
-
-using Compat
-
-# More compatibility with Julia 0.3.
-if VERSION < v"0.4-"
-    const base64encode = base64::Function
-end
+using Libz: ZlibDeflateOutputStream
 
 # Cell type definitions as in vtkCellType.h
 include("VTKCellType.jl")
 
 ## Constants ##
 const COMPRESSION_LEVEL = 6
+const IS_LITTLE_ENDIAN = (ENDIAN_BOM == 0x04030201)  # see the documentation for ENDIAN_BOM
 
 ## Types ##
 abstract VTKFile
@@ -36,7 +32,7 @@ immutable DatasetFile <: VTKFile
     Npts::Int           # Number of grid points.
     Ncls::Int           # Number of cells.
     compressed::Bool    # Data is compressed?
-    appended::Bool      # Data is appended? (or written inline, base64-encoded?)
+    appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     buf::IOBuffer       # Buffer with appended data.
     function DatasetFile(xdoc, path, gridType_str, Npts, Ncls,
                          compressed, appended)
@@ -73,7 +69,7 @@ end
 # Cells in unstructured meshes.
 immutable MeshCell
     ctype::UInt8                 # cell type identifier (see VTKCellType.jl)
-    connectivity::Vector{Int32}  # indices of points (one-based, like in Julia!!)
+    connectivity::Vector{Int32}  # indices of points (one-based, following the convention in Julia)
 end
 
 # Multiblock-specific functions and types.

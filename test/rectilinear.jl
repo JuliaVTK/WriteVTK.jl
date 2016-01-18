@@ -39,8 +39,11 @@ function main()
         cdata[i, j, k] = 2i + 3k * sin(3*pi * (j-1) / (Nj-2))
     end
 
+    # Test extents (this is optional!!)
+    ext = [0, Ni-1, 0, Nj-1, 0, Nk-1] + 42
+
     # Initialise new vtr file (rectilinear grid).
-    vtk = vtk_grid(vtk_filename_noext, x, y, z)
+    vtk = vtk_grid(vtk_filename_noext, x, y, z; extent=ext)
 
     # Add data.
     vtk_point_data(vtk, p, "p_values")

@@ -1,11 +1,14 @@
 # Contains common functions for all grid types.
 
+ZlibCompressStream(buf::IOBuffer) =
+    ZlibDeflateOutputStream(buf; gzip=false, level=COMPRESSION_LEVEL)
+
 function data_to_xml{T<:Real}(
         vtk::DatasetFile, xParent::XMLElement, data::Array{T},
         varname::AbstractString, Nc::Integer=1)
     #==========================================================================
     This variant of data_to_xml should be used when writing appended data.
-      * bapp is the IOBuffer where the appended data is written.
+      * buf is the IOBuffer where the appended data is written.
       * xParent is the XML node under which the DataArray node will be created.
         It is either a "Points" or a "PointData" node.
 
@@ -29,7 +32,7 @@ function data_to_xml{T<:Real}(
         return data_to_xml_inline(vtk, xParent, data, varname, Nc)::XMLElement
     end
 
-    const bapp = vtk.buf    # append buffer
+    const buf = vtk.buf    # append buffer
     const compress = vtk.compressed
 
     @assert name(xParent) in ("Points", "PointData", "Coordinates",
@@ -46,34 +49,34 @@ function data_to_xml{T<:Real}(
     set_attribute(xDA, "type",   sType)
     set_attribute(xDA, "Name",   varname)
     set_attribute(xDA, "format", "appended")
-    set_attribute(xDA, "offset", "$(bapp.size)")
+    set_attribute(xDA, "offset", "$(buf.size)")
     set_attribute(xDA, "NumberOfComponents", "$Nc")
 
     # Size of data array (in bytes).
     const nb::UInt32 = sizeof(data)
 
     # Position in the append buffer where the previous record ends.
-    const initpos = position(bapp)
+    const initpos = position(buf)
     header = zeros(UInt32, 4)
 
     if compress
         # Write temporary array that will be replaced later by the real header.
-        write(bapp, header)
+        write(buf, header)
 
         # Write compressed data.
-        zWriter = Zlib.Writer(bapp, COMPRESSION_LEVEL)
+        zWriter = ZlibCompressStream(buf)
         write(zWriter, data)
         close(zWriter)
 
         # Write real header.
-        compbytes = position(bapp) - initpos - sizeof(header)
+        compbytes = position(buf) - initpos - sizeof(header)
         header[:] = [1, nb, nb, compbytes]
-        seek(bapp, initpos)
-        write(bapp, header)
-        seekend(bapp)
+        seek(buf, initpos)
+        write(buf, header)
+        seekend(buf)
     else
-        write(bapp, nb)       # header (uncompressed version)
-        write(bapp, data)
+        write(buf, nb)       # header (uncompressed version)
+        write(buf, data)
     end
 
     return xDA::XMLElement
@@ -125,7 +128,7 @@ function data_to_xml_inline{T<:Real}(
     # other data_to_xml function.
     if compress
         # Write compressed data.
-        zWriter = Zlib.Writer(buf, COMPRESSION_LEVEL)
+        zWriter = ZlibCompressStream(buf)
         write(zWriter, data)
         close(zWriter)
     else
@@ -149,12 +152,10 @@ function data_to_xml_inline{T<:Real}(
 end
 
 
-function vtk_point_or_cell_data{T<:FloatingPoint}(
+function vtk_point_or_cell_data{T<:Real}(
         vtk::DatasetFile, data::Array{T}, name::AbstractString,
         nodetype::AbstractString, Nc::Integer)
-
-    # Nc: number of components (defines whether data is scalar or vectorial).
-    @assert Nc in (1, 3)
+    # Nc: number of components (Nc >= 1)
 
     # Find Piece node.
     xroot = root(vtk.xdoc)
@@ -236,11 +237,35 @@ function vtk_xml_write_header(vtk::DatasetFile)
     xroot = create_root(vtk.xdoc, "VTKFile")
     set_attribute(xroot, "type", vtk.gridType_str)
     set_attribute(xroot, "version", "1.0")
-    set_attribute(xroot, "byte_order", "LittleEndian")
+    if IS_LITTLE_ENDIAN
+        set_attribute(xroot, "byte_order", "LittleEndian")
+    else
+        set_attribute(xroot, "byte_order", "BigEndian")
+    end
     if vtk.compressed
         set_attribute(xroot, "compressor", "vtkZLibDataCompressor")
         set_attribute(xroot, "header_type", "UInt32")
     end
     return xroot::XMLElement
+end
+
+
+# Returns the "extent" attribute required for structured (including rectilinear)
+# grids.
+function extent_attribute(Ni, Nj, Nk, extent::Void=nothing)
+    return "1 $Ni 1 $Nj 1 $Nk"
+end
+
+function extent_attribute{T<:Integer}(Ni, Nj, Nk, extent::Array{T})
+    length(extent) == 6 || error("extent must have length 6.")
+    (extent[2] - extent[1] + 1 == Ni) &&
+    (extent[4] - extent[3] + 1 == Nj) &&
+    (extent[6] - extent[5] + 1 == Nk) ||
+    error("extent is not consistent with dataset dimensions")
+    ext = string(extent[1])
+    for n = 2:6
+        ext *= " " * string(extent[n])
+    end
+    return ext
 end
 
