@@ -6,7 +6,8 @@ using Base.Test
 tests = ["multiblock.jl",
          "rectilinear.jl",
          "structured.jl",
-         "unstructured.jl"]
+         "unstructured.jl",
+         "pvdCollection.jl"]
 
 # Only toggle to generate new checksums, if new tests are added.
 OVERWRITE_CHECKSUMS = false
