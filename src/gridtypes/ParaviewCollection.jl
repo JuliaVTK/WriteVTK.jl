@@ -14,7 +14,7 @@ function paraview_collection(filename_noext::AbstractString)
     return CollectionFile(xvtm, string(filename_noext, ".pvd"))
 end
 
-function collection_add_timestep(pvd::CollectionFile,datfile::VTKFile,t::FloatingPoint)
+function collection_add_timestep(pvd::CollectionFile,datfile::VTKFile,t::AbstractFloat)
   xroot = root(pvd.xdoc)
   xMBDS = find_element(xroot, "Collection")
   
