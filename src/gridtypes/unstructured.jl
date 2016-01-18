@@ -8,6 +8,7 @@ function vtk_grid{T<:FloatingPoint}(
         filename_noext::AbstractString,
         points::Array{T}, cells::Vector{MeshCell};
         compress::Bool=true, append::Bool=true)
+        
     xvtk = XMLDocument()
 
     Npts = div(length(points), 3)

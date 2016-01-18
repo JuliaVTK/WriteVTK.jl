@@ -8,6 +8,7 @@ export VTKCellType
 export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
+export paraview_collection,collection_add_timestep#,VTKFile
 
 using LightXML
 import Zlib
@@ -60,6 +61,15 @@ immutable MultiblockFile <: VTKFile
     MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
+immutable CollectionFile <: VTKFile
+    xdoc::XMLDocument
+    path::UTF8String
+    timeSteps::Vector{VTKFile}
+
+    # Override default constructor.
+    CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
+end
+
 # Cells in unstructured meshes.
 immutable MeshCell
     ctype::UInt8                 # cell type identifier (see VTKCellType.jl)
@@ -68,6 +78,7 @@ end
 
 # Multiblock-specific functions and types.
 include("gridtypes/multiblock.jl")
+include("gridtypes/ParaviewCollection.jl")
 
 # Grid-specific functions and types.
 include("gridtypes/structured.jl")
