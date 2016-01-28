@@ -19,6 +19,7 @@ exported.
   - [Rectilinear and structured meshes](#usage-rectilinear-and-structured-meshes)
   - [Unstructured meshes](#usage-unstructured-meshes)
   - [Multiblock files](#multiblock-files)
+  - [Paraview PVD files](#paraview-data-pvd-file-format)
   - [Additional options](#additional-options)
   - [Examples](#examples)
 
@@ -216,9 +217,11 @@ Assuming that the two blocks are structured grids, this generates the files
 `my_vtm_file.vtm`, `my_vtm_file.z01.vts` and `my_vtm_file.z02.vts`, where the
 `vtm` file points to the two `vts` files.
 
+
 ## Paraview Data (PVD) file format
 
-A `pvd` file is a collection of VTK files, typically for holding results at different time steps in a simulation. A `pvd` file is initialised with:
+A `pvd` file is a collection of VTK files, typically for holding results at
+different time steps in a simulation. A `pvd` file is initialised with:
 
 ``` julia
 pvd = paraview_collection()
@@ -230,7 +233,8 @@ VTK files are then added to the `pvd` file with
 collection_add_timestep(pvd, vtkfile, time)
 ```
 
-Here, time is a float that represents the current time in the simulation. When all the files are added to the `pvd` file, it can be saved using:
+Here, time is a float that represents the current time in the simulation. When
+all the files are added to the `pvd` file, it can be saved using:
 
 ``` julia
 vtk_save(pvd)
