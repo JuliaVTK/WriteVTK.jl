@@ -10,7 +10,7 @@ export VTKCellType
 export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
-export paraview_collection,collection_add_timestep#,VTKFile
+export paraview_collection, collection_add_timestep
 
 using LightXML
 using Libz: ZlibDeflateOutputStream
@@ -52,8 +52,7 @@ immutable MultiblockFile <: VTKFile
     xdoc::XMLDocument
     path::UTF8String
     blocks::Vector{VTKFile}
-
-    # Override default constructor.
+    # Constructor.
     MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
@@ -61,8 +60,7 @@ immutable CollectionFile <: VTKFile
     xdoc::XMLDocument
     path::UTF8String
     timeSteps::Vector{VTKFile}
-
-    # Override default constructor.
+    # Constructor.
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
@@ -84,4 +82,4 @@ include("gridtypes/rectilinear.jl")
 # Common functions.
 include("gridtypes/common.jl")
 
-end     # module WriteVTK
+end

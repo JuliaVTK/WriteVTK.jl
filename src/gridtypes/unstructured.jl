@@ -1,5 +1,3 @@
-# Included in WriteVTK.jl.
-
 # Variant of vtk_grid with 2-D array "points".
 # Size: (3, num_points)
 # Note that reshaped arrays are also accepted (as long as they have the correct
@@ -8,7 +6,7 @@ function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         points::Array{T}, cells::Vector{MeshCell};
         compress::Bool=true, append::Bool=true)
-        
+
     xvtk = XMLDocument()
 
     Npts = div(length(points), 3)

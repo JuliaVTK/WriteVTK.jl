@@ -1,5 +1,3 @@
-# Included in WriteVTK.jl.
-
 # TODO
 # - Document extent option.
 

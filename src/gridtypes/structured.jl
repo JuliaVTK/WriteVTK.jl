@@ -1,5 +1,3 @@
-# Included in WriteVTK.jl.
-
 # Variant of vtk_grid with 4-D array xyz.
 function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString, xyz::Array{T,4};
