@@ -1,6 +1,6 @@
 # Contains common functions for all grid types.
 
-ZlibCompressStream(buf::IOBuffer) =
+ZlibCompressStream(buf::IO) =
     ZlibDeflateOutputStream(buf; gzip=false, level=COMPRESSION_LEVEL)
 
 function data_to_xml{T<:Real}(
@@ -8,7 +8,7 @@ function data_to_xml{T<:Real}(
         varname::AbstractString, Nc::Integer=1)
     #==========================================================================
     This variant of data_to_xml should be used when writing appended data.
-      * buf is the IOBuffer where the appended data is written.
+      * buf is the buffer where the appended data is written.
       * xParent is the XML node under which the DataArray node will be created.
         It is either a "Points" or a "PointData" node.
 
@@ -49,18 +49,17 @@ function data_to_xml{T<:Real}(
     set_attribute(xDA, "type",   sType)
     set_attribute(xDA, "Name",   varname)
     set_attribute(xDA, "format", "appended")
-    set_attribute(xDA, "offset", "$(buf.size)")
-    set_attribute(xDA, "NumberOfComponents", "$Nc")
+    set_attribute(xDA, "offset", string(buf.position - 1))
+    set_attribute(xDA, "NumberOfComponents", string(Nc))
 
     # Size of data array (in bytes).
     const nb::UInt32 = sizeof(data)
 
-    # Position in the append buffer where the previous record ends.
-    const initpos = position(buf)
-    header = zeros(UInt32, 4)
-
     if compress
+        const initpos = buf.position
+
         # Write temporary array that will be replaced later by the real header.
+        header = zeros(UInt32, 4)
         write(buf, header)
 
         # Write compressed data.
@@ -68,12 +67,13 @@ function data_to_xml{T<:Real}(
         write(zWriter, data)
         close(zWriter)
 
-        # Write real header.
-        compbytes = position(buf) - initpos - sizeof(header)
+        # Go back to `initpos` and write real header.
+        endpos = buf.position
+        compbytes = buf.position - initpos - sizeof(header)
         header[:] = [1, nb, nb, compbytes]
-        seek(buf, initpos)
+        buf.position = initpos
         write(buf, header)
-        seekend(buf)
+        buf.position = endpos
     else
         write(buf, nb)       # header (uncompressed version)
         write(buf, data)
@@ -115,9 +115,9 @@ function data_to_xml_inline{T<:Real}(
     # Number of bytes of data.
     const nb::UInt32 = sizeof(data)
 
-    # Write data to an IOBuffer, which is then base64-encoded and added to the
+    # Write data to a buffer, which is then base64-encoded and added to the
     # XML document.
-    buf = IOBuffer()
+    buf = BufferedOutputStream()
 
     # Position in the append buffer where the previous record ends.
     const header = zeros(UInt32, 4)     # only used when compressing
@@ -138,7 +138,7 @@ function data_to_xml_inline{T<:Real}(
     # Write buffer with data to XML document.
     add_text(xDA, "\n")
     if compress
-        header[:] = [1, nb, nb, buf.size]
+        header[:] = [1, nb, nb, buf.position - 1]
         add_text(xDA, base64encode(header))
     else
         add_text(xDA, base64encode(nb))     # header (uncompressed version)
@@ -218,7 +218,7 @@ function vtk_save(vtk::DatasetFile)
         write(io, "\n")
     end
 
-    # Write raw data (contents of IOBuffer vtk.buf).
+    # Write raw data (contents of buffer vtk.buf).
     # An underscore "_" is needed before writing appended data.
     write(io, "  <AppendedData encoding=\"raw\">")
     write(io, "\n_")

@@ -13,6 +13,7 @@ export vtk_multiblock
 export paraview_collection, collection_add_timestep
 
 using LightXML
+using BufferedStreams: BufferedOutputStream, EmptyStreamSource
 using Libz: ZlibDeflateOutputStream
 
 # Cell type definitions as in vtkCellType.h
@@ -25,6 +26,8 @@ const IS_LITTLE_ENDIAN = (ENDIAN_BOM == 0x04030201)  # see the documentation for
 ## Types ##
 abstract VTKFile
 
+typealias DataBuffer BufferedOutputStream{EmptyStreamSource}
+
 immutable DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::UTF8String
@@ -33,14 +36,11 @@ immutable DatasetFile <: VTKFile
     Ncls::Int           # Number of cells.
     compressed::Bool    # Data is compressed?
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
-    buf::IOBuffer       # Buffer with appended data.
+    buf::DataBuffer     # Buffer with appended data.
     function DatasetFile(xdoc, path, gridType_str, Npts, Ncls,
                          compressed, appended)
-        if appended
-            buf = IOBuffer()
-        else
-            # In this case we don't need a buffer, so just define a closed one.
-            buf = IOBuffer(0)
+        buf = BufferedOutputStream() :: DataBuffer
+        if !appended  # in this case we don't need a buffer
             close(buf)
         end
         return new(xdoc, path, gridType_str, Npts, Ncls,
