@@ -224,7 +224,7 @@ A `pvd` file is a collection of VTK files, typically for holding results at
 different time steps in a simulation. A `pvd` file is initialised with:
 
 ``` julia
-pvd = paraview_collection()
+pvd = paraview_collection("my_pvd_file")
 ```
 
 VTK files are then added to the `pvd` file with
@@ -233,8 +233,8 @@ VTK files are then added to the `pvd` file with
 collection_add_timestep(pvd, vtkfile, time)
 ```
 
-Here, time is a float that represents the current time in the simulation. When
-all the files are added to the `pvd` file, it can be saved using:
+Here, `time` is a float that represents the current time in the simulation.
+When all the files are added to the `pvd` file, it can be saved using:
 
 ``` julia
 vtk_save(pvd)
