@@ -65,7 +65,7 @@ function data_to_xml{T<:Real}(
         # Write compressed data.
         zWriter = ZlibCompressStream(buf)
         write(zWriter, data)
-        close(zWriter)
+        flush(zWriter)
 
         # Go back to `initpos` and write real header.
         endpos = buf.position
@@ -130,7 +130,7 @@ function data_to_xml_inline{T<:Real}(
         # Write compressed data.
         zWriter = ZlibCompressStream(buf)
         write(zWriter, data)
-        close(zWriter)
+        flush(zWriter)
     else
         write(buf, data)
     end
