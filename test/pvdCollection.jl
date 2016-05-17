@@ -55,6 +55,7 @@ function main()
       vtk_point_data(vtk, q[:,:,:,it+1], "q_values")
       vtk_point_data(vtk, vec[:,:,:,:,it+1], "myVector")
       vtk_cell_data(vtk, cdata[:,:,:,it+1], "myCellData")
+      vtk_save(vtk)
       collection_add_timestep(pvd, vtk, Float64(it+1))
     end
 
