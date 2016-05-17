@@ -35,6 +35,9 @@ function vtk_save(pvd::CollectionFile)
     for vtk in pvd.timeSteps
         append!(outfiles, vtk_save(vtk))
     end
-    save_file(pvd.xdoc, pvd.path)
-    return outfiles::Vector{UTF8String}
+    if isopen(pvd)
+        save_file(pvd.xdoc, pvd.path)
+        close(pvd)
+    end
+    return outfiles
 end

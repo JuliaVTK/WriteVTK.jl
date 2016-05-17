@@ -16,6 +16,8 @@ using LightXML
 using BufferedStreams: BufferedOutputStream, EmptyStreamSource
 using Libz: ZlibDeflateOutputStream
 
+import Base: close, isopen
+
 # Cell type definitions as in vtkCellType.h
 include("VTKCellType.jl")
 
@@ -69,6 +71,9 @@ immutable MeshCell
     ctype::UInt8                 # cell type identifier (see VTKCellType.jl)
     connectivity::Vector{Int32}  # indices of points (one-based, following the convention in Julia)
 end
+
+close(vtk::VTKFile) = free(vtk.xdoc)
+isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
 # Multiblock-specific functions and types.
 include("gridtypes/multiblock.jl")

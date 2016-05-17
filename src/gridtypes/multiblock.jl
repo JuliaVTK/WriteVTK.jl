@@ -31,8 +31,11 @@ function vtk_save(vtm::MultiblockFile)
     for vtk in vtm.blocks
         append!(outfiles, vtk_save(vtk))
     end
-    save_file(vtm.xdoc, vtm.path)
-    return outfiles::Vector{UTF8String}
+    if isopen(vtm)
+        save_file(vtm.xdoc, vtm.path)
+        close(vtm)
+    end
+    return outfiles
 end
 
 function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile)

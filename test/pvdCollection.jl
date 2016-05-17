@@ -1,7 +1,5 @@
 #!/usr/bin/env julia
 
-# Create rectilinear grid VTK file.
-
 using WriteVTK
 typealias FloatType Float32
 const vtk_filename_noext = "collection"

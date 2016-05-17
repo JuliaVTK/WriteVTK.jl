@@ -190,9 +190,15 @@ end
 
 
 function vtk_save(vtk::DatasetFile)
+    outfiles = [vtk.path]::Vector{UTF8String}
+    if !isopen(vtk)
+        return outfiles
+    end
+
     if !vtk.appended
         save_file(vtk.xdoc, vtk.path)
-        return [vtk.path]::Vector{UTF8String}
+        close(vtk)
+        return outfiles
     end
 
     ## if vtk.appended:
@@ -227,9 +233,10 @@ function vtk_save(vtk::DatasetFile)
     write(io, "\n</VTKFile>")
 
     close(vtk.buf)
+    close(vtk)
     close(io)
 
-    return [vtk.path]::Vector{UTF8String}
+    return outfiles
 end
 
 
