@@ -41,6 +41,7 @@ function data_to_xml{T<:Real}(
     sType = T === Float32 ? "Float32" :
             T === Float64 ? "Float64" :
             T === Int32   ? "Int32"   :
+            T === Int64   ? "Int64"   :
             T === UInt8   ? "UInt8"   :
             error("Real subtype not supported: $T")
 
@@ -102,6 +103,7 @@ function data_to_xml_inline{T<:Real}(
     sType = T === Float32 ? "Float32" :
             T === Float64 ? "Float64" :
             T === Int32   ? "Int32"   :
+            T === Int64   ? "Int64"   :
             T === UInt8   ? "UInt8"   :
             error("Real subtype not supported: $T")
 
