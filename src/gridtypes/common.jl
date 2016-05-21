@@ -4,7 +4,7 @@ ZlibCompressStream(buf::IO) =
     ZlibDeflateOutputStream(buf; gzip=false, level=COMPRESSION_LEVEL)
 
 function data_to_xml{T<:Real}(
-        vtk::DatasetFile, xParent::XMLElement, data::Array{T},
+        vtk::DatasetFile, xParent::XMLElement, data::AbstractArray{T},
         varname::AbstractString, Nc::Integer=1)
     #==========================================================================
     This variant of data_to_xml should be used when writing appended data.
@@ -89,7 +89,7 @@ end
 
 
 function data_to_xml_inline{T<:Real}(
-        vtk::DatasetFile, xParent::XMLElement, data::Array{T},
+        vtk::DatasetFile, xParent::XMLElement, data::AbstractArray{T},
         varname::AbstractString, Nc::Integer=1)
     #==========================================================================
     This variant of data_to_xml should be used when writing data "inline" into
@@ -160,7 +160,7 @@ end
 
 
 function vtk_point_or_cell_data{T<:Real}(
-        vtk::DatasetFile, data::Array{T}, name::AbstractString,
+        vtk::DatasetFile, data::AbstractArray{T}, name::AbstractString,
         nodetype::AbstractString, Nc::Integer)
     # Nc: number of components (Nc >= 1)
 
@@ -180,7 +180,7 @@ function vtk_point_or_cell_data{T<:Real}(
 end
 
 
-function vtk_point_data(vtk::DatasetFile, data::Array, name::AbstractString)
+function vtk_point_data(vtk::DatasetFile, data::AbstractArray, name::AbstractString)
     # Number of components.
     Nc = div(length(data), vtk.Npts)
     @assert Nc*vtk.Npts == length(data)
@@ -188,7 +188,7 @@ function vtk_point_data(vtk::DatasetFile, data::Array, name::AbstractString)
 end
 
 
-function vtk_cell_data(vtk::DatasetFile, data::Array, name::AbstractString)
+function vtk_cell_data(vtk::DatasetFile, data::AbstractArray, name::AbstractString)
     # Number of components.
     Nc = div(length(data), vtk.Ncls)
     @assert Nc*vtk.Ncls == length(data)

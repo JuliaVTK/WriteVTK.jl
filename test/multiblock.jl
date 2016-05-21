@@ -17,7 +17,10 @@ function first_block_data()
     x = zeros(FloatType, Ni, Nj, Nk)
     y = copy(x)
     z = copy(x)
-    q = copy(x)
+
+    # Just to test subarrays:
+    qall = zeros(FloatType, 3Ni, 2Nj, 2Nk)
+    q = sub(qall, 1:Ni, 1:Nj, 1:Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         r::FloatType = 1 + (i - 1)/(Ni - 1)

@@ -4,7 +4,7 @@
 # ordering).
 function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
-        points::Array{T}, cells::Vector{MeshCell};
+        points::AbstractArray{T}, cells::Vector{MeshCell};
         compress::Bool=true, append::Bool=true)
 
     xvtk = XMLDocument()
@@ -80,7 +80,8 @@ end
 # Size of each array: (num_points)
 function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
-        x::Array{T}, y::Array{T}, z::Array{T}, cells::Vector{MeshCell};
+        x::AbstractArray{T}, y::AbstractArray{T}, z::AbstractArray{T},
+        cells::Vector{MeshCell};
         compress::Bool=true, append::Bool=true)
     @assert length(x) == length(y) == length(z)
     Npts = length(x)

@@ -19,9 +19,12 @@ function main()
     end
 
     # Create some scalar and vectorial data.
-    p = zeros(FloatType, Ni, Nj, Nk)
     q = zeros(FloatType, Ni, Nj, Nk)
     vec = zeros(FloatType, 3, Ni, Nj, Nk)
+
+    # Just to test support for subarrays:
+    p = zeros(FloatType, 2Ni, 2Nj, 2Nk)
+    psub = sub(p, 1:Ni, 1:Nj, 1:Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         p[i, j, k] = i*i + k
@@ -49,7 +52,7 @@ function main()
     # vtk = vtk_grid(vtk_filename_noext, xyz[1, :], xyz[2, :], xyz[3, :])
 
     # Add data.
-    vtk_point_data(vtk, p, "p_values")
+    vtk_point_data(vtk, psub, "p_values")
     vtk_point_data(vtk, q, "q_values")
     vtk_point_data(vtk, vec, "myVector")
     vtk_cell_data(vtk, cdata, "myCellData")
