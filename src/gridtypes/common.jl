@@ -54,7 +54,7 @@ function data_to_xml{T<:Real}(
     set_attribute(xDA, "NumberOfComponents", string(Nc))
 
     # Size of data array (in bytes).
-    const nb::UInt32 = sizeof(data)
+    const nb = length(data) * sizeof(eltype(data))
 
     if compress
         const initpos = buf.position
@@ -65,7 +65,9 @@ function data_to_xml{T<:Real}(
 
         # Write compressed data.
         zWriter = ZlibCompressStream(buf)
-        write(zWriter, data)
+        for val in data
+            write(zWriter, val)
+        end
         flush(zWriter)
 
         # Go back to `initpos` and write real header.
@@ -76,8 +78,10 @@ function data_to_xml{T<:Real}(
         write(buf, header)
         buf.position = endpos
     else
-        write(buf, nb)       # header (uncompressed version)
-        write(buf, data)
+        write(buf, UInt32(nb))       # header (uncompressed version)
+        for val in data
+            write(buf, val)
+        end
     end
 
     return xDA::XMLElement
@@ -115,14 +119,11 @@ function data_to_xml_inline{T<:Real}(
     set_attribute(xDA, "NumberOfComponents", "$Nc")
 
     # Number of bytes of data.
-    const nb::UInt32 = sizeof(data)
+    const nb = length(data) * sizeof(eltype(data))
 
     # Write data to a buffer, which is then base64-encoded and added to the
     # XML document.
     buf = BufferedOutputStream()
-
-    # Position in the append buffer where the previous record ends.
-    const header = zeros(UInt32, 4)     # only used when compressing
 
     # NOTE: in the compressed case, the header and the data need to be
     # base64-encoded separately!!
@@ -131,19 +132,23 @@ function data_to_xml_inline{T<:Real}(
     if compress
         # Write compressed data.
         zWriter = ZlibCompressStream(buf)
-        write(zWriter, data)
+        for val in data
+            write(zWriter, val)
+        end
         flush(zWriter)
     else
-        write(buf, data)
+        for val in data
+            write(buf, val)
+        end
     end
 
     # Write buffer with data to XML document.
     add_text(xDA, "\n")
     if compress
-        header[:] = [1, nb, nb, buf.position - 1]
+        header = UInt32[1, nb, nb, buf.position - 1]
         add_text(xDA, base64encode(header))
     else
-        add_text(xDA, base64encode(nb))     # header (uncompressed version)
+        add_text(xDA, base64encode(UInt32(nb)))     # header (uncompressed version)
     end
     add_text(xDA, base64encode(takebuf_string(buf)))
     add_text(xDA, "\n")
