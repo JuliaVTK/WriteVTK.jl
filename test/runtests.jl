@@ -5,6 +5,7 @@ using Base.Test
 
 tests = ["multiblock.jl",
          "rectilinear.jl",
+         "imagedata.jl",
          "structured.jl",
          "unstructured.jl",
          "pvdCollection.jl"]

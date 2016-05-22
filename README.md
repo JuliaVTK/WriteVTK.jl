@@ -8,8 +8,8 @@ with [ParaView](http://www.paraview.org/).
 The data is written compressed by default, using the
 [Libz](https://github.com/BioJulia/Libz.jl) package.
 
-Rectilinear (.vtr), structured (.vts) and unstructured (.vtu) grids are
-supported.
+Rectilinear (.vtr), structured (.vts), image data (.vti) and unstructured
+(.vtu) grids are supported.
 Multiblock files (.vtm), which can point to multiple VTK files, can also be
 exported.
 
@@ -17,6 +17,7 @@ exported.
 
   - [Installation](#installation)
   - [Rectilinear and structured meshes](#usage-rectilinear-and-structured-meshes)
+  - [Image data](#usage-image-data)
   - [Unstructured meshes](#usage-unstructured-meshes)
   - [Multiblock files](#multiblock-files)
   - [Paraview PVD files](#paraview-data-pvd-file-format)
@@ -104,6 +105,23 @@ outfiles = vtk_save(vtkfile)
 `outfiles` is an array of strings with the paths to the generated files.
 In this case, the array is of length 1, but that changes when working
 with [multiblock files](#multiblock-files).
+
+
+## Usage: image data
+
+The points and cells of an image data file are defined by the number of points
+in each direction, `(Nx, Ny, Nz)`.
+The origin of the dataset and the spacing in each direction can be optionally
+included.
+Example:
+
+``` julia
+Nx, Ny, Nz = 10, 12, 42
+origin = [3.0, 4.0, -3.2]
+spacing = [0.1, 0.2, 0.3]
+vtk = vtk_grid("my_vti_file", Nx, Ny, Nz, origin=origin, spacing=spacing)
+vtk_save(vtk)
+```
 
 ## Usage: unstructured meshes
 

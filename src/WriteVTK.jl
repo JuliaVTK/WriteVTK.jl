@@ -83,6 +83,7 @@ include("gridtypes/ParaviewCollection.jl")
 include("gridtypes/structured.jl")
 include("gridtypes/unstructured.jl")
 include("gridtypes/rectilinear.jl")
+include("gridtypes/imagedata.jl")
 
 # Common functions.
 include("gridtypes/common.jl")
