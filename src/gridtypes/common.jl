@@ -267,7 +267,7 @@ end
 # Returns the "extent" attribute required for structured (including rectilinear)
 # grids.
 function extent_attribute(Ni, Nj, Nk, extent::Void=nothing)
-    return "1 $Ni 1 $Nj 1 $Nk"
+    return @sprintf("%d %d %d %d %d %d", 0, Ni-1, 0, Nj-1, 0, Nk-1)
 end
 
 function extent_attribute{T<:Integer}(Ni, Nj, Nk, extent::Array{T})
