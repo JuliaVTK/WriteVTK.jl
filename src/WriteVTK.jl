@@ -15,6 +15,7 @@ export paraview_collection, collection_add_timestep
 using LightXML
 using BufferedStreams: BufferedOutputStream, EmptyStreamSource
 using Libz: ZlibDeflateOutputStream
+import Compat.UTF8String
 
 import Base: close, isopen
 
