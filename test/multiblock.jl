@@ -5,6 +5,7 @@
 # i.e., compress=false and append=false.
 
 using WriteVTK
+import Compat: UTF8String, view
 typealias FloatType Float32
 const vtm_filename_noext = "multiblock"
 
@@ -20,7 +21,7 @@ function first_block_data()
 
     # Just to test subarrays:
     qall = zeros(FloatType, 3Ni, 2Nj, 2Nk)
-    q = sub(qall, 1:Ni, 1:Nj, 1:Nk)
+    q = view(qall, 1:Ni, 1:Nj, 1:Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         r::FloatType = 1 + (i - 1)/(Ni - 1)
