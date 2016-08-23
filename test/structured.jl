@@ -3,6 +3,7 @@
 # Create structured grid VTK file.
 
 using WriteVTK
+import Compat: UTF8String, view
 typealias FloatType Float32
 const vtk_filename_noext = "structured"
 
@@ -24,7 +25,7 @@ function main()
 
     # Just to test support for subarrays:
     p = zeros(FloatType, 2Ni, 2Nj, 2Nk)
-    psub = sub(p, 1:Ni, 1:Nj, 1:Nk)
+    psub = view(p, 1:Ni, 1:Nj, 1:Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         p[i, j, k] = i*i + k

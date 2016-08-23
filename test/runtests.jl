@@ -2,6 +2,7 @@
 
 using WriteVTK
 using Base.Test
+import Compat: UTF8String, readstring
 
 tests = ["multiblock.jl",
          "rectilinear.jl",
@@ -14,7 +15,7 @@ tests = ["multiblock.jl",
 OVERWRITE_CHECKSUMS = false
 checksums_file = "checksums.sha1"
 
-checksum_list = readall(checksums_file)
+checksum_list = readstring(checksums_file)
 
 if OVERWRITE_CHECKSUMS
     csio = open(checksums_file, "w")
@@ -27,7 +28,7 @@ for test in tests
 
     # Check that the generated files match the stored checksums.
     for file in outfiles
-        sha = readall(`sha1sum $file`)
+        sha = readstring(`sha1sum $file`)
         if OVERWRITE_CHECKSUMS
             write(csio, sha)
         else

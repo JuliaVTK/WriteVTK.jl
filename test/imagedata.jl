@@ -3,6 +3,7 @@
 # Create rectilinear grid VTK file.
 
 using WriteVTK
+import Compat.UTF8String
 typealias FloatType Float32
 const vtk_filename_noext = "imagedata"
 
