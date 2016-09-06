@@ -6,7 +6,7 @@ module WriteVTK
 # undocumented stuff found around the internet...
 # [1] http://www.vtk.org/VTK/img/file-formats.pdf
 
-export VTKCellType
+export VTKCellTypes
 export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
@@ -20,7 +20,7 @@ import Compat.UTF8String
 import Base: close, isopen
 
 # Cell type definitions as in vtkCellType.h
-include("VTKCellType.jl")
+include("VTKCellTypes.jl")
 
 ## Constants ##
 const COMPRESSION_LEVEL = 6
@@ -69,8 +69,16 @@ end
 
 # Cells in unstructured meshes.
 immutable MeshCell
-    ctype::UInt8                 # cell type identifier (see VTKCellType.jl)
+    ctype::VTKCellTypes.VTKCellType           # cell type identifier (see VTKCellType.jl)
     connectivity::Vector{Int32}  # indices of points (one-based, following the convention in Julia)
+
+    function MeshCell{T<:Integer}(ctype::VTKCellTypes.VTKCellType,connectivity::Vector{T})
+        if length(connectivity) == ctype.nodes || ctype.nodes == -1
+            new(ctype,connectivity)
+        else
+            throw(ArgumentError("Wrong number of nodes in connectivity vector."))
+        end
+    end
 end
 
 close(vtk::VTKFile) = free(vtk.xdoc)

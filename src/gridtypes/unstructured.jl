@@ -49,7 +49,7 @@ function vtk_grid{T<:AbstractFloat}(
     for (n, c) in enumerate(cells)
         Npts_cell = length(c.connectivity)
         Nconn += Npts_cell
-        types[n] = c.ctype
+        types[n] = c.ctype.vtk_id
         if n >= 2
             offsets[n] = offsets[n-1] + Npts_cell
         end
