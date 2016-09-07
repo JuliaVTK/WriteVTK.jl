@@ -6,7 +6,7 @@ module WriteVTK
 # undocumented stuff found around the internet...
 # [1] http://www.vtk.org/VTK/img/file-formats.pdf
 
-export VTKCellTypes
+export VTKCellTypes, VTKCellType
 export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
@@ -21,6 +21,9 @@ import Base: close, isopen
 
 # Cell type definitions as in vtkCellType.h
 include("VTKCellTypes.jl")
+
+# Base.@eprecate_binding VTKCellType VTKCellTypes
+const VTKCellType = VTKCellTypes # VTKCellType is deprecated, use VTKCellTypes instead
 
 ## Constants ##
 const COMPRESSION_LEVEL = 6
