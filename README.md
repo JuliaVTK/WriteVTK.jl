@@ -138,14 +138,14 @@ In WriteVTK, a cell is defined using the MeshCell type:
 cell = MeshCell(cell_type, connectivity)
 ```
 
-  - `cell_type` is an integer value that determines the type of the cell, as
+  - `cell_type` is of type `VTKCellType` which contains the name and an integer value that determines the type of the cell, as
     defined in the
     [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf) (see
     figures 2 and 3 in that document).
-    For convenience, WriteVTK includes a `VTKCellType` module that contains these
+    For convenience, WriteVTK includes a `VTKCellTypes` module that contains these
     definitions.
     For instance, a triangle is associated to the
-    value `cell_type = VTKCellType.VTK_TRIANGLE`.
+    value `cell_type = VTKCellTypes.VTK_TRIANGLE`.
 
   - `connectivity` is a vector of indices that determine the mesh points that are
     connected by the cell.
@@ -171,8 +171,8 @@ vtkfile = vtk_grid("my_vtk_file", points, cells)
 
     ``` julia
     # Supposing that the mesh is made of 5 points:
-    cells = [MeshCell(VTKCellType.VTK_TRIANGLE, [1, 4, 2]),
-             MeshCell(VTKCellType.VTK_QUAD,     [2, 4, 3, 5])]
+    cells = [MeshCell(VTKCellTypes.VTK_TRIANGLE, [1, 4, 2]),
+             MeshCell(VTKCellTypes.VTK_QUAD,     [2, 4, 3, 5])]
     ```
 
 Alternatively, the grid points can be defined from three 1-D arrays `x`, `y`,

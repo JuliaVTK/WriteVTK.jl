@@ -31,7 +31,7 @@ function mesh_data()
     end
 
     # Create cells (all hexahedrons in this case) and cell data.
-    const celltype = VTKCellType.VTK_HEXAHEDRON
+    const celltype = VTKCellTypes.VTK_HEXAHEDRON
     cells = MeshCell[]
     cdata = FloatType[]
 
