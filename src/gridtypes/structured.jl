@@ -1,10 +1,17 @@
-# Variant of vtk_grid with 4-D array xyz.
+# Variant of vtk_grid with 4-D array points.
 function vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString, xyz::AbstractArray{T,4};
+        filename_noext::AbstractString, points::AbstractArray{T,4};
         compress::Bool=true, append::Bool=true, extent=nothing)
 
-    Ncomp, Ni, Nj, Nk = size(xyz)
-    @assert Ncomp == 3  # three components (x, y, z)
+    dim, Ni, Nj, Nk = size(points)
+
+    if !(dim in [1,2,3])
+        throw(ArgumentError("First dimension of points must be of length 1, 2 or 3"))
+    end
+
+    _points = zeros(T,3,Ni,Nj,Nk)
+    _points[1:dim,:,:,:] = points
+
 
     xvtk = XMLDocument()
 
@@ -31,7 +38,7 @@ function vtk_grid{T<:AbstractFloat}(
     xPoints = new_child(xPiece, "Points")
 
     # DataArray node
-    data_to_xml(vtk, xPoints, xyz, "Points", 3)
+    data_to_xml(vtk, xPoints, _points, "Points", 3)
 
     return vtk::DatasetFile
 end
@@ -54,3 +61,17 @@ function vtk_grid{T<:AbstractFloat}(
                     compress=compress, append=append,
                     extent=extent)::DatasetFile
 end
+
+# 2D version
+vtk_grid{T<:AbstractFloat}(
+        filename_noext::AbstractString,
+        x::AbstractArray{T,3}, y::AbstractArray{T,3};
+        compress::Bool=true, append::Bool=true, extent=nothing) =
+    vtk_grid(filename_noext, x, y, zero(x), compress=compress, append=append, extent=extent)
+
+# 1D version
+vtk_grid{T<:AbstractFloat}(
+        filename_noext::AbstractString,
+        x::AbstractArray{T,3};
+        compress::Bool=true, append::Bool=true, extent=nothing) =
+    vtk_grid(filename_noext, x, zero(x), zero(x), compress=compress, append=append, extent=extent)
