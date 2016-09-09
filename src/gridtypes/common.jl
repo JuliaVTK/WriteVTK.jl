@@ -283,3 +283,17 @@ function extent_attribute{T<:Integer}(Ni, Nj, Nk, extent::Array{T})
     return ext
 end
 
+
+# Number of cells in structured grids (includes structured and rectilinear
+# VTK files).
+# In 3D, all cells are hexahedrons (i.e. VTK_HEXAHEDRON), and the number of
+# cells is (Ni-1)*(Nj-1)*(Nk-1).
+# In 2D, they are quadrilaterals (VTK_QUAD), and in 1D they are line segments
+# (VTK_LINE).
+function num_cells_structured(Ni, Nj, Nk)
+    Ncls = 1
+    for N in (Ni, Nj, Nk)
+        Ncls *= (N == 1) ? 1 : (N - 1)
+    end
+    return Ncls
+end

@@ -9,7 +9,7 @@ function vtk_grid{T<:AbstractFloat}(
     xvtk = XMLDocument()
 
     Npts = Ni*Nj*Nk
-    Ncls = (Ni - 1) * (Nj - 1) * (Nk - 1)
+    Ncls = num_cells_structured(Ni, Nj, Nk)
 
     ext = extent_attribute(Ni, Nj, Nk, extent)
 
