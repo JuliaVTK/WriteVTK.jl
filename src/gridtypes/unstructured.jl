@@ -109,7 +109,7 @@ vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         x::AbstractVector{T}, y::AbstractVector{T},
         cells::Vector{MeshCell};
-        compress::Bool=true, append::Bool=true) = 
+        compress::Bool=true, append::Bool=true) =
     vtk_grid(filename_noext, x, y, zero(x), cells, compress=compress, append=append)
 
 # 1D version
@@ -117,7 +117,7 @@ vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         x::AbstractVector{T},
         cells::Vector{MeshCell};
-        compress::Bool=true, append::Bool=true) = 
+        compress::Bool=true, append::Bool=true) =
     vtk_grid(filename_noext, x, zero(x), zero(x), cells, compress=compress, append=append)
 
 # Variant with 4-D Array
