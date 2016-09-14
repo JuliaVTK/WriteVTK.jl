@@ -45,10 +45,3 @@ vtk_grid{T<:AbstractFloat}(
         x::AbstractVector{T}, y::AbstractVector{T};
         compress::Bool=true, append::Bool=true, extent=nothing) =
     vtk_grid(filename_noext, x, y, zeros(T,1), compress=compress, append=append, extent=extent)
-
-# 1D version
-vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString,
-        x::AbstractVector{T};
-        compress::Bool=true, append::Bool=true, extent=nothing) =
-    vtk_grid(filename_noext, x, zeros(T,1), zeros(T,1), compress=compress, append=append, extent=extent)
