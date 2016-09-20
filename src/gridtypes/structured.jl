@@ -98,5 +98,3 @@ function vtk_grid{T<:AbstractFloat}(
     return vtk_grid(filename_noext, xyz,
                     compress=compress, append=append, extent=extent)::DatasetFile
 end
-
-# 1D version defined in `src/gridtypes/rectilinear.jl`
