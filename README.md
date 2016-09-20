@@ -4,11 +4,16 @@
 [![WriteVTK](http://pkg.julialang.org/badges/WriteVTK_0.4.svg)](http://pkg.julialang.org/?pkg=WriteVTK)
 [![WriteVTK](http://pkg.julialang.org/badges/WriteVTK_0.5.svg)](http://pkg.julialang.org/?pkg=WriteVTK)
 
-This module allows to write VTK XML files, that can be visualised for example with [ParaView](http://www.paraview.org/).
+This module allows to write VTK XML files, that can be visualized for example
+with [ParaView](http://www.paraview.org/).
 
-The data is written compressed by default, using the [Libz](https://github.com/BioJulia/Libz.jl) package.
+The data is written compressed by default, using the
+[Libz](https://github.com/BioJulia/Libz.jl) package.
 
-Rectilinear (.vtr), structured (.vts), image data (.vti) and unstructured (.vtu) grids are supported. Multiblock files (.vtm), which can point to multiple VTK files, can also be exported.
+Rectilinear (.vtr), structured (.vts), image data (.vti) and unstructured
+(.vtu) grids are supported.
+Multiblock files (.vtm), which can point to multiple VTK files, can also be
+exported.
 
 ## Contents
 
@@ -39,10 +44,14 @@ using WriteVTK
 
 ### Define a grid
 
-The function `vtk_grid` initialises the VTK file. This function requires a filename with no extension, and the grid coordinates. Depending on the shape of the arrays `x`, `y` and `z`, either a rectilinear or structured grid is created.
+The function `vtk_grid` initializes the VTK file.
+This function requires a filename with no extension, and the grid coordinates.
+Depending on the shape of the arrays `x`, `y` and `z`, either a rectilinear or
+structured grid is created.
 
 ``` julia
-vtkfile = vtk_grid("my_vtk_file", x, y, z)
+vtkfile = vtk_grid("my_vtk_file", x, y, z) # 3-D
+vtkfile = vtk_grid("my_vtk_file", x, y)    # 2-D
 ```
 
 Required array shapes for each grid type:
@@ -50,19 +59,25 @@ Required array shapes for each grid type:
   - Rectilinear grid: `x`, `y`, `z` are 1-D arrays with different lengths in
     general (`Ni`, `Nj` and `Nk` respectively).
   - Structured grid: `x`, `y`, `z` are 3-D arrays with the same
-    shape `[Ni, Nj, Nk]`.
+    shape: `[Ni, Nj, Nk]`. For the two dimensional case, `x` and `y` are 2-D arrays
+    with shape `[Ni, Nj]`
 
-Alternatively, in the case of structured grids, the grid points can be defined from a single 4-D array `xyz`, of dimensions `[3, Ni, Nj, Nk]`:
+Alternatively, in the case of structured grids, the grid points can be defined from a
+single 4-D array `xyz`, of dimensions `[3, Ni, Nj, Nk]`. For the two dimensional case
+`xy` is a 3-D array, with dimensions `[2, Ni, Nj]`:
 
 ``` julia
-vtkfile = vtk_grid("my_vtk_file", xyz)
+vtkfile = vtk_grid("my_vtk_file", xyz) # 3-D
+vtkfile = vtk_grid("my_vtk_file", xy)  # 2-D
 ```
 
 This is actually more efficient than the previous formulation.
 
 ### Add some data to the file
 
-The function `vtk_point_data` adds point data to the file. The required input is a VTK file object created by `vtk_grid`, an array and a string:
+The function `vtk_point_data` adds point data to the file.
+The required input is a VTK file object created by `vtk_grid`, an array and a
+string:
 
 ``` julia
 vtk_point_data(vtkfile, p, "Pressure")
@@ -70,7 +85,10 @@ vtk_point_data(vtkfile, C, "Concentration")
 vtk_point_data(vtkfile, vel, "Velocity")
 ```
 
-The array can represent either scalar or vectorial data. The shape of the array should be `[Ni, Nj, Nk]` for scalars, and `[Ncomp, Ni, Nj, Nk]` for vectors, where `Ncomp` is the number of components of the vector.
+The array can represent either scalar or vectorial data.
+The shape of the array should be `[Ni, Nj, Nk]` for scalars, and
+`[Ncomp, Ni, Nj, Nk]` for vectors, where `Ncomp` is the number of components of
+the vector.
 
 Cell data can also be added, using `vtk_cell_data`:
 
@@ -78,7 +96,9 @@ Cell data can also be added, using `vtk_cell_data`:
 vtk_cell_data(vtkfile, T, "Temperature")
 ```
 
-Note that in rectilinear and structured meshes, the cell resolution is always `[Ni-1, Nj-1, Nk-1]`, and the dimensions of the data arrays should be consistent with that resolution.
+Note that in rectilinear and structured meshes, the cell resolution is
+always `[Ni-1, Nj-1, Nk-1]`, and the dimensions of the data arrays should
+be consistent with that resolution.
 
 ### Save the file
 
@@ -88,13 +108,17 @@ Finally, close and save the file with `vtk_save`:
 outfiles = vtk_save(vtkfile)
 ```
 
-`outfiles` is an array of strings with the paths to the generated files. In this case, the array is of length 1, but that changes when working with [multiblock files](#multiblock-files).
+`outfiles` is an array of strings with the paths to the generated files.
+In this case, the array is of length 1, but that changes when working
+with [multiblock files](#multiblock-files).
 
 
 ## Usage: image data
 
-The points and cells of an image data file are defined by the number of points in each direction, `(Nx, Ny, Nz)`. The origin of the dataset and the spacing in each direction can be optionally included.
-
+The points and cells of an image data file are defined by the number of points
+in each direction, `(Nx, Ny, Nz)`.
+The origin of the dataset and the spacing in each direction can be optionally
+included.
 Example:
 
 ``` julia
@@ -107,7 +131,8 @@ vtk_save(vtk)
 
 ## Usage: unstructured meshes
 
-An unstructured mesh is defined by a set of points in space and a set of cells that connect those points.
+An unstructured mesh is defined by a set of points in space and a set of cells
+that connect those points.
 
 ### Defining cells
 
@@ -117,21 +142,30 @@ In WriteVTK, a cell is defined using the MeshCell type:
 cell = MeshCell(cell_type, connectivity)
 ```
 
-  - `cell_type` is of type `VTKCellType` which contains the name and an integer value that determines the type of the cell, as defined in the [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf) (see figures 2 and 3 in that document). For convenience, WriteVTK includes a `VTKCellTypes` module that contains these definitions. For instance, a triangle is associated to the value `cell_type = VTKCellTypes.VTK_TRIANGLE`.
+  - `cell_type` is of type `VTKCellType` which contains the name and an integer value that
+    determines the type of the cell, as defined in the
+    [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf) (see figures 2 and 3 in
+    that document). For convenience, WriteVTK includes a `VTKCellTypes` module that contains
+    these definitions. For instance, a triangle is associated to the value
+    `cell_type = VTKCellTypes.VTK_TRIANGLE`.
 
-  - `connectivity` is a vector of indices that determine the mesh points that are connected by the cell. In the case of a triangle, this would be an integer array of length 3.
+  - `connectivity` is a vector of indices that determine the mesh points that are connected
+    by the cell. In the case of a triangle, this would be an integer array of length 3.
 
-    Note that the connectivity indices are one-based (as opposed to [zero-based](https://en.wikipedia.org/wiki/Zero-based_numbering)), following the convention in Julia.
+    Note that the connectivity indices are one-based (as opposed to
+    [zero-based](https://en.wikipedia.org/wiki/Zero-based_numbering)), following the
+    convention in Julia.
 
 ### Generating an unstructured VTK file
 
-First, initialise the file:
+First, initialize the file:
 
 ``` julia
 vtkfile = vtk_grid("my_vtk_file", points, cells)
 ```
 
-  - `points` is an array with the point locations, of dimensions `[dim, num_points]` where `dim` is the dimension (1, 2 or 3) and `num_points` the number of points.
+  - `points` is an array with the point locations, of dimensions `[dim, num_points]` where
+    `dim` is the dimension (1, 2 or 3) and `num_points` the number of points.
 
   - `cells` is a MeshCell array that contains all the cells of the mesh. For example:
 
@@ -141,7 +175,8 @@ vtkfile = vtk_grid("my_vtk_file", points, cells)
              MeshCell(VTKCellTypes.VTK_QUAD,     [2, 4, 3, 5])]
     ```
 
-Alternatively, the grid points can be defined from 1-D arrays with equal lengths `num_points`:
+Alternatively, the grid points can be defined from 1-D arrays `x`, `y`,
+`z` with equal lengths `num_points`:
 
 ``` julia
 vtkfile = vtk_grid("my_vtk_file", x, y, z, cells) # 3D
@@ -149,22 +184,28 @@ vtkfile = vtk_grid("my_vtk_file", x, y, cells)    # 2D
 vtkfile = vtk_grid("my_vtk_file", x, cells)       # 1D
 ```
 
-or from a 4-D array `points`, with dimension `[dim, Ni, Nj, Nk]` where `dim` is the dimension and `Ni`,`Nj`,`Nk` the number of points in each direction `x`,`y`,`z`:
+or from a 4-D array `points`, with dimension `[dim, Ni, Nj, Nk]` where `dim` is the dimension
+and `Ni`,`Nj`,`Nk` the number of points in each direction `x`,`y`,`z`:
 
 ``` julia
 vtkfile = vtk_grid("my_vtk_file", points, cells)
 ```
+These two last methods are less efficient though.
 
-Now add some data to the file. It is possible to add both point data and cell data:
+Now add some data to the file.
+It is possible to add both point data and cell data:
 
 ``` julia
 vtk_point_data(vtkfile, pdata, "my_point_data")
 vtk_cell_data(vtkfile, cdata, "my_cell_data")
 ```
 
-The `pdata` and `cdata` arrays must have sizes consistent with the number of points and cells in the mesh, respectively. The arrays can contain scalar and vectorial data (see [here](#add-some-data-to-the-file)).
+The `pdata` and `cdata` arrays must have sizes consistent with the number of
+points and cells in the mesh, respectively.
+The arrays can contain scalar and vectorial data (see
+[here](#add-some-data-to-the-file)).
 
-Finally, close the file:
+Finally, close and save the file:
 
 ``` julia
 outfiles = vtk_save(vtkfile)
@@ -172,15 +213,21 @@ outfiles = vtk_save(vtkfile)
 
 ## Multiblock files
 
-Multiblock files (.vtm) are XML VTK files that can point to multiple other VTK files. They can be useful when working with complex geometries that are composed of multiple subdomains. In order to generate multiblock files, the `vtk_multiblock` function must be used. The functions introduced above are then used with some small modifications.
+Multiblock files (.vtm) are XML VTK files that can point to multiple other VTK
+files.
+They can be useful when working with complex geometries that are composed of
+multiple sub-domains.
+In order to generate multiblock files, the `vtk_multiblock` function must be used.
+The functions introduced above are then used with some small modifications.
 
-First, a multiblock file must be initialised:
+First, a multiblock file must be initialized:
 
 ``` julia
 vtmfile = vtk_multiblock("my_vtm_file")
 ```
 
-Then, each subgrid can be generated with `vtk_grid` using the `vtmfile` object as the first argument:
+Then, each sub-grid can be generated with `vtk_grid` using the `vtmfile` object
+as the first argument:
 
 ``` julia
 # First block.
@@ -192,18 +239,21 @@ vtkfile = vtk_grid(vtmfile, x2, y2, z2)
 vtk_point_data(vtkfile, p2, "Pressure")
 ```
 
-Finally, only the multiblock file needs to be saved explicitely:
+Finally, only the multiblock file needs to be saved explicitly:
 
 ``` julia
 outfiles = vtk_save(vtmfile)
 ```
 
-Assuming that the two blocks are structured grids, this generates the files `my_vtm_file.vtm`, `my_vtm_file.z01.vts` and `my_vtm_file.z02.vts`, where the `vtm` file points to the two `vts` files.
+Assuming that the two blocks are structured grids, this generates the files
+`my_vtm_file.vtm`, `my_vtm_file.z01.vts` and `my_vtm_file.z02.vts`, where the
+`vtm` file points to the two `vts` files.
 
 
 ## Paraview Data (PVD) file format
 
-A `pvd` file is a collection of VTK files, typically for holding results at different time steps in a simulation. A `pvd` file is initialised with:
+A `pvd` file is a collection of VTK files, typically for holding results at
+different time steps in a simulation. A `pvd` file is initialized with:
 
 ``` julia
 pvd = paraview_collection("my_pvd_file")
@@ -215,7 +265,8 @@ VTK files are then added to the `pvd` file with
 collection_add_timestep(pvd, vtkfile, time)
 ```
 
-Here, `time` is a float that represents the current time in the simulation. When all the files are added to the `pvd` file, it can be saved using:
+Here, `time` is a float that represents the current time in the simulation.
+When all the files are added to the `pvd` file, it can be saved using:
 
 ``` julia
 vtk_save(pvd)
@@ -223,17 +274,26 @@ vtk_save(pvd)
 
 ## Additional options
 
-By default, numerical data is written to the XML files as compressed raw binary data. This can be changed using the optional `compress` and `append` parameters of the `vtk_grid` functions.
+By default, numerical data is written to the XML files as compressed raw binary
+data.
+This can be changed using the optional `compress` and `append` parameters of
+the `vtk_grid` functions.
 
-For instance, to disable both compressing and appending raw data in the case of unstructured meshes:
+For instance, to disable both compressing and appending raw data in the case of
+unstructured meshes:
 
 ``` julia
 vtkfile = vtk_grid("my_vtk_file", points, cells; compress=false, append=false)
 ```
 
-  - If `append` is `true` (default), data is written appended at the end of the XML file as raw binary data. Note that this violates the XML specification, although it is allowed by VTK.
+  - If `append` is `true` (default), data is written appended at the end of the
+    XML file as raw binary data.
+    Note that this violates the XML specification, although it is allowed by VTK.
 
-    Otherwise, if `append` is `false`, data is written "inline", and base-64 encoded instead of raw. This is usually slower than writing raw binary data, and also results in larger files, but is valid according to the XML specification.
+    Otherwise, if `append` is `false`, data is written "inline", and base-64
+    encoded instead of raw.
+    This is usually slower than writing raw binary data, and also results in
+    larger files, but is valid according to the XML specification.
 
   - If `compress` is `true` (default), data is first compressed using zlib.
 
