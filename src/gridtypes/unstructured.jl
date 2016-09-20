@@ -11,10 +11,10 @@ function vtk_grid{T<:AbstractFloat}(
 
     # Reshape to 3D (if its not already)
     if dim == 1
-        _points = zeros(3,np)
+        _points = zeros(3,Npts)
         _points[1,:] = points
     elseif dim == 2
-        _points = zeros(3,np)
+        _points = zeros(3,Npts)
         _points[1:2,:] = points
     elseif dim == 3
         _points = points
