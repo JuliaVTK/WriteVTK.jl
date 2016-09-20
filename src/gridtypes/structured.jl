@@ -50,20 +50,6 @@ function vtk_grid{T<:AbstractFloat}(
                     compress=compress, append=append, extent=extent)
 end
 
-# 1-D variant of vtk_grid with 2-D array x
-function vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString, x::AbstractArray{T,2};
-        compress::Bool=true, append::Bool=true, extent=nothing)
-
-    dim, Ni = size(x); Nj, Nk = 1, 1
-    dim == 1 || throw(ArgumentError("The size of x needs to be (1,Ni)"))
-    xyz = zeros(T,3,Ni,Nj,Nk)
-    xyz[1,:,:,1] = x
-
-    return vtk_grid(filename_noext, xyz,
-                    compress=compress, append=append, extent=extent)
-end
-
 
 # 3-D variant of vtk_grid with 3-D arrays x, y, z.
 function vtk_grid{T<:AbstractFloat}(
