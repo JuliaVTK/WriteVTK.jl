@@ -45,3 +45,24 @@ vtk_grid{T<:AbstractFloat}(
         x::AbstractVector{T}, y::AbstractVector{T};
         compress::Bool=true, append::Bool=true, extent=nothing) =
     vtk_grid(filename_noext, x, y, zeros(T,1), compress=compress, append=append, extent=extent)
+
+# 1-D variant of vtk_grid with 1-D array x. Same for rectilinear and structured.
+# Defaults to rectilinear
+function vtk_grid{T<:AbstractFloat}(
+        filename_noext::AbstractString,
+        x::AbstractArray{T,1};
+        compress::Bool=true, append::Bool=true, extent=nothing, rectilinear=true)
+    if rectilinear
+        return vtk_grid(filename_noext, x, zeros(T,1), zeros(T,1),
+                        compress=compress, append=append, extent=extent)
+    else # structured
+        Ni = length(x)
+        Nj, Nk = 1, 1
+        xyz = zeros(T, 3, Ni, Nj, Nk)
+        for i = 1:Ni
+            xyz[1, i, 1, 1] = x[i]
+        end
+        return vtk_grid(filename_noext, xyz,
+                        compress=compress, append=append, extent=extent)::DatasetFile
+    end
+end
