@@ -22,8 +22,11 @@ import Base: close, isopen
 # Cell type definitions as in vtkCellType.h
 include("VTKCellTypes.jl")
 
-# Base.@eprecate_binding VTKCellType VTKCellTypes
-const VTKCellType = VTKCellTypes # VTKCellType is deprecated, use VTKCellTypes instead
+if VERSION >= v"0.5"
+    Base.@deprecate_binding VTKCellType VTKCellTypes
+else
+    const VTKCellType = VTKCellTypes
+end
 
 ## Constants ##
 const COMPRESSION_LEVEL = 6
