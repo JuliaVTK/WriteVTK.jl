@@ -4,7 +4,7 @@
 [![WriteVTK](http://pkg.julialang.org/badges/WriteVTK_0.4.svg)](http://pkg.julialang.org/?pkg=WriteVTK)
 [![WriteVTK](http://pkg.julialang.org/badges/WriteVTK_0.5.svg)](http://pkg.julialang.org/?pkg=WriteVTK)
 
-This module allows to write VTK XML files, that can be visualized for example
+This module allows to write VTK XML files, that can be visualised for example
 with [ParaView](http://www.paraview.org/).
 
 The data is written compressed by default, using the
@@ -44,7 +44,7 @@ using WriteVTK
 
 ### Define a grid
 
-The function `vtk_grid` initializes the VTK file.
+The function `vtk_grid` initialises the VTK file.
 This function requires a filename with no extension, and the grid coordinates.
 Depending on the shape of the arrays `x`, `y` and `z`, either a rectilinear or
 structured grid is created.
@@ -158,7 +158,7 @@ cell = MeshCell(cell_type, connectivity)
 
 ### Generating an unstructured VTK file
 
-First, initialize the file:
+First, initialise the file:
 
 ``` julia
 vtkfile = vtk_grid("my_vtk_file", points, cells)
@@ -220,7 +220,7 @@ multiple sub-domains.
 In order to generate multiblock files, the `vtk_multiblock` function must be used.
 The functions introduced above are then used with some small modifications.
 
-First, a multiblock file must be initialized:
+First, a multiblock file must be initialised:
 
 ``` julia
 vtmfile = vtk_multiblock("my_vtm_file")
@@ -253,7 +253,7 @@ Assuming that the two blocks are structured grids, this generates the files
 ## Paraview Data (PVD) file format
 
 A `pvd` file is a collection of VTK files, typically for holding results at
-different time steps in a simulation. A `pvd` file is initialized with:
+different time steps in a simulation. A `pvd` file is initialised with:
 
 ``` julia
 pvd = paraview_collection("my_pvd_file")
