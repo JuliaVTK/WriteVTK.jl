@@ -6,7 +6,6 @@ import Compat: UTF8String, readstring
 
 tests = ["multiblock.jl",
          "rectilinear.jl",
-         "rectilinear_2d.jl",
          "imagedata.jl",
          "structured.jl",
          "unstructured.jl",

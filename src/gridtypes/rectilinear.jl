@@ -4,7 +4,7 @@
 # extent should be a vector of integers of length 6.
 function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
-        x::AbstractArray{T,1}, y::AbstractArray{T,1}, z::AbstractArray{T,1};
+        x::AbstractVector{T}, y::AbstractVector{T}, z::AbstractVector{T};
         compress::Bool=true, append::Bool=true, extent=nothing)
     xvtk = XMLDocument()
 
@@ -38,3 +38,10 @@ function vtk_grid{T<:AbstractFloat}(
 
     return vtk::DatasetFile
 end
+
+# 2D version
+vtk_grid{T<:AbstractFloat}(
+        filename_noext::AbstractString,
+        x::AbstractVector{T}, y::AbstractVector{T};
+        compress::Bool=true, append::Bool=true, extent=nothing) =
+    vtk_grid(filename_noext, x, y, zeros(T,1), compress=compress, append=append, extent=extent)

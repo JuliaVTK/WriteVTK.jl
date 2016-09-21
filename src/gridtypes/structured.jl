@@ -1,4 +1,4 @@
-# Variant of vtk_grid with 4-D array xyz.
+# 3-D variant of vtk_grid with 4-D array xyz.
 function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString, xyz::AbstractArray{T,4};
         compress::Bool=true, append::Bool=true, extent=nothing)
@@ -36,8 +36,22 @@ function vtk_grid{T<:AbstractFloat}(
     return vtk::DatasetFile
 end
 
+# 2-D variant of vtk_grid with 3-D array xy
+function vtk_grid{T<:AbstractFloat}(
+        filename_noext::AbstractString, xy::AbstractArray{T,3};
+        compress::Bool=true, append::Bool=true, extent=nothing)
 
-# Variant of vtk_grid with 3-D arrays x, y, z.
+    dim, Ni, Nj = size(xy); Nk = 1
+    dim == 2 || throw(ArgumentError("The size of xy needs to be (2,Ni,Nj)"))
+    xyz = zeros(T,3,Ni,Nj,Nk)
+    xyz[1:2,:,:,1] = xy
+
+    return vtk_grid(filename_noext, xyz,
+                    compress=compress, append=append, extent=extent)
+end
+
+
+# 3-D variant of vtk_grid with 3-D arrays x, y, z.
 function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         x::AbstractArray{T,3}, y::AbstractArray{T,3}, z::AbstractArray{T,3};
@@ -50,7 +64,23 @@ function vtk_grid{T<:AbstractFloat}(
         xyz[2, i, j, k] = y[i, j, k]
         xyz[3, i, j, k] = z[i, j, k]
     end
-    return vtk_grid(filename_noext, xyz;
-                    compress=compress, append=append,
-                    extent=extent)::DatasetFile
+    return vtk_grid(filename_noext, xyz, compress=compress,
+                    append=append, extent=extent)::DatasetFile
+end
+
+# 2-D variant of vtk_grid with 2-D arrays x, y.
+function vtk_grid{T<:AbstractFloat}(
+        filename_noext::AbstractString,
+        x::AbstractArray{T,2}, y::AbstractArray{T,2};
+        compress::Bool=true, append::Bool=true, extent=nothing)
+    @assert size(x) == size(y)
+    Ni, Nj = size(x)
+    Nk = 1
+    xyz = zeros(T, 3, Ni, Nj, Nk)
+    for j = 1:Nj, i = 1:Ni
+        xyz[1, i, j, 1] = x[i, j]
+        xyz[2, i, j, 1] = y[i, j]
+    end
+    return vtk_grid(filename_noext, xyz,
+                    compress=compress, append=append, extent=extent)::DatasetFile
 end

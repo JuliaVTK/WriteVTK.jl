@@ -75,7 +75,7 @@ end
 
 # Cells in unstructured meshes.
 immutable MeshCell
-    ctype::VTKCellTypes.VTKCellType           # cell type identifier (see VTKCellType.jl)
+    ctype::VTKCellTypes.VTKCellType           # cell type identifier (see VTKCellTypes.jl)
     connectivity::Vector{Int32}  # indices of points (one-based, following the convention in Julia)
 
     function MeshCell{T<:Integer}(ctype::VTKCellTypes.VTKCellType,connectivity::Vector{T})

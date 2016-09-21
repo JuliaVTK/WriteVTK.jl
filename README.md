@@ -50,7 +50,8 @@ Depending on the shape of the arrays `x`, `y` and `z`, either a rectilinear or
 structured grid is created.
 
 ``` julia
-vtkfile = vtk_grid("my_vtk_file", x, y, z)
+vtkfile = vtk_grid("my_vtk_file", x, y, z) # 3-D
+vtkfile = vtk_grid("my_vtk_file", x, y)    # 2-D
 ```
 
 Required array shapes for each grid type:
@@ -58,13 +59,16 @@ Required array shapes for each grid type:
   - Rectilinear grid: `x`, `y`, `z` are 1-D arrays with different lengths in
     general (`Ni`, `Nj` and `Nk` respectively).
   - Structured grid: `x`, `y`, `z` are 3-D arrays with the same
-    shape `[Ni, Nj, Nk]`.
+    shape: `[Ni, Nj, Nk]`. For the two dimensional case, `x` and `y` are 2-D arrays
+    with shape `[Ni, Nj]`
 
-Alternatively, in the case of structured grids, the grid points can be defined
-from a single 4-D array `xyz`, of dimensions `[3, Ni, Nj, Nk]`:
+Alternatively, in the case of structured grids, the grid points can be defined from a
+single 4-D array `xyz`, of dimensions `[3, Ni, Nj, Nk]`. For the two dimensional case
+`xy` is a 3-D array, with dimensions `[2, Ni, Nj]`:
 
 ``` julia
-vtkfile = vtk_grid("my_vtk_file", xyz)
+vtkfile = vtk_grid("my_vtk_file", xyz) # 3-D
+vtkfile = vtk_grid("my_vtk_file", xy)  # 2-D
 ```
 
 This is actually more efficient than the previous formulation.
@@ -138,22 +142,19 @@ In WriteVTK, a cell is defined using the MeshCell type:
 cell = MeshCell(cell_type, connectivity)
 ```
 
-  - `cell_type` is of type `VTKCellType` which contains the name and an integer value that determines the type of the cell, as
-    defined in the
-    [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf) (see
-    figures 2 and 3 in that document).
-    For convenience, WriteVTK includes a `VTKCellTypes` module that contains these
-    definitions.
-    For instance, a triangle is associated to the
-    value `cell_type = VTKCellTypes.VTK_TRIANGLE`.
+  - `cell_type` is of type `VTKCellType` which contains the name and an integer value that
+    determines the type of the cell, as defined in the
+    [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf) (see figures 2 and 3 in
+    that document). For convenience, WriteVTK includes a `VTKCellTypes` module that contains
+    these definitions. For instance, a triangle is associated to the value
+    `cell_type = VTKCellTypes.VTK_TRIANGLE`.
 
-  - `connectivity` is a vector of indices that determine the mesh points that are
-    connected by the cell.
-    In the case of a triangle, this would be an integer array of length 3.
+  - `connectivity` is a vector of indices that determine the mesh points that are connected
+    by the cell. In the case of a triangle, this would be an integer array of length 3.
 
     Note that the connectivity indices are one-based (as opposed to
-    [zero-based](https://en.wikipedia.org/wiki/Zero-based_numbering)),
-    following the convention in Julia.
+    [zero-based](https://en.wikipedia.org/wiki/Zero-based_numbering)), following the
+    convention in Julia.
 
 ### Generating an unstructured VTK file
 
@@ -163,22 +164,33 @@ First, initialise the file:
 vtkfile = vtk_grid("my_vtk_file", points, cells)
 ```
 
-  - `points` is an array with the point locations, of
-    dimensions `[3, num_points]` (can be also flattened or reshaped).
+  - `points` is an array with the point locations, of dimensions `[dim, num_points]` where
+    `dim` is the dimension (1, 2 or 3) and `num_points` the number of points.
 
-  - `cells` is a MeshCell array that contains all the cells of the mesh.
-    For example:
+  - `cells` is a MeshCell array that contains all the cells of the mesh. For example:
 
     ``` julia
-    # Supposing that the mesh is made of 5 points:
+    # Suppose that the mesh is made of 5 points:
     cells = [MeshCell(VTKCellTypes.VTK_TRIANGLE, [1, 4, 2]),
              MeshCell(VTKCellTypes.VTK_QUAD,     [2, 4, 3, 5])]
     ```
 
-Alternatively, the grid points can be defined from three 1-D arrays `x`, `y`,
-`z`, of equal lengths, as in
-`vtkfile = vtk_grid("my_vtk_file", x, y, z, cells)`.
-This is less efficient though.
+Alternatively, the grid points can be defined from 1-D arrays `x`, `y`,
+`z` with equal lengths `num_points`:
+
+``` julia
+vtkfile = vtk_grid("my_vtk_file", x, y, z, cells) # 3D
+vtkfile = vtk_grid("my_vtk_file", x, y, cells)    # 2D
+vtkfile = vtk_grid("my_vtk_file", x, cells)       # 1D
+```
+
+or from a 4-D array `points`, with dimension `[dim, Ni, Nj, Nk]` where `dim` is the dimension
+and `Ni`,`Nj`,`Nk` the number of points in each direction `x`,`y`,`z`:
+
+``` julia
+vtkfile = vtk_grid("my_vtk_file", points, cells)
+```
+These two last methods are less efficient though.
 
 Now add some data to the file.
 It is possible to add both point data and cell data:
@@ -193,7 +205,7 @@ points and cells in the mesh, respectively.
 The arrays can contain scalar and vectorial data (see
 [here](#add-some-data-to-the-file)).
 
-Finally, close the file:
+Finally, close and save the file:
 
 ``` julia
 outfiles = vtk_save(vtkfile)
@@ -204,7 +216,7 @@ outfiles = vtk_save(vtkfile)
 Multiblock files (.vtm) are XML VTK files that can point to multiple other VTK
 files.
 They can be useful when working with complex geometries that are composed of
-multiple subdomains.
+multiple sub-domains.
 In order to generate multiblock files, the `vtk_multiblock` function must be used.
 The functions introduced above are then used with some small modifications.
 
@@ -214,7 +226,7 @@ First, a multiblock file must be initialised:
 vtmfile = vtk_multiblock("my_vtm_file")
 ```
 
-Then, each subgrid can be generated with `vtk_grid` using the `vtmfile` object
+Then, each sub-grid can be generated with `vtk_grid` using the `vtmfile` object
 as the first argument:
 
 ``` julia
@@ -227,7 +239,7 @@ vtkfile = vtk_grid(vtmfile, x2, y2, z2)
 vtk_point_data(vtkfile, p2, "Pressure")
 ```
 
-Finally, only the multiblock file needs to be saved explicitely:
+Finally, only the multiblock file needs to be saved explicitly:
 
 ``` julia
 outfiles = vtk_save(vtmfile)

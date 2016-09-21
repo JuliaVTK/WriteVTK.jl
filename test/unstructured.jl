@@ -10,7 +10,8 @@ const vtk_filename_noext = "unstructured"
 # Like sub2ind, but specifically for 3D arrays.
 mysub2ind(dims, i, j, k) = i + dims[1]*(j-1) + dims[1]*dims[2]*(k-1)
 
-function mesh_data()
+# 3D mesh
+function mesh_data(::Val{3})
     # This is basically a structured grid, but defined as an unstructured one.
     # Based on the structured.jl example.
     const Ni, Nj, Nk = 40, 50, 20
@@ -60,24 +61,109 @@ function mesh_data()
     return pts, cells, pdata, cdata
 end
 
+# 2D mesh
+function mesh_data(::Val{2})
+    const Ni, Nj = 40, 50
+    const dims = (Ni, Nj)
+    const Npts = prod(dims)
+
+    # Create points and point data.
+    pts_ijk = Array(FloatType, 2, Ni, Nj)
+    pdata_ijk = Array(FloatType, Ni, Nj)
+
+    for j = 1:Nj, i = 1:Ni
+        r = 1 + (i - 1)/(Ni - 1)
+        th = 3*pi/4 * (j - 1)/(Nj - 1)
+        pts_ijk[1, i, j] = r * cos(th)
+        pts_ijk[2, i, j] = r * sin(th)
+        pdata_ijk[i, j] = i*i + sqrt(j)
+    end
+
+    # Create cells (all quads in this case) and cell data.
+    const celltype = VTKCellTypes.VTK_QUAD
+    cells = MeshCell[]
+    cdata = FloatType[]
+
+    for j = 2:Nj, i = 2:Ni
+        # Define connectivity of cell.
+        inds = Array(Int32, 4)
+        inds[1] = sub2ind(dims, i-1, j-1)
+        inds[2] = sub2ind(dims, i  , j-1)
+        inds[3] = sub2ind(dims, i  , j  )
+        inds[4] = sub2ind(dims, i-1, j  )
+
+        # Define cell.
+        c = MeshCell(celltype, inds)
+
+        push!(cells, c)
+        push!(cdata, i*j)
+    end
+
+    pts = reshape(pts_ijk, 2, Npts)
+    pdata = reshape(pdata_ijk, Npts)
+
+    return pts, cells, pdata, cdata
+end
+
+# 1D mesh
+function mesh_data(::Val{1})
+    const Ni = 40
+    const Npts = Ni
+
+    # Create points and point data.
+    pts_ijk = Array(FloatType, 1, Ni)
+    pdata_ijk = Array(FloatType, Ni)
+
+    for i = 1:Ni
+        pts_ijk[1, i] = (i-1)^2 / (Ni-1)^2
+        pdata_ijk[i] = i*i
+    end
+
+    # Create cells (all lines in this case) and cell data.
+    const celltype = VTKCellTypes.VTK_LINE
+    cells = MeshCell[]
+    cdata = FloatType[]
+
+    for i = 2:Ni
+        # Define connectivity of cell.
+        inds = Array(Int32, 2)
+        inds[1] = i-1
+        inds[2] = i
+
+        # Define cell.
+        c = MeshCell(celltype, inds)
+
+        push!(cells, c)
+        push!(cdata, i)
+    end
+
+    pts = reshape(pts_ijk, 1, Npts)
+    pdata = reshape(pdata_ijk, Npts)
+
+    return pts, cells, pdata, cdata
+end
+
 function main()
-    pts, cells, pdata, cdata = mesh_data()
+    outfiles = UTF8String[]
+    for dim in 1:3
+        pts, cells, pdata, cdata = mesh_data(Val{dim}())
 
-    # Initialise new vtu file (unstructured grid).
-    vtk = vtk_grid(vtk_filename_noext, pts, cells)
+        # Initialise new vtu file (unstructured grid).
+        vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", pts, cells)
 
-    # NOTE
-    # This is also accepted (but less efficient):
-    # vtk = vtk_grid(vtk_filename_noext, pts[1, :], pts[2, :], pts[3, :], cells)
+        # NOTE
+        # This is also accepted (but less efficient):
+        # vtk = vtk_grid(vtk_filename_noext, pts[1, :], pts[2, :], pts[3, :], cells)
 
-    # Add some point and cell data.
-    vtk_point_data(vtk, pdata, "my_point_data")
-    vtk_cell_data(vtk, cdata, "my_cell_data")
+        # Add some point and cell data.
+        vtk_point_data(vtk, pdata, "my_point_data")
+        vtk_cell_data(vtk, cdata, "my_cell_data")
 
-    # Save and close vtk file.
-    outfiles = vtk_save(vtk)
+        # Save and close vtk file.
+        append!(outfiles, vtk_save(vtk))
+    end
+
     println("Saved:   ", outfiles...)
-
     return outfiles::Vector{UTF8String}
 end
 
