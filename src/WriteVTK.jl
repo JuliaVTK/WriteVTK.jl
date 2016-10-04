@@ -75,15 +75,14 @@ end
 
 # Cells in unstructured meshes.
 immutable MeshCell
-    ctype::VTKCellTypes.VTKCellType           # cell type identifier (see VTKCellTypes.jl)
-    connectivity::Vector{Int32}  # indices of points (one-based, following the convention in Julia)
-
-    function MeshCell{T<:Integer}(ctype::VTKCellTypes.VTKCellType,connectivity::Vector{T})
-        if length(connectivity) == ctype.nodes || ctype.nodes == -1
-            new(ctype,connectivity)
-        else
+    ctype::VTKCellTypes.VTKCellType  # cell type identifier (see VTKCellTypes.jl)
+    connectivity::Vector{Int32}      # indices of points (one-based, following the convention in Julia)
+    function MeshCell{T<:Integer}(ctype::VTKCellTypes.VTKCellType,
+                                  connectivity::Vector{T})
+        if ctype.nodes ∉ (length(connectivity), -1)
             throw(ArgumentError("Wrong number of nodes in connectivity vector."))
         end
+        return new(ctype, connectivity)
     end
 end
 
