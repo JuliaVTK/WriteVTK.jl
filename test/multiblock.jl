@@ -119,7 +119,7 @@ function main()
         vtk_point_data(vtk, q, "q_values")
         vtk_cell_data(vtk, c, "c_values")
     end
-    println("Saved:", [" "^3 * s for s in outfiles]...)
+    println("Saved:  ", join(outfiles, "  "))
 
     return outfiles::Vector{UTF8String}
 end

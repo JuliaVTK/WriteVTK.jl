@@ -58,7 +58,7 @@ function main()
             collection_add_timestep(pvd, vtk, Float64(it+1))
         end
     end
-    println("Saved:", [" "^3 * s for s in outfiles]...)
+    println("Saved:  ", join(outfiles, "  "))
 
     return outfiles::Vector{UTF8String}
 end

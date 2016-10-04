@@ -76,7 +76,7 @@ function main()
 
     end # dim loop
 
-    println("Saved:", [" "^3 * s for s in outfiles]...)
+    println("Saved:  ", join(outfiles, "  "))
     return outfiles::Vector{UTF8String}
 end
 

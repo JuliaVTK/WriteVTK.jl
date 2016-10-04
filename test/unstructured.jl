@@ -163,7 +163,7 @@ function main()
         append!(outfiles, vtk_save(vtk))
     end
 
-    println("Saved:   ", join(outfiles, "   "))
+    println("Saved:  ", join(outfiles, "  "))
     return outfiles::Vector{UTF8String}
 end
 
