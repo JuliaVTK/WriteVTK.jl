@@ -15,6 +15,15 @@ function paraview_collection(filename_noext::AbstractString)
     return CollectionFile(xpvd, string(filename_noext, ".pvd"))
 end
 
+function paraview_collection(f::Function, filename_noext::AbstractString)
+    pvd = paraview_collection(filename_noext)
+    try
+        f(pvd)
+    finally
+        return vtk_save(pvd) :: Vector{UTF8String}
+    end
+end
+
 function collection_add_timestep(pvd::CollectionFile, datfile::VTKFile,
                                  t::AbstractFloat)
   xroot = root(pvd.xdoc)

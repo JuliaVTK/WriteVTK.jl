@@ -1,5 +1,15 @@
 # Contains common functions for all grid types.
 
+# This allows using do-block syntax for generation of VTK files.
+function vtk_grid(f::Function, args...; kwargs...)
+    vtk = vtk_grid(args...; kwargs...)
+    try
+        f(vtk)
+    finally
+        return vtk_save(vtk) :: Vector{UTF8String}
+    end
+end
+
 ZlibCompressStream(buf::IO) =
     ZlibDeflateOutputStream(buf; gzip=false, level=COMPRESSION_LEVEL)
 

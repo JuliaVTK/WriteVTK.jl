@@ -102,26 +102,23 @@ end
 
 function main()
     # Initialise multiblock file.
-    vtm = vtk_multiblock(vtm_filename_noext)
+    outfiles = vtk_multiblock(vtm_filename_noext) do vtm
+        # Create first block.
+        x, y, z, q = first_block_data()
+        vtk = vtk_grid(vtm, x, y, z; compress=false, append=false)
+        vtk_point_data(vtk, q, "q_values")
 
-    # Create first block.
-    x, y, z, q = first_block_data()
-    vtk = vtk_grid(vtm, x, y, z; compress=false, append=false)
-    vtk_point_data(vtk, q, "q_values")
+        # Create second block.
+        x, y, z, q = second_block_data()
+        vtk = vtk_grid(vtm, x, y, z; compress=false)
+        vtk_point_data(vtk, q, "q_values")
 
-    # Create second block.
-    x, y, z, q = second_block_data()
-    vtk = vtk_grid(vtm, x, y, z; compress=false)
-    vtk_point_data(vtk, q, "q_values")
-
-    # Create third block.
-    points, cells, q, c = third_block_data()
-    vtk = vtk_grid(vtm, points, cells; append=false)
-    vtk_point_data(vtk, q, "q_values")
-    vtk_cell_data(vtk, c, "c_values")
-
-    # Saved multiblock file and included block files.
-    outfiles = vtk_save(vtm)
+        # Create third block.
+        points, cells, q, c = third_block_data()
+        vtk = vtk_grid(vtm, points, cells; append=false)
+        vtk_point_data(vtk, q, "q_values")
+        vtk_cell_data(vtk, c, "c_values")
+    end
     println("Saved:", [" "^3 * s for s in outfiles]...)
 
     return outfiles::Vector{UTF8String}

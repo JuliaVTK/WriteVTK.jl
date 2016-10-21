@@ -273,6 +273,32 @@ When all the files are added to the `pvd` file, it can be saved using:
 vtk_save(pvd)
 ```
 
+## Do-block syntax
+
+[Do-block syntax](http://docs.julialang.org/en/release-0.5/manual/functions/#do-block-syntax-for-function-arguments)
+is supported by `vtk_grid`, `vtk_multiblock` and `paraview_collection`.
+At the end of the do-block, `vtk_save` is called implicitly on the generated
+VTK object.
+Example:
+
+``` julia
+# Rectilinear or structured grid
+outfiles = vtk_grid("my_vtk_file", x, y, z) do vtk
+    vtk_point_data(vtk, p, "Pressure")
+    vtk_point_data(vtk, vel, "Velocity")
+end
+
+# Multiblock file
+outfiles = vtk_multiblock("my_vtm_file") do vtm
+    vtk = vtk_grid(vtm, x1, y1, z1)
+    vtk_point_data(vtk, vel1, "Velocity")
+
+    vtk = vtk_grid(vtm, x2, y2, z2)
+    vtk_point_data(vtk, vel2, "Velocity")
+end
+```
+
+
 ## Additional options
 
 By default, numerical data is written to the XML files as compressed raw binary

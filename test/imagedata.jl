@@ -1,6 +1,7 @@
 #!/usr/bin/env julia
 
-# Create rectilinear grid VTK file.
+# Create image data VTK file.
+# This corresponds to a rectilinear grid with uniform spacing in each direction.
 
 using WriteVTK
 import Compat.UTF8String
@@ -37,18 +38,18 @@ function main()
     origin = [1.2, 4.3, -3.1]
     spacing = [0.1, 0.5, 1.2]
 
-    # Initialise new vtr file (rectilinear grid).
-    vtk = vtk_grid(vtk_filename_noext, Ni, Nj, Nk,
-                   extent=extent, origin=origin, spacing=spacing)
+    # Initialise new vti file (image data).
+    outfiles = vtk_grid(vtk_filename_noext, Ni, Nj, Nk,
+                        extent=extent, origin=origin, spacing=spacing) do vtk
+        # Add data.
+        vtk_point_data(vtk, p, "p_values")
+        vtk_point_data(vtk, q, "q_values")
+        vtk_point_data(vtk, vec, "myVector")
+        vtk_cell_data(vtk, cdata, "myCellData")
 
-    # Add data.
-    vtk_point_data(vtk, p, "p_values")
-    vtk_point_data(vtk, q, "q_values")
-    vtk_point_data(vtk, vec, "myVector")
-    vtk_cell_data(vtk, cdata, "myCellData")
-
-    # Save and close vtk file.
-    outfiles = vtk_save(vtk)
+        # Save and close vtk file.
+        # outfiles = vtk_save(vtk)
+    end
     println("Saved:   ", outfiles...)
 
     return outfiles::Vector{UTF8String}
