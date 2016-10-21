@@ -24,6 +24,7 @@ exported.
   - [Unstructured meshes](#usage-unstructured-meshes)
   - [Multiblock files](#multiblock-files)
   - [Paraview PVD files](#paraview-data-pvd-file-format)
+  - [Do-block syntax](#do-block-syntax)
   - [Additional options](#additional-options)
   - [Examples](#examples)
 
