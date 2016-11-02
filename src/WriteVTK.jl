@@ -102,4 +102,18 @@ include("gridtypes/imagedata.jl")
 # Common functions.
 include("gridtypes/common.jl")
 
+# This allows using do-block syntax for generation of VTK files.
+for func in (:vtk_grid, :vtk_multiblock, :paraview_collection)
+    @eval begin
+        function ($func)(f::Function, args...; kwargs...)
+            vtk = ($func)(args...; kwargs...)
+            try
+                f(vtk)
+            finally
+                return vtk_save(vtk) :: Vector{UTF8String}
+            end
+        end
+    end
+end
+
 end

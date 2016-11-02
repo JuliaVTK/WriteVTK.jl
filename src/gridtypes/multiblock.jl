@@ -14,15 +14,6 @@ function vtk_multiblock(filename_noext::AbstractString)
     return MultiblockFile(xvtm, string(filename_noext, ".vtm"))
 end
 
-function vtk_multiblock(f::Function, filename_noext::AbstractString)
-    vtm = vtk_multiblock(filename_noext)
-    try
-        f(vtm)
-    finally
-        return vtk_save(vtm) :: Vector{UTF8String}
-    end
-end
-
 function vtk_grid(vtm::MultiblockFile, griddata...; kwargs...)
     # Creates new dataset file that is added to the multiblock file.
     # "griddata" can be any combination of arrays that define a VTK grid.
