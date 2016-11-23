@@ -15,9 +15,17 @@ function datatype_str(T::DataType)
     return string(T)
 end
 
-function data_to_xml{T<:Real}(
-        vtk::DatasetFile, xParent::XMLElement, data::AbstractArray{T},
-        varname::AbstractString, Nc::Integer=1)
+
+function data_to_xml(vtk::DatasetFile, xParent::XMLElement, data::AbstractArray,
+                     varname::AbstractString, Nc::Integer=1)
+    func :: Function = vtk.appended ? data_to_xml_appended : data_to_xml_inline
+    return func(vtk, xParent, data, varname, Nc) :: XMLElement
+end
+
+
+function data_to_xml_appended{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
+                                       data::AbstractArray{T},
+                                       varname::AbstractString, Nc::Integer)
     #==========================================================================
     This variant of data_to_xml should be used when writing appended data.
       * buf is the buffer where the appended data is written.
@@ -39,16 +47,12 @@ function data_to_xml{T<:Real}(
     the data array in bytes.
     ==========================================================================#
 
-    if !vtk.appended
-        # Redirect to the inline version of this function.
-        return data_to_xml_inline(vtk, xParent, data, varname, Nc)::XMLElement
-    end
+    @assert vtk.appended
+    @assert name(xParent) in ("Points", "PointData", "Coordinates",
+                              "Cells", "CellData")
 
     const buf = vtk.buf    # append buffer
     const compress = vtk.compressed
-
-    @assert name(xParent) in ("Points", "PointData", "Coordinates",
-                              "Cells", "CellData")
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
@@ -93,9 +97,9 @@ function data_to_xml{T<:Real}(
 end
 
 
-function data_to_xml_inline{T<:Real}(
-        vtk::DatasetFile, xParent::XMLElement, data::AbstractArray{T},
-        varname::AbstractString, Nc::Integer=1)
+function data_to_xml_inline{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
+                                     data::AbstractArray{T},
+                                     varname::AbstractString, Nc::Integer)
     #==========================================================================
     This variant of data_to_xml should be used when writing data "inline" into
     the XML file (not appended at the end).
@@ -157,9 +161,9 @@ function data_to_xml_inline{T<:Real}(
 end
 
 
-function vtk_point_or_cell_data{T<:Real}(
-        vtk::DatasetFile, data::AbstractArray{T}, name::AbstractString,
-        nodetype::AbstractString, Nc::Integer)
+function vtk_point_or_cell_data(vtk::DatasetFile, data::AbstractArray,
+                                name::AbstractString, nodetype::AbstractString,
+                                Nc::Integer)
     # Nc: number of components (Nc >= 1)
 
     # Find Piece node.
