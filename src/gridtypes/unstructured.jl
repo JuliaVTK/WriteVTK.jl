@@ -34,7 +34,7 @@ function vtk_grid{T<:AbstractFloat}(
     xroot = vtk_xml_write_header(vtk)
 
     # UnstructuredGrid node
-    xGrid = new_child(xroot, vtk.gridType_str)
+    xGrid = new_child(xroot, vtk.grid_type)
 
     # Piece node
     xPiece = new_child(xGrid, "Piece")

@@ -40,19 +40,19 @@ typealias DataBuffer BufferedOutputStream{EmptyStreamSource}
 immutable DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::UTF8String
-    gridType_str::UTF8String
+    grid_type::UTF8String
     Npts::Int           # Number of grid points.
     Ncls::Int           # Number of cells.
     compressed::Bool    # Data is compressed?
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     buf::DataBuffer     # Buffer with appended data.
-    function DatasetFile(xdoc, path, gridType_str, Npts, Ncls,
+    function DatasetFile(xdoc, path, grid_type, Npts, Ncls,
                          compressed, appended)
         buf = BufferedOutputStream() :: DataBuffer
         if !appended  # in this case we don't need a buffer
             close(buf)
         end
-        return new(xdoc, path, gridType_str, Npts, Ncls,
+        return new(xdoc, path, grid_type, Npts, Ncls,
                    compressed, appended, buf)
     end
 end

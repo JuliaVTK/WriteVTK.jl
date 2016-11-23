@@ -21,7 +21,7 @@ function vtk_grid(
     xroot = vtk_xml_write_header(vtk)
 
     # ImageData node
-    xGrid = new_child(xroot, vtk.gridType_str)
+    xGrid = new_child(xroot, vtk.grid_type)
     set_attribute(xGrid, "WholeExtent", ext)
 
     origin_str = string(origin[1], " ", origin[2], " ", origin[3])

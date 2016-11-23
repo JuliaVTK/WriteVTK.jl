@@ -21,7 +21,7 @@ function vtk_grid{T<:AbstractFloat}(
     xroot = vtk_xml_write_header(vtk)
 
     # RectilinearGrid node
-    xGrid = new_child(xroot, vtk.gridType_str)
+    xGrid = new_child(xroot, vtk.grid_type)
     set_attribute(xGrid, "WholeExtent", ext)
 
     # Piece node

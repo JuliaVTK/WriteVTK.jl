@@ -168,7 +168,7 @@ function vtk_point_or_cell_data(vtk::DatasetFile, data::AbstractArray,
                                 Nc::Integer)
     # Find Piece node.
     xroot = root(vtk.xdoc)
-    xGrid = find_element(xroot, vtk.gridType_str)
+    xGrid = find_element(xroot, vtk.grid_type)
     xPiece = find_element(xGrid, "Piece")
 
     # Find or create "nodetype" (PointData or CellData) node.
@@ -255,7 +255,7 @@ end
 
 function vtk_xml_write_header(vtk::DatasetFile)
     xroot = create_root(vtk.xdoc, "VTKFile")
-    set_attribute(xroot, "type", vtk.gridType_str)
+    set_attribute(xroot, "type", vtk.grid_type)
     set_attribute(xroot, "version", "1.0")
     if IS_LITTLE_ENDIAN
         set_attribute(xroot, "byte_order", "LittleEndian")
