@@ -3,6 +3,18 @@
 ZlibCompressStream(buf::IO) =
     ZlibDeflateOutputStream(buf; gzip=false, level=COMPRESSION_LEVEL)
 
+
+"Return the VTK string representation of a numerical data type."
+function datatype_str(T::DataType)
+    # Note: at least for the supported types, the VTK type names are exactly the
+    # same as the Julia type names (e.g.  Float64 -> "Float64"), so that we can
+    # simply use the `string` function.
+    if T ∉ (Float32, Float64, Int32, Int64, UInt8)
+        throw(ArgumentError("Data type not supported: $T"))
+    end
+    return string(T)
+end
+
 function data_to_xml{T<:Real}(
         vtk::DatasetFile, xParent::XMLElement, data::AbstractArray{T},
         varname::AbstractString, Nc::Integer=1)
@@ -38,17 +50,10 @@ function data_to_xml{T<:Real}(
     @assert name(xParent) in ("Points", "PointData", "Coordinates",
                               "Cells", "CellData")
 
-    sType = T === Float32 ? "Float32" :
-            T === Float64 ? "Float64" :
-            T === Int32   ? "Int32"   :
-            T === Int64   ? "Int64"   :
-            T === UInt8   ? "UInt8"   :
-            error("Real subtype not supported: $T")
-
     # DataArray node
     xDA = new_child(xParent, "DataArray")
-    set_attribute(xDA, "type",   sType)
-    set_attribute(xDA, "Name",   varname)
+    set_attribute(xDA, "type", datatype_str(T))
+    set_attribute(xDA, "Name", varname)
     set_attribute(xDA, "format", "appended")
     set_attribute(xDA, "offset", string(buf.position - 1))
     set_attribute(xDA, "NumberOfComponents", string(Nc))
@@ -104,17 +109,10 @@ function data_to_xml_inline{T<:Real}(
 
     const compress = vtk.compressed
 
-    sType = T === Float32 ? "Float32" :
-            T === Float64 ? "Float64" :
-            T === Int32   ? "Int32"   :
-            T === Int64   ? "Int64"   :
-            T === UInt8   ? "UInt8"   :
-            error("Real subtype not supported: $T")
-
     # DataArray node
     xDA = new_child(xParent, "DataArray")
-    set_attribute(xDA, "type",   sType)
-    set_attribute(xDA, "Name",   varname)
+    set_attribute(xDA, "type", datatype_str(T))
+    set_attribute(xDA, "Name", varname)
     set_attribute(xDA, "format", "binary")   # here, binary means base64-encoded
     set_attribute(xDA, "NumberOfComponents", "$Nc")
 
@@ -183,7 +181,9 @@ end
 function vtk_point_data(vtk::DatasetFile, data::AbstractArray, name::AbstractString)
     # Number of components.
     Nc = div(length(data), vtk.Npts)
-    @assert Nc*vtk.Npts == length(data)
+    if Nc * vtk.Npts != length(data)
+        throw(ArgumentError("Incorrect dimensions of input array."))
+    end
     return vtk_point_or_cell_data(vtk, data, name, "PointData", Nc)
 end
 
@@ -191,7 +191,9 @@ end
 function vtk_cell_data(vtk::DatasetFile, data::AbstractArray, name::AbstractString)
     # Number of components.
     Nc = div(length(data), vtk.Ncls)
-    @assert Nc*vtk.Ncls == length(data)
+    if Nc * vtk.Ncls != length(data)
+        throw(ArgumentError("Incorrect dimensions of input array."))
+    end
     return vtk_point_or_cell_data(vtk, data, name, "CellData", Nc)
 end
 
@@ -271,16 +273,12 @@ function extent_attribute(Ni, Nj, Nk, extent::Void=nothing)
 end
 
 function extent_attribute{T<:Integer}(Ni, Nj, Nk, extent::Array{T})
-    length(extent) == 6 || error("extent must have length 6.")
+    length(extent) == 6 || throw(ArgumentError("Extent must have length 6."))
     (extent[2] - extent[1] + 1 == Ni) &&
     (extent[4] - extent[3] + 1 == Nj) &&
     (extent[6] - extent[5] + 1 == Nk) ||
-    error("extent is not consistent with dataset dimensions")
-    ext = string(extent[1])
-    for n = 2:6
-        ext *= " " * string(extent[n])
-    end
-    return ext
+    throw(ArgumentError("Extent is not consistent with dataset dimensions."))
+    return @sprintf("%d %d %d %d %d %d", extent...)
 end
 
 
@@ -291,9 +289,9 @@ end
 # In 2D, they are quadrilaterals (VTK_QUAD), and in 1D they are line segments
 # (VTK_LINE).
 function num_cells_structured(Ni, Nj, Nk)
-    Ncls = 1
+    Ncls = one(Ni)
     for N in (Ni, Nj, Nk)
-        Ncls *= (N == 1) ? 1 : (N - 1)
+        Ncls *= max(1, N - 1)
     end
     return Ncls
 end

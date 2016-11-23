@@ -4,7 +4,13 @@ function vtk_grid{T<:AbstractFloat}(
         compress::Bool=true, append::Bool=true, extent=nothing)
 
     Ncomp, Ni, Nj, Nk = size(xyz)
-    @assert Ncomp == 3  # three components (x, y, z)
+
+    if Ncomp != 3  # three components (x, y, z)
+        msg = "Coordinate array `xyz` has incorrect dimensions.\n" *
+              "Expected dimensions: (3, Ni, Nj, Nk).\n" *
+              "Actual dimensions: $(size(xyz))"
+        throw(ArgumentError(msg))
+    end
 
     xvtk = XMLDocument()
 
@@ -41,10 +47,19 @@ function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString, xy::AbstractArray{T,3};
         compress::Bool=true, append::Bool=true, extent=nothing)
 
-    dim, Ni, Nj = size(xy); Nk = 1
-    dim == 2 || throw(ArgumentError("The size of xy needs to be (2,Ni,Nj)"))
-    xyz = zeros(T,3,Ni,Nj,Nk)
-    xyz[1:2,:,:,1] = xy
+    Ncomp, Ni, Nj = size(xy)
+    if Ncomp != 2
+        msg = "Coordinate array `xy` has incorrect dimensions.\n" *
+              "Expected dimensions: (2, Ni, Nj).\n" *
+              "Actual dimensions: $(size(xy))"
+        throw(ArgumentError(msg))
+    end
+
+    Nk = 1
+    xyz = zeros(T, 3, Ni, Nj, Nk)
+    for j = 1:Nj, i = 1:Ni, n = 1:2
+        xyz[n, i, j, 1] = xy[n, i, j]
+    end
 
     return vtk_grid(filename_noext, xyz,
                     compress=compress, append=append, extent=extent)
@@ -56,7 +71,9 @@ function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         x::AbstractArray{T,3}, y::AbstractArray{T,3}, z::AbstractArray{T,3};
         compress::Bool=true, append::Bool=true, extent=nothing)
-    @assert size(x) == size(y) == size(z)
+    if !(size(x) == size(y) == size(z))
+        throw(ArgumentError("Size of x, y and z arrays must be the same."))
+    end
     Ni, Nj, Nk = size(x)
     xyz = Array(T, 3, Ni, Nj, Nk)
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
@@ -73,7 +90,9 @@ function vtk_grid{T<:AbstractFloat}(
         filename_noext::AbstractString,
         x::AbstractArray{T,2}, y::AbstractArray{T,2};
         compress::Bool=true, append::Bool=true, extent=nothing)
-    @assert size(x) == size(y)
+    if size(x) != size(y)
+        throw(ArgumentError("Size of x and y arrays must be the same."))
+    end
     Ni, Nj = size(x)
     Nk = 1
     xyz = zeros(T, 3, Ni, Nj, Nk)
