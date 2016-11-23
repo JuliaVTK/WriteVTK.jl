@@ -16,40 +16,47 @@ function datatype_str(T::DataType)
 end
 
 
+"""Add numerical data to VTK XML file.
+
+Data is written under the `xParent` XML node.
+
+`Nc` corresponds to the number of components of the data.
+"""
 function data_to_xml(vtk::DatasetFile, xParent::XMLElement, data::AbstractArray,
                      varname::AbstractString, Nc::Integer=1)
+    @assert name(xParent) in ("Points", "PointData", "Coordinates", "Cells",
+                              "CellData")
     func :: Function = vtk.appended ? data_to_xml_appended : data_to_xml_inline
     return func(vtk, xParent, data, varname, Nc) :: XMLElement
 end
 
 
+"""Add appended raw binary data to VTK XML file.
+
+Data is written to the `vtk.buf` buffer.
+
+When `vtk.compressed` is true:
+
+  * the data array is written in compressed form (obviously);
+
+  * the header, written before the actual numerical data, is an array of UInt32
+    values:
+        `[num_blocks, blocksize, last_blocksize, compressed_blocksizes]`
+    All the sizes are in bytes. The header itself is not compressed, only the
+    data is.
+    For more details, see:
+        http://public.kitware.com/pipermail/paraview/2005-April/001391.html
+        http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats
+    (This is not really documented in the VTK specification...)
+
+Otherwise, if compression is disabled, the header is just a single UInt32 value
+containing the size of the data array in bytes.
+
+"""
 function data_to_xml_appended{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
                                        data::AbstractArray{T},
                                        varname::AbstractString, Nc::Integer)
-    #==========================================================================
-    This variant of data_to_xml should be used when writing appended data.
-      * buf is the buffer where the appended data is written.
-      * xParent is the XML node under which the DataArray node will be created.
-        It is either a "Points" or a "PointData" node.
-
-    When vtk.compressed == true:
-      * the data array is written in compressed form (obviously);
-      * the header, written before the actual numerical data, is an array of
-        UInt32 values:
-            [num_blocks, blocksize, last_blocksize, compressed_blocksizes]
-        All the sizes are in bytes. The header itself is not compressed, only
-        the data is.
-        See also:
-            http://public.kitware.com/pipermail/paraview/2005-April/001391.html
-            http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats
-
-    Otherwise, the header is just a single UInt32 value containing the size of
-    the data array in bytes.
-    ==========================================================================#
-
     @assert vtk.appended
-    @assert name(xParent) in ("Points", "PointData", "Coordinates",
-                              "Cells", "CellData")
 
     const buf = vtk.buf    # append buffer
     const compress = vtk.compressed
@@ -97,20 +104,11 @@ function data_to_xml_appended{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
 end
 
 
+"Add inline, base64-encoded data to VTK XML file."
 function data_to_xml_inline{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
                                      data::AbstractArray{T},
                                      varname::AbstractString, Nc::Integer)
-    #==========================================================================
-    This variant of data_to_xml should be used when writing data "inline" into
-    the XML file (not appended at the end).
-
-    See the other variant of this function for more info.
-    ==========================================================================#
-
     @assert !vtk.appended
-    @assert name(xParent) in ("Points", "PointData", "Coordinates",
-                              "Cells", "CellData")
-
     const compress = vtk.compressed
 
     # DataArray node
@@ -161,11 +159,13 @@ function data_to_xml_inline{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
 end
 
 
+"""Add either point or cell data to VTK file.
+
+Here `Nc` is the number of components of the data (Nc >= 1).
+"""
 function vtk_point_or_cell_data(vtk::DatasetFile, data::AbstractArray,
                                 name::AbstractString, nodetype::AbstractString,
                                 Nc::Integer)
-    # Nc: number of components (Nc >= 1)
-
     # Find Piece node.
     xroot = root(vtk.xdoc)
     xGrid = find_element(xroot, vtk.gridType_str)
@@ -216,14 +216,13 @@ function vtk_save(vtk::DatasetFile)
 end
 
 
-function save_with_appended_data(vtk::DatasetFile)
-    ## if vtk.appended:
-    # Write XML file manually, including appended data.
+"""Write VTK XML file containing appended binary data to disk.
 
-    # NOTE: this is not very clean, but I can't write raw binary data with the
-    # LightXML package.
-    # Using raw data is way more efficient than base64 encoding in terms of
-    # filesize AND time (especially time).
+In this case, the XML file is written manually instead of using the `save_file`
+function of `LightXML`, which doesn't allow to write raw binary data.
+"""
+function save_with_appended_data(vtk::DatasetFile)
+    @assert vtk.appended
 
     # Convert XML document to a string, and split it by lines.
     lines = split(string(vtk.xdoc), '\n')
@@ -271,8 +270,10 @@ function vtk_xml_write_header(vtk::DatasetFile)
 end
 
 
-# Returns the "extent" attribute required for structured (including rectilinear)
-# grids.
+"""
+Return the "extent" attribute required for structured (including rectilinear)
+grids.
+"""
 function extent_attribute(Ni, Nj, Nk, extent::Void=nothing)
     return @sprintf("%d %d %d %d %d %d", 0, Ni-1, 0, Nj-1, 0, Nk-1)
 end
@@ -287,12 +288,13 @@ function extent_attribute{T<:Integer}(Ni, Nj, Nk, extent::Array{T})
 end
 
 
-# Number of cells in structured grids (includes structured and rectilinear
-# VTK files).
-# In 3D, all cells are hexahedrons (i.e. VTK_HEXAHEDRON), and the number of
-# cells is (Ni-1)*(Nj-1)*(Nk-1).
-# In 2D, they are quadrilaterals (VTK_QUAD), and in 1D they are line segments
-# (VTK_LINE).
+"""Number of cells in structured grids.
+
+In 3D, all cells are hexahedrons (i.e. VTK_HEXAHEDRON), and the number of
+cells is (Ni-1)*(Nj-1)*(Nk-1). In 2D, they are quadrilaterals (VTK_QUAD), and in
+1D they are line segments (VTK_LINE).
+
+"""
 function num_cells_structured(Ni, Nj, Nk)
     Ncls = one(Ni)
     for N in (Ni, Nj, Nk)
