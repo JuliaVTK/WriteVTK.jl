@@ -203,17 +203,20 @@ end
 
 
 function vtk_save(vtk::DatasetFile)
-    outfiles = [vtk.path]::Vector{UTF8String}
-    if !isopen(vtk)
-        return outfiles
-    end
-
-    if !vtk.appended
-        save_file(vtk.xdoc, vtk.path)
+    if isopen(vtk)
+        if vtk.appended
+            save_with_appended_data(vtk)
+        else
+            save_file(vtk.xdoc, vtk.path)
+        end
+        @assert isopen(vtk)
         close(vtk)
-        return outfiles
     end
+    return [vtk.path] :: Vector{UTF8String}
+end
 
+
+function save_with_appended_data(vtk::DatasetFile)
     ## if vtk.appended:
     # Write XML file manually, including appended data.
 
@@ -229,27 +232,25 @@ function vtk_save(vtk::DatasetFile)
     @assert lines[end-1] == "</VTKFile>"
     @assert lines[end] == ""
 
-    io = open(vtk.path, "w")
+    open(vtk.path, "w") do io
+        # Write everything but the last two lines.
+        for line in lines[1:end-2]
+            write(io, line)
+            write(io, "\n")
+        end
 
-    # Write everything but the last two lines.
-    for line in lines[1:end-2]
-        write(io, line)
-        write(io, "\n")
+        # Write raw data (contents of buffer vtk.buf).
+        # An underscore "_" is needed before writing appended data.
+        write(io, "  <AppendedData encoding=\"raw\">")
+        write(io, "\n_")
+        write(io, takebuf_string(vtk.buf))
+        write(io, "\n  </AppendedData>")
+        write(io, "\n</VTKFile>")
+
+        close(vtk.buf)
     end
 
-    # Write raw data (contents of buffer vtk.buf).
-    # An underscore "_" is needed before writing appended data.
-    write(io, "  <AppendedData encoding=\"raw\">")
-    write(io, "\n_")
-    write(io, takebuf_string(vtk.buf))
-    write(io, "\n  </AppendedData>")
-    write(io, "\n</VTKFile>")
-
-    close(vtk.buf)
-    close(vtk)
-    close(io)
-
-    return outfiles
+    return
 end
 
 
