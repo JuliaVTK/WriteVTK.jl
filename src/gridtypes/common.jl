@@ -16,6 +16,15 @@ function datatype_str(T::DataType)
 end
 
 
+"Write array of numerical data to stream."
+function write_array(io, data::AbstractArray)
+    for val in data
+        write(io, val)
+    end
+    nothing
+end
+
+
 """Add numerical data to VTK XML file.
 
 Data is written under the `xParent` XML node.
@@ -53,13 +62,14 @@ Otherwise, if compression is disabled, the header is just a single UInt32 value
 containing the size of the data array in bytes.
 
 """
-function data_to_xml_appended{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
-                                       data::AbstractArray{T},
-                                       varname::AbstractString, Nc::Integer)
+function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
+                              data::AbstractArray, varname::AbstractString,
+                              Nc::Integer)
     @assert vtk.appended
 
     const buf = vtk.buf    # append buffer
     const compress = vtk.compressed
+    const T = eltype(data)
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
@@ -81,9 +91,7 @@ function data_to_xml_appended{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
 
         # Write compressed data.
         zWriter = ZlibCompressStream(buf)
-        for val in data
-            write(zWriter, val)
-        end
+        write_array(zWriter, data)
         flush(zWriter)
 
         # Go back to `initpos` and write real header.
@@ -94,10 +102,8 @@ function data_to_xml_appended{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
         write(buf, header)
         buf.position = endpos
     else
-        write(buf, UInt32(nb))       # header (uncompressed version)
-        for val in data
-            write(buf, val)
-        end
+        write(buf, UInt32(nb))  # header (uncompressed version)
+        write_array(buf, data)
     end
 
     return xDA::XMLElement
@@ -105,11 +111,12 @@ end
 
 
 "Add inline, base64-encoded data to VTK XML file."
-function data_to_xml_inline{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
-                                     data::AbstractArray{T},
-                                     varname::AbstractString, Nc::Integer)
+function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
+                            data::AbstractArray, varname::AbstractString,
+                            Nc::Integer)
     @assert !vtk.appended
     const compress = vtk.compressed
+    const T = eltype(data)
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
@@ -132,14 +139,10 @@ function data_to_xml_inline{T<:Real}(vtk::DatasetFile, xParent::XMLElement,
     if compress
         # Write compressed data.
         zWriter = ZlibCompressStream(buf)
-        for val in data
-            write(zWriter, val)
-        end
+        write_array(zWriter, data)
         flush(zWriter)
     else
-        for val in data
-            write(buf, val)
-        end
+        write_array(buf, data)
     end
 
     # Write buffer with data to XML document.
