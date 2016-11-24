@@ -149,9 +149,9 @@ function main()
             # Initialise new vtu file (unstructured grid).
             vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", pts, cells)
 
-            # NOTE
-            # This is also accepted (but less efficient):
-            # vtk = vtk_grid(vtk_filename_noext, pts[1, :], pts[2, :], pts[3, :], cells)
+            # This is also accepted in 3D:
+            # vtk = vtk_grid(vtk_filename_noext, pts[1, :], pts[2, :], pts[3, :],
+            #                cells)
 
             # Add some point and cell data.
             vtk_point_data(vtk, pdata, "my_point_data")

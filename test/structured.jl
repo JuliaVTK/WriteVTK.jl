@@ -73,8 +73,9 @@ function main()
             vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", xyz; extent=ext)
 
             # This is also accepted:
-            # vtk = vtk_grid(vtk_filename_noext, xyz[1, :], xyz[2, :]) # For 2D
-            # vtk = vtk_grid(vtk_filename_noext, xyz[1, :], xyz[2, :], xyz[3, :]) # For 3D
+            # vtk = vtk_grid(vtk_filename_noext, xyz[1,:,:], xyz[2,:,:]) # For 2D
+            # vtk = vtk_grid(vtk_filename_noext,
+            #                xyz[1,:,:,:], xyz[2,:,:,:], xyz[3,:,:,:])   # For 3D
 
             # Add data.
             vtk_point_data(vtk, psub, "p_values")

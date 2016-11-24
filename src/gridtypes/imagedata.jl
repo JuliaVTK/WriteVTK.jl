@@ -1,19 +1,13 @@
-# TODO
-# - Document extent option.
-
-# extent should be a vector of integers of length 6.
-function vtk_grid(
-        filename_noext::AbstractString,
-        Nx::Integer, Ny::Integer, Nz::Integer;
-        origin=[0.0, 0.0, 0.0], spacing=[1.0, 1.0, 1.0],
-        compress::Bool=true, append::Bool=true, extent=nothing)
-    xvtk = XMLDocument()
-
+function vtk_grid(filename_noext::AbstractString,
+                  Nx::Integer, Ny::Integer, Nz::Integer;
+                  origin::AbstractArray=[0.0, 0.0, 0.0],
+                  spacing::AbstractArray=[1.0, 1.0, 1.0],
+                  compress::Bool=true, append::Bool=true, extent=nothing)
     Npts = Nx*Ny*Nz
     Ncls = (Nx - 1) * (Ny - 1) * (Nz - 1)
-
     ext = extent_attribute(Nx, Ny, Nz, extent)
 
+    xvtk = XMLDocument()
     vtk = DatasetFile(xvtk, filename_noext*".vti", "ImageData",
                       Npts, Ncls, compress, append)
 
@@ -24,8 +18,14 @@ function vtk_grid(
     xGrid = new_child(xroot, vtk.grid_type)
     set_attribute(xGrid, "WholeExtent", ext)
 
-    origin_str = string(origin[1], " ", origin[2], " ", origin[3])
-    spacing_str = string(spacing[1], " ", spacing[2], " ", spacing[3])
+    if length(origin) != 3
+        throw(ArgumentError("origin array must have length 3"))
+    elseif length(spacing) != 3
+        throw(ArgumentError("spacing array must have length 3"))
+    end
+
+    origin_str = join(origin, " ")
+    spacing_str = join(spacing, " ")
     set_attribute(xGrid, "Origin", origin_str)
     set_attribute(xGrid, "Spacing", spacing_str)
 
