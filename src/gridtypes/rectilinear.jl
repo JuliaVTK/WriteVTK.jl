@@ -1,19 +1,13 @@
-# TODO
-# - Document extent option.
-
-# extent should be a vector of integers of length 6.
-function vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString,
-        x::AbstractVector{T}, y::AbstractVector{T}, z::AbstractVector{T};
-        compress::Bool=true, append::Bool=true, extent=nothing)
-    xvtk = XMLDocument()
-
+function rectilinear_grid(filename_noext::AbstractString, x::AbstractVector,
+                          y::AbstractVector, z::AbstractVector;
+                          compress::Bool=true, append::Bool=true,
+                          extent=nothing)
     Ni, Nj, Nk = length(x), length(y), length(z)
     Npts = Ni*Nj*Nk
     Ncls = num_cells_structured(Ni, Nj, Nk)
-
     ext = extent_attribute(Ni, Nj, Nk, extent)
 
+    xvtk = XMLDocument()
     vtk = DatasetFile(xvtk, filename_noext*".vtr", "RectilinearGrid",
                       Npts, Ncls, compress, append)
 
@@ -39,9 +33,12 @@ function vtk_grid{T<:AbstractFloat}(
     return vtk::DatasetFile
 end
 
-# 2D version
-vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString,
-        x::AbstractVector{T}, y::AbstractVector{T};
-        compress::Bool=true, append::Bool=true, extent=nothing) =
-    vtk_grid(filename_noext, x, y, zeros(T,1), compress=compress, append=append, extent=extent)
+# 3D variant
+vtk_grid{T}(filename_noext::AbstractString, x::AbstractVector{T},
+            y::AbstractVector{T}, z::AbstractVector{T}; kwargs...) =
+    rectilinear_grid(filename_noext, x, y, z; kwargs...)
+
+# 2D variant
+vtk_grid{T}(filename_noext::AbstractString, x::AbstractVector{T},
+            y::AbstractVector{T}; kwargs...) =
+    rectilinear_grid(filename_noext, x, y, zeros(T, 1); kwargs...)

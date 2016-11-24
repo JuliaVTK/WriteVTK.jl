@@ -1,32 +1,11 @@
-# Variant of vtk_grid with 2-D array "points".
-# Size: (dim, num_points)
-function vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString,
-        points::AbstractArray{T,2}, cells::Vector{MeshCell};
-        compress::Bool=true, append::Bool=true)
-
-    xvtk = XMLDocument()
-
-    dim, Npts = size(points)
-
-    # Reshape to 3D (if its not already)
-    if dim == 1
-        _points = zeros(T, 3, Npts)
-        _points[1, :] = points
-    elseif dim == 2
-        _points = zeros(T, 3, Npts)
-        _points[1:2, :] = points
-    elseif dim == 3
-        _points = points
-    else
-        msg = string("`points` array must be of size (dim, Npts), ",
-                     "where dim = 1, 2 or 3 and `Npts` the number of points.\n",
-                     "Actual size of input: $(size(points))")
-        throw(ArgumentError(msg))
-    end
-
+function unstructured_grid(filename_noext::AbstractString, points::AbstractArray,
+                           cells::Vector{MeshCell};
+                           compress::Bool=true, append::Bool=true)
+    @assert size(points, 1) == 3
+    Npts = prod(size(points)[2:end])
     Ncls = length(cells)
 
+    xvtk = XMLDocument()
     vtk = DatasetFile(xvtk, filename_noext*".vtu", "UnstructuredGrid",
                       Npts, Ncls, compress, append)
 
@@ -45,7 +24,7 @@ function vtk_grid{T<:AbstractFloat}(
     xPoints = new_child(xPiece, "Points")
 
     # DataArray node
-    data_to_xml(vtk, xPoints, _points, "Points", 3)
+    data_to_xml(vtk, xPoints, points, "Points", 3)
 
     # Cells node (below the Piece node)
     xCells = new_child(xPiece, "Cells")
@@ -81,20 +60,41 @@ function vtk_grid{T<:AbstractFloat}(
     end
 
     # Add arrays to the XML file (DataArray nodes).
-    data_to_xml(vtk, xCells, conn,    "connectivity")
-    data_to_xml(vtk, xCells, offsets, "offsets"     )
-    data_to_xml(vtk, xCells, types,   "types"       )
+    data_to_xml(vtk, xCells, conn, "connectivity")
+    data_to_xml(vtk, xCells, offsets, "offsets")
+    data_to_xml(vtk, xCells, types, "types")
 
     return vtk::DatasetFile
 end
 
+# Variant of vtk_grid with 2-D array "points".
+#   size(points) = (dim, num_points), with dim ∈ {1, 2, 3}
+function vtk_grid{T}(filename_noext::AbstractString, points::AbstractArray{T,2},
+                     cells::Vector{MeshCell}; kwargs...)
+    dim, Npts = size(points)
+    if dim == 3
+        return unstructured_grid(filename_noext, points, cells; kwargs...)
+    end
+    # Reshape to 3D
+    _points = zeros(T, 3, Npts)
+    if dim == 1
+        _points[1, :] = points
+    elseif dim == 2
+        _points[1:2, :] = points
+    else
+        msg = string("`points` array must be of size (dim, Npts), ",
+                     "where dim = 1, 2 or 3 and `Npts` the number of points.\n",
+                     "Actual size of input: $(size(points))")
+        throw(ArgumentError(msg))
+    end
+    return unstructured_grid(filename_noext, _points, cells; kwargs...)
+end
+
 # Variant of vtk_grid with 1-D arrays x, y, z.
 # Size of each array: (num_points)
-function vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString,
-        x::AbstractVector{T}, y::AbstractVector{T}, z::AbstractVector{T},
-        cells::Vector{MeshCell};
-        compress::Bool=true, append::Bool=true)
+function vtk_grid{T}(filename_noext::AbstractString, x::AbstractVector{T},
+                     y::AbstractVector{T}, z::AbstractVector{T},
+                     cells::Vector{MeshCell}; kwargs...)
     if !(length(x) == length(y) == length(z))
         throw(ArgumentError("Length of x, y and z arrays must be the same."))
     end
@@ -105,36 +105,24 @@ function vtk_grid{T<:AbstractFloat}(
         points[2, n] = y[n]
         points[3, n] = z[n]
     end
-    return vtk_grid(filename_noext, points, cells;
-                    compress=compress, append=append)::DatasetFile
+    return unstructured_grid(filename_noext, points, cells; kwargs...)
 end
 
 # 2D version
-vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString,
-        x::AbstractVector{T}, y::AbstractVector{T},
-        cells::Vector{MeshCell};
-        compress::Bool=true, append::Bool=true) =
-    vtk_grid(filename_noext, x, y, zero(x), cells, compress=compress,
-             append=append)
+vtk_grid{T}(filename_noext::AbstractString, x::AbstractVector{T},
+            y::AbstractVector{T}, cells::Vector{MeshCell}; kwargs...) =
+    vtk_grid(filename_noext, x, y, zero(x), cells; kwargs...)
 
 # 1D version
-vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString,
-        x::AbstractVector{T},
-        cells::Vector{MeshCell};
-        compress::Bool=true, append::Bool=true) =
-    vtk_grid(filename_noext, x, zero(x), zero(x), cells, compress=compress,
-             append=append)
+vtk_grid{T}(filename_noext::AbstractString, x::AbstractVector{T},
+            cells::Vector{MeshCell}; kwargs...) =
+    vtk_grid(filename_noext, x, zero(x), zero(x), cells; kwargs...)
 
-# Variant with 4-D Array
-function vtk_grid{T<:AbstractFloat}(
-        filename_noext::AbstractString,
-        points::AbstractArray{T,4}, cells::Vector{MeshCell};
-        compress::Bool=true, append::Bool=true)
-
+# Variant with 4-D Array (for "pseudo-unstructured" datasets, i.e., those that
+# actually have a 3D structure) -- maybe this variant should be removed...
+function vtk_grid{T}(filename_noext::AbstractString, points::AbstractArray{T,4},
+                     cells::Vector{MeshCell}; kwargs...)
     dim, Ni, Nj, Nk = size(points)
-
-    return vtk_grid(filename_noext, reshape(points,(dim,Ni*Nj*Nk)), cells,
-                    compress=compress, append=append)
+    points_r = reshape(points, (dim, Ni*Nj*Nk))
+    return unstructured_grid(filename_noext, points_r, cells; kwargs...)
 end
