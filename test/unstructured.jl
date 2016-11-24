@@ -7,15 +7,12 @@ import Compat.UTF8String
 typealias FloatType Float32
 const vtk_filename_noext = "unstructured"
 
-# Like sub2ind, but specifically for 3D arrays.
-mysub2ind(dims, i, j, k) = i + dims[1]*(j-1) + dims[1]*dims[2]*(k-1)
-
 # 3D mesh
 function mesh_data(::Val{3})
     # This is basically a structured grid, but defined as an unstructured one.
     # Based on the structured.jl example.
     const Ni, Nj, Nk = 40, 50, 20
-    const dims = [Ni, Nj, Nk]
+    const dims = (Ni, Nj, Nk)
     const Npts = prod(dims)
 
     # Create points and point data.
@@ -39,14 +36,14 @@ function mesh_data(::Val{3})
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
         inds = Array(Int32, 8)
-        inds[1] = mysub2ind(dims, i-1, j-1, k-1)
-        inds[2] = mysub2ind(dims, i  , j-1, k-1)
-        inds[3] = mysub2ind(dims, i  , j  , k-1)
-        inds[4] = mysub2ind(dims, i-1, j  , k-1)
-        inds[5] = mysub2ind(dims, i-1, j-1, k  )
-        inds[6] = mysub2ind(dims, i  , j-1, k  )
-        inds[7] = mysub2ind(dims, i  , j  , k  )
-        inds[8] = mysub2ind(dims, i-1, j  , k  )
+        inds[1] = sub2ind(dims, i-1, j-1, k-1)
+        inds[2] = sub2ind(dims, i  , j-1, k-1)
+        inds[3] = sub2ind(dims, i  , j  , k-1)
+        inds[4] = sub2ind(dims, i-1, j  , k-1)
+        inds[5] = sub2ind(dims, i-1, j-1, k  )
+        inds[6] = sub2ind(dims, i  , j-1, k  )
+        inds[7] = sub2ind(dims, i  , j  , k  )
+        inds[8] = sub2ind(dims, i-1, j  , k  )
 
         # Define cell.
         c = MeshCell(celltype, inds)
