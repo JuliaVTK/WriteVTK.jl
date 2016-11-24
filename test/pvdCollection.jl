@@ -43,17 +43,16 @@ function main()
     ext = [0, Ni-1, 0, Nj-1, 0, Nk-1] + 42
 
     # Initialise pvd container file
-    outfiles = paraview_collection(vtk_filename_noext) do pvd
+    @time outfiles = paraview_collection(vtk_filename_noext) do pvd
         # Create files for each time-step and add them to the collection
-        vtk = []
         for it = 0:Nt-1
             vtk = vtk_grid(@sprintf("%s_%02i", vtk_filename_noext, it), x, y, z;
                            extent=ext)
             # Add data for current time-step
-            vtk_point_data(vtk, p[:,:,:,it+1], "p_values")
-            vtk_point_data(vtk, q[:,:,:,it+1], "q_values")
-            vtk_point_data(vtk, vec[:,:,:,:,it+1], "myVector")
-            vtk_cell_data(vtk, cdata[:,:,:,it+1], "myCellData")
+            vtk_point_data(vtk, view(p, :, :, :, it+1), "p_values")
+            vtk_point_data(vtk, view(q, :, :, :, it+1), "q_values")
+            vtk_point_data(vtk, view(vec, :, :, :, :, it+1), "myVector")
+            vtk_cell_data(vtk, view(cdata, :, :, :, it+1), "myCellData")
             vtk_save(vtk)
             collection_add_timestep(pvd, vtk, Float64(it+1))
         end

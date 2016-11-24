@@ -58,21 +58,24 @@ function main()
         ext = [0, Ni-1, 0, Nj-1, 0, Nk-1] + 42
 
         # Initialise new vtr file (rectilinear grid).
-        local vtk
-        if dim == 2
-            vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", x, y   ; extent=ext)
-        elseif dim == 3
-            vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", x, y, z; extent=ext)
+        @time begin
+            local vtk
+            if dim == 2
+                vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", x, y; extent=ext)
+            elseif dim == 3
+                vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", x, y, z;
+                               extent=ext)
+            end
+
+            # Add data.
+            vtk_point_data(vtk, p, "p_values")
+            vtk_point_data(vtk, q, "q_values")
+            vtk_point_data(vtk, vec, "myVector")
+            vtk_cell_data(vtk, cdata, "myCellData")
+
+            # Save and close vtk file.
+            append!(outfiles, vtk_save(vtk))
         end
-
-        # Add data.
-        vtk_point_data(vtk, p, "p_values")
-        vtk_point_data(vtk, q, "q_values")
-        vtk_point_data(vtk, vec, "myVector")
-        vtk_cell_data(vtk, cdata, "myCellData")
-
-        # Save and close vtk file.
-        append!(outfiles, vtk_save(vtk))
 
     end # dim loop
 

@@ -68,21 +68,23 @@ function main()
         # Test extents (this is optional!!)
         ext = [0, Ni-1, 0, Nj-1, 0, Nk-1]
 
-        # Initialise new vts file (structured grid).
-        vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", xyz; extent=ext)
+        @time begin
+            # Initialise new vts file (structured grid).
+            vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", xyz; extent=ext)
 
-        # This is also accepted:
-        # vtk = vtk_grid(vtk_filename_noext, xyz[1, :], xyz[2, :]) # For 2D
-        # vtk = vtk_grid(vtk_filename_noext, xyz[1, :], xyz[2, :], xyz[3, :]) # For 3D
+            # This is also accepted:
+            # vtk = vtk_grid(vtk_filename_noext, xyz[1, :], xyz[2, :]) # For 2D
+            # vtk = vtk_grid(vtk_filename_noext, xyz[1, :], xyz[2, :], xyz[3, :]) # For 3D
 
-        # Add data.
-        vtk_point_data(vtk, psub, "p_values")
-        vtk_point_data(vtk, q, "q_values")
-        vtk_point_data(vtk, vec, "myVector")
-        vtk_cell_data(vtk, cdata, "myCellData")
+            # Add data.
+            vtk_point_data(vtk, psub, "p_values")
+            vtk_point_data(vtk, q, "q_values")
+            vtk_point_data(vtk, vec, "myVector")
+            vtk_cell_data(vtk, cdata, "myCellData")
 
-        # Save and close vtk file.
-        append!(outfiles, vtk_save(vtk))
+            # Save and close vtk file.
+            append!(outfiles, vtk_save(vtk))
+        end
     end # dim loop
 
     println("Saved:  ", join(outfiles, "  "))

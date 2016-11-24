@@ -24,7 +24,7 @@ end
 # Run the test scripts.
 for test in tests
     println("TEST (first run): " * test)
-    @time outfiles = evalfile(test)::Vector{UTF8String}
+    outfiles = evalfile(test)::Vector{UTF8String}
 
     # Check that the generated files match the stored checksums.
     for file in outfiles
@@ -48,7 +48,7 @@ println("="^60 * "\n")
 # functions have already been compiled.
 for test in tests
     println("TEST (second run): " * test)
-    @time outfiles = evalfile(test)::Vector{UTF8String}
+    outfiles = evalfile(test)::Vector{UTF8String}
     println()
 end
 

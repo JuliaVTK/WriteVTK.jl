@@ -145,19 +145,21 @@ function main()
     for dim in 1:3
         pts, cells, pdata, cdata = mesh_data(Val{dim}())
 
-        # Initialise new vtu file (unstructured grid).
-        vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", pts, cells)
+        @time begin
+            # Initialise new vtu file (unstructured grid).
+            vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", pts, cells)
 
-        # NOTE
-        # This is also accepted (but less efficient):
-        # vtk = vtk_grid(vtk_filename_noext, pts[1, :], pts[2, :], pts[3, :], cells)
+            # NOTE
+            # This is also accepted (but less efficient):
+            # vtk = vtk_grid(vtk_filename_noext, pts[1, :], pts[2, :], pts[3, :], cells)
 
-        # Add some point and cell data.
-        vtk_point_data(vtk, pdata, "my_point_data")
-        vtk_cell_data(vtk, cdata, "my_cell_data")
+            # Add some point and cell data.
+            vtk_point_data(vtk, pdata, "my_point_data")
+            vtk_cell_data(vtk, cdata, "my_cell_data")
 
-        # Save and close vtk file.
-        append!(outfiles, vtk_save(vtk))
+            # Save and close vtk file.
+            append!(outfiles, vtk_save(vtk))
+        end
     end
 
     println("Saved:  ", join(outfiles, "  "))

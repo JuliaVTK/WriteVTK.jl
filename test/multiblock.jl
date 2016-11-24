@@ -98,23 +98,25 @@ function third_block_data()
 end
 
 function main()
-    # Initialise multiblock file.
-    outfiles = vtk_multiblock(vtm_filename_noext) do vtm
-        # Create first block.
-        x, y, z, q = first_block_data()
-        vtk = vtk_grid(vtm, x, y, z; compress=false, append=false)
-        vtk_point_data(vtk, q, "q_values")
+    # Generate data.
+    x1, y1, z1, q1 = first_block_data()
+    x2, y2, z2, q2 = second_block_data()
+    points3, cells3, q3, c3 = third_block_data()
 
-        # Create second block.
-        x, y, z, q = second_block_data()
-        vtk = vtk_grid(vtm, x, y, z; compress=false)
-        vtk_point_data(vtk, q, "q_values")
+    # Create multiblock file.
+    @time outfiles = vtk_multiblock(vtm_filename_noext) do vtm
+        # First block.
+        vtk = vtk_grid(vtm, x1, y1, z1; compress=false, append=false)
+        vtk_point_data(vtk, q1, "q_values")
 
-        # Create third block.
-        points, cells, q, c = third_block_data()
-        vtk = vtk_grid(vtm, points, cells; append=false)
-        vtk_point_data(vtk, q, "q_values")
-        vtk_cell_data(vtk, c, "c_values")
+        # Second block.
+        vtk = vtk_grid(vtm, x2, y2, z2; compress=false)
+        vtk_point_data(vtk, q2, "q_values")
+
+        # Third block.
+        vtk = vtk_grid(vtm, points3, cells3; append=false)
+        vtk_point_data(vtk, q3, "q_values")
+        vtk_cell_data(vtk, c3, "c_values")
     end
     println("Saved:  ", join(outfiles, "  "))
 
