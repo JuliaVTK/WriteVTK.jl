@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 
 using WriteVTK
-import Compat.UTF8String
+using Compat: UTF8String, view
 typealias FloatType Float32
 const vtk_filename_noext = "collection"
 
