@@ -17,10 +17,8 @@ end
 
 
 "Write array of numerical data to stream."
-function write_array(io, data::AbstractArray)
-    for val in data
-        write(io, val)
-    end
+@inline function write_array(io, data::AbstractArray)
+    write(io, data)
     nothing
 end
 
