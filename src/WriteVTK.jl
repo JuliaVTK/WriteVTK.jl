@@ -13,7 +13,7 @@ export vtk_multiblock
 export paraview_collection, collection_add_timestep
 
 using LightXML
-using BufferedStreams: BufferedOutputStream, EmptyStreamSource
+using BufferedStreams: BufferedOutputStream, EmptyStream
 using Libz: ZlibDeflateOutputStream
 import Compat.UTF8String
 
@@ -35,7 +35,7 @@ const IS_LITTLE_ENDIAN = (ENDIAN_BOM == 0x04030201)  # see the documentation for
 ## Types ##
 abstract VTKFile
 
-typealias DataBuffer BufferedOutputStream{EmptyStreamSource}
+typealias DataBuffer BufferedOutputStream{EmptyStream}
 
 immutable DatasetFile <: VTKFile
     xdoc::XMLDocument
