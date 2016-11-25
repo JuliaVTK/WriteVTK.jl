@@ -48,7 +48,7 @@ immutable DatasetFile <: VTKFile
     buf::DataBuffer     # Buffer with appended data.
     function DatasetFile(xdoc, path, grid_type, Npts, Ncls,
                          compressed, appended)
-        buf = BufferedOutputStream() :: DataBuffer
+        buf = BufferedOutputStream(EmptyStream())
         if !appended  # in this case we don't need a buffer
             close(buf)
         end
