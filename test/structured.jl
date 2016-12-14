@@ -17,7 +17,6 @@ function main()
             Ni, Nj, Nk = 20, 30, 40
         end
 
-        local xyz
         if dim == 2
             xyz = zeros(FloatType, 2, Ni, Nj)
             for j = 1:Nj, i = 1:Ni
@@ -52,7 +51,6 @@ function main()
         # Create some scalar data at grid cells.
         # Note that in structured grids, the cells are the hexahedra (3D) or quads (2D)
         # formed between grid points.
-        local cdata
         if dim == 2
             cdata = zeros(FloatType, Ni-1, Nj-1)
             for j = 1:Nj-1, i = 1:Ni-1
@@ -68,14 +66,25 @@ function main()
         # Test extents (this is optional!!)
         ext = [0, Ni-1, 0, Nj-1, 0, Nk-1]
 
+        if dim == 3
+            # This is not required. It's done to test the generation of
+            # structured grids using 3 separate x, y, z arrays.
+            x = xyz[1, :, :, :]
+            y = xyz[2, :, :, :]
+            z = xyz[3, :, :, :]
+        end
+
         @time begin
             # Initialise new vts file (structured grid).
-            vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", xyz; extent=ext)
+            fname = "$(vtk_filename_noext)_$(dim)D"
 
-            # This is also accepted:
-            # vtk = vtk_grid(vtk_filename_noext, xyz[1,:,:], xyz[2,:,:]) # For 2D
-            # vtk = vtk_grid(vtk_filename_noext,
-            #                xyz[1,:,:,:], xyz[2,:,:,:], xyz[3,:,:,:])   # For 3D
+            if dim == 3
+                vtk = vtk_grid(fname, x, y, z; extent=ext)
+                # Equivalent (and more efficient!):
+                # vtk = vtk_grid(fname, xyz; extent=ext)
+            else
+                vtk = vtk_grid(fname, xyz; extent=ext)
+            end
 
             # Add data.
             vtk_point_data(vtk, psub, "p_values")
