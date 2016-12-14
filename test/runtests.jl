@@ -15,12 +15,15 @@ const tests = ["multiblock.jl",
 # Only toggle to generate new checksums, if new tests are added.
 const OVERWRITE_CHECKSUMS = false
 const checksums_file = "checksums.sha1"
-
 const checksum_list = readstring(checksums_file)
 
 if OVERWRITE_CHECKSUMS
     csio = open(checksums_file, "w")
 end
+
+const EXECDIR = "output"
+mkpath(EXECDIR)
+cd(EXECDIR)
 
 # Run the test scripts.
 for test in tests
