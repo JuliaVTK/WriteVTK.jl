@@ -72,6 +72,11 @@ function main()
             x = xyz[1, :, :, :]
             y = xyz[2, :, :, :]
             z = xyz[3, :, :, :]
+            if VERSION < v"0.5-"
+                x = squeeze(x, 1)
+                y = squeeze(y, 1)
+                z = squeeze(z, 1)
+            end
         end
 
         @time begin
