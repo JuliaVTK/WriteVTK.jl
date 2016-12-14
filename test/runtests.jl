@@ -3,19 +3,20 @@
 using WriteVTK
 using Base.Test
 import Compat: UTF8String, readstring
+using SHA: sha1
 
-tests = ["multiblock.jl",
-         "rectilinear.jl",
-         "imagedata.jl",
-         "structured.jl",
-         "unstructured.jl",
-         "pvdCollection.jl"]
+const tests = ["multiblock.jl",
+               "rectilinear.jl",
+               "imagedata.jl",
+               "structured.jl",
+               "unstructured.jl",
+               "pvdCollection.jl"]
 
 # Only toggle to generate new checksums, if new tests are added.
-OVERWRITE_CHECKSUMS = false
-checksums_file = "checksums.sha1"
+const OVERWRITE_CHECKSUMS = false
+const checksums_file = "checksums.sha1"
 
-checksum_list = readstring(checksums_file)
+const checksum_list = readstring(checksums_file)
 
 if OVERWRITE_CHECKSUMS
     csio = open(checksums_file, "w")
@@ -23,17 +24,17 @@ end
 
 # Run the test scripts.
 for test in tests
-    println("TEST (first run): " * test)
+    println("TEST (first run): ", test)
     outfiles = evalfile(test)::Vector{UTF8String}
 
     # Check that the generated files match the stored checksums.
     for file in outfiles
-        sha = readstring(`sha1sum $file`)
+        sha_str = bytes2hex(open(sha1, file)) * "  $file\n"
         if OVERWRITE_CHECKSUMS
-            write(csio, sha)
+            write(csio, sha_str)
         else
             # Returns 0:-1 if string is not found.
-            cmp = search(checksum_list, sha)
+            cmp = search(checksum_list, sha_str)
             @test cmp != 0:-1
         end
     end
@@ -42,12 +43,12 @@ end
 
 OVERWRITE_CHECKSUMS && close(csio)
 
-println("="^60 * "\n")
+println("="^60, "\n")
 
 # Run the tests again, just to measure the time and allocations once all the
 # functions have already been compiled.
 for test in tests
-    println("TEST (second run): " * test)
+    println("TEST (second run): ", test)
     outfiles = evalfile(test)::Vector{UTF8String}
     println()
 end
