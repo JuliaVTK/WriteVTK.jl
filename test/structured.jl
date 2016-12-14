@@ -7,6 +7,12 @@ import Compat: UTF8String, view
 typealias FloatType Float32
 const vtk_filename_noext = "structured"
 
+# True if `squeeze` should be called to explicitly reduce the number of
+# dimensions in this kind of array slices. This will usually be true in Julia <
+# v0.5.
+const WITH_SQUEEZE = ndims(zeros(1, 1)[1, :]) == 2
+
+
 function main()
     outfiles = UTF8String[]
     for dim in 2:3
@@ -72,7 +78,7 @@ function main()
             x = xyz[1, :, :, :]
             y = xyz[2, :, :, :]
             z = xyz[3, :, :, :]
-            if VERSION < v"0.5-"
+            if WITH_SQUEEZE
                 x = squeeze(x, 1)
                 y = squeeze(y, 1)
                 z = squeeze(z, 1)
