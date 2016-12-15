@@ -267,7 +267,7 @@ VTK files are then added to the `pvd` file with
 collection_add_timestep(pvd, vtkfile, time)
 ```
 
-Here, `time` is a float that represents the current time in the simulation.
+Here, `time` is a number that represents the current time (or step) in the simulation.
 When all the files are added to the `pvd` file, it can be saved using:
 
 ``` julia
