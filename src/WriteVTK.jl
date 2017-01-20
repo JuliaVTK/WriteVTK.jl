@@ -11,6 +11,7 @@ export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
 export paraview_collection, collection_add_timestep
+export vtk_write_array
 
 using LightXML
 using BufferedStreams: BufferedOutputStream, EmptyStream
@@ -98,6 +99,7 @@ include("gridtypes/structured.jl")
 include("gridtypes/unstructured.jl")
 include("gridtypes/rectilinear.jl")
 include("gridtypes/imagedata.jl")
+include("gridtypes/array.jl")
 
 # Common functions.
 include("gridtypes/common.jl")
