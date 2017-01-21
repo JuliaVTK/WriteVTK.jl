@@ -10,7 +10,8 @@ const tests = ["multiblock.jl",
                "imagedata.jl",
                "structured.jl",
                "unstructured.jl",
-               "pvdCollection.jl"]
+               "pvdCollection.jl",
+               "array.jl"]
 
 # Only toggle to generate new checksums, if new tests are added.
 const OVERWRITE_CHECKSUMS = false
