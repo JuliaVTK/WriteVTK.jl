@@ -16,8 +16,8 @@ function mesh_data(::Val{3})
     const Npts = prod(dims)
 
     # Create points and point data.
-    pts_ijk = Array(FloatType, 3, Ni, Nj, Nk)
-    pdata_ijk = Array(FloatType, Ni, Nj, Nk)
+    pts_ijk = Array{FloatType}(3, Ni, Nj, Nk)
+    pdata_ijk = Array{FloatType}(Ni, Nj, Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         r = 1 + (i - 1)/(Ni - 1)
@@ -35,7 +35,7 @@ function mesh_data(::Val{3})
 
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
-        inds = Array(Int32, 8)
+        inds = Array{Int32}(8)
         inds[1] = sub2ind(dims, i-1, j-1, k-1)
         inds[2] = sub2ind(dims, i  , j-1, k-1)
         inds[3] = sub2ind(dims, i  , j  , k-1)
@@ -65,8 +65,8 @@ function mesh_data(::Val{2})
     const Npts = prod(dims)
 
     # Create points and point data.
-    pts_ijk = Array(FloatType, 2, Ni, Nj)
-    pdata_ijk = Array(FloatType, Ni, Nj)
+    pts_ijk = Array{FloatType}(2, Ni, Nj)
+    pdata_ijk = Array{FloatType}(Ni, Nj)
 
     for j = 1:Nj, i = 1:Ni
         r = 1 + (i - 1)/(Ni - 1)
@@ -83,7 +83,7 @@ function mesh_data(::Val{2})
 
     for j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
-        inds = Array(Int32, 4)
+        inds = Array{Int32}(4)
         inds[1] = sub2ind(dims, i-1, j-1)
         inds[2] = sub2ind(dims, i  , j-1)
         inds[3] = sub2ind(dims, i  , j  )
@@ -108,8 +108,8 @@ function mesh_data(::Val{1})
     const Npts = Ni
 
     # Create points and point data.
-    pts_ijk = Array(FloatType, 1, Ni)
-    pdata_ijk = Array(FloatType, Ni)
+    pts_ijk = Array{FloatType}(1, Ni)
+    pdata_ijk = Array{FloatType}(Ni)
 
     for i = 1:Ni
         pts_ijk[1, i] = (i-1)^2 / (Ni-1)^2
@@ -123,7 +123,7 @@ function mesh_data(::Val{1})
 
     for i = 2:Ni
         # Define connectivity of cell.
-        inds = Array(Int32, 2)
+        inds = Array{Int32}(2)
         inds[1] = i-1
         inds[2] = i
 

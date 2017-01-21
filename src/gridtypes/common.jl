@@ -151,7 +151,7 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
     else
         add_text(xDA, base64encode(UInt32(nb)))     # header (uncompressed version)
     end
-    add_text(xDA, base64encode(takebuf_string(buf)))
+    add_text(xDA, base64encode(take!(buf)))
     add_text(xDA, "\n")
 
     close(buf)
@@ -243,7 +243,7 @@ function save_with_appended_data(vtk::DatasetFile)
         # An underscore "_" is needed before writing appended data.
         write(io, "  <AppendedData encoding=\"raw\">")
         write(io, "\n_")
-        write(io, takebuf_string(vtk.buf))
+        write(io, take!(vtk.buf))
         write(io, "\n  </AppendedData>")
         write(io, "\n</VTKFile>")
 

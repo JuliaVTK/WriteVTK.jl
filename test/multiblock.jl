@@ -58,8 +58,8 @@ function third_block_data()
     const dims = (Ni, Nj, Nk)
 
     # Create points and point data.
-    pts = Array(FloatType, 3, Ni, Nj, Nk)
-    pdata = Array(FloatType, Ni, Nj, Nk)
+    pts = Array{FloatType}(3, Ni, Nj, Nk)
+    pdata = Array{FloatType}(Ni, Nj, Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         r = 1 + (i - 1)/(Ni - 1)
@@ -77,7 +77,7 @@ function third_block_data()
 
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
-        inds = Array(Int32, 8)
+        inds = Array{Int32}(8)
         inds[1] = sub2ind(dims, i-1, j-1, k-1)
         inds[2] = sub2ind(dims, i  , j-1, k-1)
         inds[3] = sub2ind(dims, i  , j  , k-1)
