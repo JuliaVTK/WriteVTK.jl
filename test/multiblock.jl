@@ -6,7 +6,7 @@
 
 using WriteVTK
 import Compat: UTF8String, view
-typealias FloatType Float32
+const FloatType = Float32
 const vtm_filename_noext = "multiblock"
 
 function first_block_data()

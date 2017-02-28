@@ -5,7 +5,7 @@
 
 using WriteVTK
 import Compat.UTF8String
-typealias FloatType Float32
+const FloatType = Float32
 const vtk_filename_noext = "imagedata"
 
 function main()

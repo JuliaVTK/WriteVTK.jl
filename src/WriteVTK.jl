@@ -16,6 +16,7 @@ export vtk_write_array
 using LightXML
 using BufferedStreams: BufferedOutputStream, EmptyStream
 using Libz: ZlibDeflateOutputStream
+using Compat
 using Compat: UTF8String, take!
 
 import Base: close, isopen
@@ -34,9 +35,9 @@ const COMPRESSION_LEVEL = 6
 const IS_LITTLE_ENDIAN = (ENDIAN_BOM == 0x04030201)  # see the documentation for ENDIAN_BOM
 
 ## Types ##
-abstract VTKFile
+@compat abstract type VTKFile end
 
-typealias DataBuffer BufferedOutputStream{EmptyStream}
+const DataBuffer = BufferedOutputStream{EmptyStream}
 
 immutable DatasetFile <: VTKFile
     xdoc::XMLDocument

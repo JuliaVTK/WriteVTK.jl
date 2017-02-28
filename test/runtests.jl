@@ -15,7 +15,7 @@ const tests = ["multiblock.jl",
 
 # Only toggle to generate new checksums, if new tests are added.
 const OVERWRITE_CHECKSUMS = false
-const checksums_file = "checksums.sha1"
+const checksums_file = joinpath(dirname(@__FILE__), "checksums.sha1")
 const checksum_list = readstring(checksums_file)
 
 if OVERWRITE_CHECKSUMS

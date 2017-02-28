@@ -4,7 +4,7 @@
 
 using WriteVTK
 import Compat: UTF8String, view
-typealias FloatType Float32
+const FloatType = Float32
 const vtk_filename_noext = "structured"
 
 # True if `squeeze` should be called to explicitly reduce the number of
