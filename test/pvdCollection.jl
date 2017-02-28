@@ -2,7 +2,7 @@
 
 using WriteVTK
 using Compat: UTF8String, view
-typealias FloatType Float32
+const FloatType = Float32
 const vtk_filename_noext = "collection"
 
 function main()
