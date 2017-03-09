@@ -4,16 +4,19 @@ ZlibCompressStream(buf::IO) =
     ZlibDeflateOutputStream(buf; gzip=false, level=COMPRESSION_LEVEL)
 
 
+"Union of data types allowed by VTK (see file-formats.pdf, page 15)."
+const VTKDataType = Union{Int8, UInt8, Int16, UInt16, Int32, UInt32,
+                          Int64, UInt64, Float32, Float64}
+
+
 "Return the VTK string representation of a numerical data type."
-function datatype_str(T::DataType)
-    # Note: at least for the supported types, the VTK type names are exactly the
-    # same as the Julia type names (e.g.  Float64 -> "Float64"), so that we can
-    # simply use the `string` function.
-    if T ∉ (Float32, Float64, Int32, Int64, UInt8)
-        throw(ArgumentError("Data type not supported: $T"))
-    end
-    return string(T)
-end
+# Note: the VTK type names are exactly the same as the Julia type names
+# (e.g.  Float64 -> "Float64"), so that we can simply use the `string`
+# function.
+datatype_str{T<:VTKDataType}(::Type{T}) = string(T)
+
+datatype_str{T}(::Type{T}) =
+    throw(ArgumentError("Data type not supported by VTK: $T"))
 
 
 "Write array of numerical data to stream."

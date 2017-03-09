@@ -110,11 +110,13 @@ for func in (:vtk_grid, :vtk_multiblock, :paraview_collection)
     @eval begin
         function ($func)(f::Function, args...; kwargs...)
             vtk = ($func)(args...; kwargs...)
+            local outfiles
             try
                 f(vtk)
             finally
-                return vtk_save(vtk) :: Vector{UTF8String}
+                outfiles = vtk_save(vtk)
             end
+            outfiles :: Vector{UTF8String}
         end
     end
 end
