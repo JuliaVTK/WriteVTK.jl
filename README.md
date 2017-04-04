@@ -21,6 +21,7 @@ exported.
   - [Installation](#installation)
   - [Rectilinear and structured meshes](#usage-rectilinear-and-structured-meshes)
   - [Image data](#usage-image-data)
+  - [Julia array](#usage-julia-array)
   - [Unstructured meshes](#usage-unstructured-meshes)
   - [Multiblock files](#multiblock-files)
   - [Paraview PVD files](#paraview-data-pvd-file-format)
@@ -129,6 +130,15 @@ origin = [3.0, 4.0, -3.2]
 spacing = [0.1, 0.2, 0.3]
 vtk = vtk_grid("my_vti_file", Nx, Ny, Nz, origin=origin, spacing=spacing)
 vtk_save(vtk)
+```
+
+## Usage: julia array
+
+A convenience function is provided to quickly save Julia arrays as image data:
+
+```julia
+A = rand(100, 100, 100)
+vtk_write_array("my_vti_file", A, "my_property_name")
 ```
 
 ## Usage: unstructured meshes
