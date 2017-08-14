@@ -7,10 +7,8 @@ __precompile__()
 
 module VTKCellTypes
 
-import Compat.UTF8String
-
 immutable VTKCellType
-    vtk_name::UTF8String
+    vtk_name::String
     vtk_id::UInt8
     nodes::Int
 end

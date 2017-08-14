@@ -5,7 +5,6 @@
 # i.e., compress=false and append=false.
 
 using WriteVTK
-import Compat: UTF8String, view
 const FloatType = Float32
 const vtm_filename_noext = "multiblock"
 
@@ -120,7 +119,7 @@ function main()
     end
     println("Saved:  ", join(outfiles, "  "))
 
-    return outfiles::Vector{UTF8String}
+    return outfiles::Vector{String}
 end
 
 main()

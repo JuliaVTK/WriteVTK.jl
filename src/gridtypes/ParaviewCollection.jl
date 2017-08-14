@@ -31,7 +31,7 @@ end
 function vtk_save(pvd::CollectionFile)
     # Saves paraview collection file (.pvd).
     # Also saves the contained data files recursively.
-    outfiles = [pvd.path]::Vector{UTF8String}
+    outfiles = [pvd.path]::Vector{String}
     for vtk in pvd.timeSteps
         append!(outfiles, vtk_save(vtk))
     end

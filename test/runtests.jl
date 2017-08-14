@@ -2,7 +2,6 @@
 
 using WriteVTK
 using Base.Test
-import Compat: UTF8String, readstring
 using SHA: sha1
 
 const tests = ["multiblock.jl",
@@ -29,7 +28,7 @@ cd(EXECDIR)
 # Run the test scripts.
 for test in tests
     println("TEST (first run): ", test)
-    outfiles = evalfile(test)::Vector{UTF8String}
+    outfiles = evalfile(test)::Vector{String}
 
     # Check that the generated files match the stored checksums.
     for file in outfiles
@@ -53,7 +52,7 @@ println("="^60, "\n")
 # functions have already been compiled.
 for test in tests
     println("TEST (second run): ", test)
-    outfiles = evalfile(test)::Vector{UTF8String}
+    outfiles = evalfile(test)::Vector{String}
     println()
 end
 

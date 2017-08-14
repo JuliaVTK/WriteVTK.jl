@@ -216,7 +216,7 @@ function vtk_save(vtk::DatasetFile)
         @assert isopen(vtk)
         close(vtk)
     end
-    return [vtk.path] :: Vector{UTF8String}
+    return [vtk.path] :: Vector{String}
 end
 
 

@@ -27,7 +27,7 @@ end
 function vtk_save(vtm::MultiblockFile)
     # Saves VTK multiblock file (.vtm).
     # Also saves the contained block files (vtm.blocks) recursively.
-    outfiles = [vtm.path]::Vector{UTF8String}
+    outfiles = [vtm.path]::Vector{String}
     for vtk in vtm.blocks
         append!(outfiles, vtk_save(vtk))
     end
