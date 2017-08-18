@@ -70,7 +70,7 @@ end
 immutable CollectionFile <: VTKFile
     xdoc::XMLDocument
     path::UTF8String
-    timeSteps::Vector{VTKFile}
+    timeSteps::Vector{UTF8String}
     # Constructor.
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
