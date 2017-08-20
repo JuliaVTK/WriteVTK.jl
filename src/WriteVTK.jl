@@ -65,7 +65,7 @@ end
 immutable CollectionFile <: VTKFile
     xdoc::XMLDocument
     path::String
-    timeSteps::Vector{VTKFile}
+    timeSteps::Vector{String}
     # Constructor.
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
