@@ -24,17 +24,13 @@ function collection_add_timestep(pvd::CollectionFile, datfile::VTKFile,
     set_attribute(xDataSet, "timestep", @sprintf("%f", t))
     set_attribute(xDataSet, "part", "0")
     set_attribute(xDataSet, "file", fname)
-    push!(pvd.timeSteps, datfile)
+    append!(pvd.timeSteps, vtk_save(datfile))
     return
 end
 
 function vtk_save(pvd::CollectionFile)
     # Saves paraview collection file (.pvd).
-    # Also saves the contained data files recursively.
-    outfiles = [pvd.path]::Vector{UTF8String}
-    for vtk in pvd.timeSteps
-        append!(outfiles, vtk_save(vtk))
-    end
+    outfiles = [pvd.path; pvd.timeSteps]::Vector{UTF8String}
     if isopen(pvd)
         save_file(pvd.xdoc, pvd.path)
         close(pvd)
