@@ -3,7 +3,6 @@
 # Create unstructured grid VTK file.
 
 using WriteVTK
-import Compat.UTF8String
 const FloatType = Float32
 const vtk_filename_noext = "unstructured"
 
@@ -141,7 +140,7 @@ function mesh_data(::Val{1})
 end
 
 function main()
-    outfiles = UTF8String[]
+    outfiles = String[]
     for dim in 1:3
         pts, cells, pdata, cdata = mesh_data(Val{dim}())
 
@@ -163,7 +162,7 @@ function main()
     end
 
     println("Saved:  ", join(outfiles, "  "))
-    return outfiles::Vector{UTF8String}
+    return outfiles::Vector{String}
 end
 
 main()

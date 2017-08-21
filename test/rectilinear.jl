@@ -3,12 +3,11 @@
 # Create rectilinear grid VTK file.
 
 using WriteVTK
-import Compat.UTF8String
 const FloatType = Float32
 const vtk_filename_noext = "rectilinear"
 
 function main()
-    outfiles = UTF8String[]
+    outfiles = String[]
     for dim in 2:3
         # Define grid.
         if dim == 2
@@ -80,7 +79,7 @@ function main()
     end # dim loop
 
     println("Saved:  ", join(outfiles, "  "))
-    return outfiles::Vector{UTF8String}
+    return outfiles::Vector{String}
 end
 
 main()

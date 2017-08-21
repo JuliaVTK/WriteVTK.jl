@@ -1,7 +1,6 @@
 #!/usr/bin/env julia
 
 using WriteVTK
-using Compat: UTF8String, view
 const FloatType = Float32
 const vtk_filename_noext = "collection"
 
@@ -59,7 +58,7 @@ function main()
     end
     println("Saved:  ", join(outfiles, "  "))
 
-    return outfiles::Vector{UTF8String}
+    return outfiles::Vector{String}
 end
 
 main()

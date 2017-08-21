@@ -4,7 +4,6 @@
 # This corresponds to a rectilinear grid with uniform spacing in each direction.
 
 using WriteVTK
-import Compat.UTF8String
 const FloatType = Float32
 const vtk_filename_noext = "imagedata"
 
@@ -49,7 +48,7 @@ function main()
     end
     println("Saved:   ", outfiles...)
 
-    return outfiles::Vector{UTF8String}
+    return outfiles::Vector{String}
 end
 
 main()

@@ -16,19 +16,14 @@ export vtk_write_array
 using LightXML
 using BufferedStreams: BufferedOutputStream, EmptyStream
 using Libz: ZlibDeflateOutputStream
-using Compat
-using Compat: UTF8String, take!
+using Compat.@compat
 
 import Base: close, isopen
 
 # Cell type definitions as in vtkCellType.h
 include("VTKCellTypes.jl")
 
-if VERSION >= v"0.5"
-    Base.@deprecate_binding VTKCellType VTKCellTypes
-else
-    const VTKCellType = VTKCellTypes
-end
+Base.@deprecate_binding VTKCellType VTKCellTypes
 
 ## Constants ##
 const COMPRESSION_LEVEL = 6
@@ -41,8 +36,8 @@ const DataBuffer = BufferedOutputStream{EmptyStream}
 
 immutable DatasetFile <: VTKFile
     xdoc::XMLDocument
-    path::UTF8String
-    grid_type::UTF8String
+    path::String
+    grid_type::String
     Npts::Int           # Number of grid points.
     Ncls::Int           # Number of cells.
     compressed::Bool    # Data is compressed?
@@ -61,7 +56,7 @@ end
 
 immutable MultiblockFile <: VTKFile
     xdoc::XMLDocument
-    path::UTF8String
+    path::String
     blocks::Vector{VTKFile}
     # Constructor.
     MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
@@ -69,8 +64,8 @@ end
 
 immutable CollectionFile <: VTKFile
     xdoc::XMLDocument
-    path::UTF8String
-    timeSteps::Vector{UTF8String}
+    path::String
+    timeSteps::Vector{String}
     # Constructor.
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
@@ -116,7 +111,7 @@ for func in (:vtk_grid, :vtk_multiblock, :paraview_collection)
             finally
                 outfiles = vtk_save(vtk)
             end
-            outfiles :: Vector{UTF8String}
+            outfiles :: Vector{String}
         end
     end
 end

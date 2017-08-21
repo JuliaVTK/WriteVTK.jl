@@ -30,7 +30,7 @@ end
 
 function vtk_save(pvd::CollectionFile)
     # Saves paraview collection file (.pvd).
-    outfiles = [pvd.path; pvd.timeSteps]::Vector{UTF8String}
+    outfiles = [pvd.path; pvd.timeSteps]::Vector{String}
     if isopen(pvd)
         save_file(pvd.xdoc, pvd.path)
         close(pvd)

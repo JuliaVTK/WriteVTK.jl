@@ -4,11 +4,10 @@
 # This corresponds to a rectilinear grid with uniform spacing in each direction.
 
 using WriteVTK
-import Compat.UTF8String
 
 function main()
     const Ni, Nj, Nk = 20, 30, 40
-    outfiles = UTF8String[]
+    outfiles = String[]
 
     # Initialise random number generator with deterministic seed (for
     # reproducibility).
