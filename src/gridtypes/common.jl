@@ -228,19 +228,17 @@ function of `LightXML`, which doesn't allow to write raw binary data.
 function save_with_appended_data(vtk::DatasetFile)
     @assert vtk.appended
 
-    # Convert XML document to a string, and split it by lines.
-    lines = split(string(vtk.xdoc), '\n')
+    # Convert XML document to a string, and split the last two lines.
+    lines = rsplit(string(vtk.xdoc), '\n', limit=3, keep=true)
 
     # Verify that the last two lines are what they're supposed to be.
-    @assert lines[end-1] == "</VTKFile>"
-    @assert lines[end] == ""
+    @assert lines[2] == "</VTKFile>"
+    @assert lines[3] == ""
 
     open(vtk.path, "w") do io
         # Write everything but the last two lines.
-        for line in lines[1:end-2]
-            write(io, line)
-            write(io, "\n")
-        end
+        write(io, lines[1])
+        write(io, "\n")
 
         # Write raw data (contents of buffer vtk.buf).
         # An underscore "_" is needed before writing appended data.
