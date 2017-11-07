@@ -2,7 +2,7 @@ function vtk_grid(filename_noext::AbstractString,
                   Nx::Integer, Ny::Integer, Nz::Integer=1;
                   origin::AbstractArray=[0.0, 0.0, 0.0],
                   spacing::AbstractArray=[1.0, 1.0, 1.0],
-                  compress::Bool=true, append::Bool=true, extent=nothing)
+                  compress=true, append::Bool=true, extent=nothing)
     Npts = Nx*Ny*Nz
     Ncls = (Nx - 1) * (Ny - 1) * (Nz - 1)
     ext = extent_attribute(Nx, Ny, Nz, extent)

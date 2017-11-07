@@ -1,6 +1,6 @@
 function unstructured_grid(filename_noext::AbstractString, points::AbstractArray,
                            cells::Vector{MeshCell};
-                           compress::Bool=true, append::Bool=true)
+                           compress=true, append::Bool=true)
     @assert size(points, 1) == 3
     Npts = prod(size(points)[2:end])
     Ncls = length(cells)

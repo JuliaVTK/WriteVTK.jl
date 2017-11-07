@@ -1,6 +1,6 @@
 function rectilinear_grid(filename_noext::AbstractString, x::AbstractVector,
                           y::AbstractVector, z::AbstractVector;
-                          compress::Bool=true, append::Bool=true,
+                          compress=true, append::Bool=true,
                           extent=nothing)
     Ni, Nj, Nk = length(x), length(y), length(z)
     Npts = Ni*Nj*Nk

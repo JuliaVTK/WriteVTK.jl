@@ -333,6 +333,8 @@ vtkfile = vtk_grid("my_vtk_file", points, cells; compress=false, append=false)
     larger files, but is valid according to the XML specification.
 
   - If `compress` is `true` (default), data is first compressed using zlib.
+    Its value may also be a compression level between 1 (fast compression)
+    and 9 (best compression).
 
 ## Examples
 

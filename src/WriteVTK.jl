@@ -26,7 +26,7 @@ include("VTKCellTypes.jl")
 Base.@deprecate_binding VTKCellType VTKCellTypes
 
 ## Constants ##
-const COMPRESSION_LEVEL = 6
+const DEFAULT_COMPRESSION_LEVEL = 6
 const IS_LITTLE_ENDIAN = (ENDIAN_BOM == 0x04030201)  # see the documentation for ENDIAN_BOM
 
 ## Types ##
@@ -34,23 +34,29 @@ const IS_LITTLE_ENDIAN = (ENDIAN_BOM == 0x04030201)  # see the documentation for
 
 const DataBuffer = BufferedOutputStream{EmptyStream}
 
+_compression_level(x::Bool) = x ? DEFAULT_COMPRESSION_LEVEL : 0
+_compression_level(x) = Int(x)
 immutable DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::String
     grid_type::String
     Npts::Int           # Number of grid points.
     Ncls::Int           # Number of cells.
-    compressed::Bool    # Data is compressed?
+    compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     buf::DataBuffer     # Buffer with appended data.
-    function DatasetFile(xdoc, path, grid_type, Npts, Ncls,
-                         compressed, appended)
+    function DatasetFile(xdoc, path, grid_type, Npts, Ncls, compression,
+                         appended)
         buf = BufferedOutputStream(EmptyStream())
         if !appended  # in this case we don't need a buffer
             close(buf)
         end
-        return new(xdoc, path, grid_type, Npts, Ncls,
-                   compressed, appended, buf)
+        clevel = _compression_level(compression)
+        if !(0 ≤ clevel ≤ 9)
+            error("Unexpected value of `compress` argument: $compression.\n",
+                  "It must be a `Bool` or a value between 0 and 9.")
+        end
+        new(xdoc, path, grid_type, Npts, Ncls, clevel, appended, buf)
     end
 end
 

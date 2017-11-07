@@ -1,5 +1,5 @@
 function structured_grid(filename_noext::AbstractString, xyz::AbstractArray;
-                         compress::Bool=true, append::Bool=true, extent=nothing)
+                         compress=true, append::Bool=true, extent=nothing)
     Ncomp, Ni, Nj, Nk = size(xyz)
     Npts = Ni*Nj*Nk
     Ncls = num_cells_structured(Ni, Nj, Nk)

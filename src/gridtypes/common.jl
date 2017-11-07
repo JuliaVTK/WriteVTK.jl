@@ -1,7 +1,7 @@
 # Contains common functions for all grid types.
 
-ZlibCompressStream(buf::IO) =
-    ZlibDeflateOutputStream(buf; gzip=false, level=COMPRESSION_LEVEL)
+ZlibCompressStream(buf::IO, level) =
+    ZlibDeflateOutputStream(buf; gzip=false, level=level)
 
 
 "Union of data types allowed by VTK (see file-formats.pdf, page 15)."
@@ -41,11 +41,12 @@ function data_to_xml(vtk::DatasetFile, xParent::XMLElement, data::AbstractArray,
 end
 
 
-"""Add appended raw binary data to VTK XML file.
+"""
+Add appended raw binary data to VTK XML file.
 
 Data is written to the `vtk.buf` buffer.
 
-When `vtk.compressed` is true:
+When compression is enabled:
 
   * the data array is written in compressed form (obviously);
 
@@ -69,7 +70,7 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
     @assert vtk.appended
 
     const buf = vtk.buf    # append buffer
-    const compress = vtk.compressed
+    const compress = vtk.compression_level > 0
     const T = eltype(data)
 
     # DataArray node
@@ -91,7 +92,7 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
         write(buf, header)
 
         # Write compressed data.
-        zWriter = ZlibCompressStream(buf)
+        zWriter = ZlibCompressStream(buf, vtk.compression_level)
         write_array(zWriter, data)
         flush(zWriter)
 
@@ -116,7 +117,7 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
                             data::AbstractArray, varname::AbstractString,
                             Nc::Integer)
     @assert !vtk.appended
-    const compress = vtk.compressed
+    const compress = vtk.compression_level > 0
     const T = eltype(data)
 
     # DataArray node
@@ -139,7 +140,7 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
     # other data_to_xml function.
     if compress
         # Write compressed data.
-        zWriter = ZlibCompressStream(buf)
+        zWriter = ZlibCompressStream(buf, vtk.compression_level)
         write_array(zWriter, data)
         flush(zWriter)
     else
@@ -264,7 +265,7 @@ function vtk_xml_write_header(vtk::DatasetFile)
     else
         set_attribute(xroot, "byte_order", "BigEndian")
     end
-    if vtk.compressed
+    if vtk.compression_level > 0
         set_attribute(xroot, "compressor", "vtkZLibDataCompressor")
         set_attribute(xroot, "header_type", "UInt32")
     end
