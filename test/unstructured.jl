@@ -146,7 +146,8 @@ function main()
 
         @time begin
             # Initialise new vtu file (unstructured grid).
-            vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", pts, cells)
+            vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", pts, cells,
+                           compress=3)
 
             # This is also accepted in 3D:
             # vtk = vtk_grid(vtk_filename_noext, pts[1, :], pts[2, :], pts[3, :],
