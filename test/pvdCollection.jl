@@ -25,9 +25,9 @@ function main()
     for t = 1:Nt, k = 1:Nk, j = 1:Nj, i = 1:Ni
         p[i, j, k, t] = exp(-t)*(i*i + k)
         q[i, j, k, t] = exp(-t)*k*sqrt(j)
-        vec[1, i, j, k] = exp(-t)*i
-        vec[2, i, j, k] = exp(-t)*j
-        vec[3, i, j, k] = exp(-t)*k
+        vec[1, i, j, k, t] = exp(-t)*i
+        vec[2, i, j, k, t] = exp(-t)*j
+        vec[3, i, j, k, t] = exp(-t)*k
     end
 
     # Create some scalar data at grid cells.
