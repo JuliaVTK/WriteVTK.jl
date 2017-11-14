@@ -16,7 +16,6 @@ export vtk_write_array
 using LightXML
 using BufferedStreams: BufferedOutputStream, EmptyStream
 using Libz: ZlibDeflateOutputStream
-using Compat.@compat
 
 import Base: close, isopen
 
@@ -27,16 +26,17 @@ Base.@deprecate_binding VTKCellType VTKCellTypes
 
 ## Constants ##
 const DEFAULT_COMPRESSION_LEVEL = 6
-const IS_LITTLE_ENDIAN = (ENDIAN_BOM == 0x04030201)  # see the documentation for ENDIAN_BOM
+const IS_LITTLE_ENDIAN = ENDIAN_BOM == 0x04030201
 
 ## Types ##
-@compat abstract type VTKFile end
+abstract type VTKFile end
 
 const DataBuffer = BufferedOutputStream{EmptyStream}
 
 _compression_level(x::Bool) = x ? DEFAULT_COMPRESSION_LEVEL : 0
 _compression_level(x) = Int(x)
-immutable DatasetFile <: VTKFile
+
+struct DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::String
     grid_type::String
@@ -60,7 +60,7 @@ immutable DatasetFile <: VTKFile
     end
 end
 
-immutable MultiblockFile <: VTKFile
+struct MultiblockFile <: VTKFile
     xdoc::XMLDocument
     path::String
     blocks::Vector{VTKFile}
@@ -68,7 +68,7 @@ immutable MultiblockFile <: VTKFile
     MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
-immutable CollectionFile <: VTKFile
+struct CollectionFile <: VTKFile
     xdoc::XMLDocument
     path::String
     timeSteps::Vector{String}
@@ -77,15 +77,15 @@ immutable CollectionFile <: VTKFile
 end
 
 # Cells in unstructured meshes.
-immutable MeshCell
+struct MeshCell
     ctype::VTKCellTypes.VTKCellType  # cell type identifier (see VTKCellTypes.jl)
     connectivity::Vector{Int32}      # indices of points (one-based, following the convention in Julia)
-    function MeshCell{T<:Integer}(ctype::VTKCellTypes.VTKCellType,
-                                  connectivity::Vector{T})
+    function MeshCell(ctype::VTKCellTypes.VTKCellType,
+                      connectivity::Vector{T}) where T<:Integer
         if ctype.nodes ∉ (length(connectivity), -1)
             throw(ArgumentError("Wrong number of nodes in connectivity vector."))
         end
-        return new(ctype, connectivity)
+        new(ctype, connectivity)
     end
 end
 

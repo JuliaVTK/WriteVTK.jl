@@ -7,7 +7,7 @@ __precompile__()
 
 module VTKCellTypes
 
-immutable VTKCellType
+struct VTKCellType
     vtk_name::String
     vtk_id::UInt8
     nodes::Int

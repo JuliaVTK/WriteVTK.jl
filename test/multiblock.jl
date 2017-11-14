@@ -9,7 +9,7 @@ const FloatType = Float32
 const vtm_filename_noext = "multiblock"
 
 function first_block_data()
-    const Ni, Nj, Nk = 10, 15, 20
+    Ni, Nj, Nk = 10, 15, 20
 
     x = zeros(FloatType, Ni, Nj, Nk)
     y = copy(x)
@@ -32,7 +32,7 @@ function first_block_data()
 end
 
 function second_block_data()
-    const Ni, Nj, Nk = 20, 16, 12
+    Ni, Nj, Nk = 20, 16, 12
 
     x = zeros(FloatType, Ni)
     y = zeros(FloatType, Nj)
@@ -53,8 +53,8 @@ end
 
 function third_block_data()
     # This is basically the same as in the unstructured example.
-    const Ni, Nj, Nk = 40, 50, 20
-    const dims = (Ni, Nj, Nk)
+    Ni, Nj, Nk = 40, 50, 20
+    dims = (Ni, Nj, Nk)
 
     # Create points and point data.
     pts = Array{FloatType}(3, Ni, Nj, Nk)
@@ -70,7 +70,7 @@ function third_block_data()
     end
 
     # Create cells (all hexahedrons in this case) and cell data.
-    const celltype = VTKCellTypes.VTK_HEXAHEDRON
+    celltype = VTKCellTypes.VTK_HEXAHEDRON
     cells = MeshCell[]
     cdata = FloatType[]
 

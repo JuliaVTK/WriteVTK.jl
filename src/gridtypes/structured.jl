@@ -38,14 +38,15 @@ end
 
 
 # 3D variant of vtk_grid with 4D array xyz.
-vtk_grid{T}(filename_noext::AbstractString, xyz::AbstractArray{T,4};
-            kwargs...) =
+vtk_grid(filename_noext::AbstractString, xyz::AbstractArray{T,4};
+         kwargs...) where T =
     structured_grid(filename_noext, xyz; kwargs...)
 
 
 # 3D variant of vtk_grid with 3D arrays x, y, z.
-function vtk_grid{T}(filename_noext::AbstractString, x::AbstractArray{T,3},
-            y::AbstractArray{T,3}, z::AbstractArray{T,3}; kwargs...)
+function vtk_grid(filename_noext::AbstractString, x::AbstractArray{T,3},
+                  y::AbstractArray{T,3}, z::AbstractArray{T,3};
+                  kwargs...) where T
     if !(size(x) == size(y) == size(z))
         throw(ArgumentError("Size of x, y and z arrays must be the same."))
     end
@@ -56,12 +57,13 @@ function vtk_grid{T}(filename_noext::AbstractString, x::AbstractArray{T,3},
         xyz[2, i, j, k] = y[i, j, k]
         xyz[3, i, j, k] = z[i, j, k]
     end
-    return structured_grid(filename_noext, xyz; kwargs...)
+    structured_grid(filename_noext, xyz; kwargs...)
 end
 
 
 # 2D variant of vtk_grid with 3D array xy
-function vtk_grid{T}(filename_noext::AbstractString, xy::AbstractArray{T,3}; kwargs...)
+function vtk_grid(filename_noext::AbstractString, xy::AbstractArray{T,3};
+                  kwargs...) where T
     Ncomp, Ni, Nj = size(xy)
     if Ncomp != 2
         msg = "Coordinate array `xy` has incorrect dimensions.\n" *
@@ -74,13 +76,13 @@ function vtk_grid{T}(filename_noext::AbstractString, xy::AbstractArray{T,3}; kwa
     for j = 1:Nj, i = 1:Ni, n = 1:2
         xyz[n, i, j, 1] = xy[n, i, j]
     end
-    return structured_grid(filename_noext, xyz; kwargs...)
+    structured_grid(filename_noext, xyz; kwargs...)
 end
 
 
 # 2D variant of vtk_grid with 2D arrays x, y.
-function vtk_grid{T}(filename_noext::AbstractString, x::AbstractArray{T,2},
-                     y::AbstractArray{T,2}; kwargs...)
+function vtk_grid(filename_noext::AbstractString, x::AbstractArray{T,2},
+                  y::AbstractArray{T,2}; kwargs...) where T
     if size(x) != size(y)
         throw(ArgumentError("Size of x and y arrays must be the same."))
     end
@@ -91,5 +93,5 @@ function vtk_grid{T}(filename_noext::AbstractString, x::AbstractArray{T,2},
         xyz[1, i, j, 1] = x[i, j]
         xyz[2, i, j, 1] = y[i, j]
     end
-    return structured_grid(filename_noext, xyz; kwargs...)
+    structured_grid(filename_noext, xyz; kwargs...)
 end

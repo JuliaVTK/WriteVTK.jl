@@ -6,7 +6,7 @@
 using WriteVTK
 
 function main()
-    const Ni, Nj, Nk = 20, 30, 40
+    Ni, Nj, Nk = 20, 30, 40
     outfiles = String[]
 
     # Initialise random number generator with deterministic seed (for

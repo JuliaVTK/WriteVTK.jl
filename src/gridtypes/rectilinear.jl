@@ -34,11 +34,11 @@ function rectilinear_grid(filename_noext::AbstractString, x::AbstractVector,
 end
 
 # 3D variant
-vtk_grid{T}(filename_noext::AbstractString, x::AbstractVector{T},
-            y::AbstractVector{T}, z::AbstractVector{T}; kwargs...) =
+vtk_grid(filename_noext::AbstractString, x::AbstractVector{T},
+         y::AbstractVector{T}, z::AbstractVector{T}; kwargs...) where T =
     rectilinear_grid(filename_noext, x, y, z; kwargs...)
 
 # 2D variant
-vtk_grid{T}(filename_noext::AbstractString, x::AbstractVector{T},
-            y::AbstractVector{T}; kwargs...) =
+vtk_grid(filename_noext::AbstractString, x::AbstractVector{T},
+         y::AbstractVector{T}; kwargs...) where T =
     rectilinear_grid(filename_noext, x, y, zeros(T, 1); kwargs...)

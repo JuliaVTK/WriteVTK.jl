@@ -54,7 +54,7 @@ function main()
         end
 
         # Test extents (this is optional!!)
-        ext = [0, Ni-1, 0, Nj-1, 0, Nk-1] + 42
+        ext = [0, Ni-1, 0, Nj-1, 0, Nk-1] .+ 42
 
         # Initialise new vtr file (rectilinear grid).
         @time begin

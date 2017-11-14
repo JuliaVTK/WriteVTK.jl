@@ -6,7 +6,7 @@ const vtk_filename_noext = "collection"
 
 function main()
     # Define grid.
-    const Ni, Nj, Nk, Nt = 20, 30, 40, 4
+    Ni, Nj, Nk, Nt = 20, 30, 40, 4
 
     x = zeros(FloatType, Ni)
     y = zeros(FloatType, Nj)
@@ -39,7 +39,7 @@ function main()
     end
 
     # Test extents (this is optional!!)
-    ext = [0, Ni-1, 0, Nj-1, 0, Nk-1] + 42
+    ext = [0, Ni-1, 0, Nj-1, 0, Nk-1] .+ 42
 
     # Initialise pvd container file
     @time outfiles = paraview_collection(vtk_filename_noext) do pvd

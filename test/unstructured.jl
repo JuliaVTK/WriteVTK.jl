@@ -10,9 +10,9 @@ const vtk_filename_noext = "unstructured"
 function mesh_data(::Val{3})
     # This is basically a structured grid, but defined as an unstructured one.
     # Based on the structured.jl example.
-    const Ni, Nj, Nk = 40, 50, 20
-    const dims = (Ni, Nj, Nk)
-    const Npts = prod(dims)
+    Ni, Nj, Nk = 40, 50, 20
+    dims = (Ni, Nj, Nk)
+    Npts = prod(dims)
 
     # Create points and point data.
     pts_ijk = Array{FloatType}(3, Ni, Nj, Nk)
@@ -28,7 +28,7 @@ function mesh_data(::Val{3})
     end
 
     # Create cells (all hexahedrons in this case) and cell data.
-    const celltype = VTKCellTypes.VTK_HEXAHEDRON
+    celltype = VTKCellTypes.VTK_HEXAHEDRON
     cells = MeshCell[]
     cdata = FloatType[]
 
@@ -59,9 +59,9 @@ end
 
 # 2D mesh
 function mesh_data(::Val{2})
-    const Ni, Nj = 40, 50
-    const dims = (Ni, Nj)
-    const Npts = prod(dims)
+    Ni, Nj = 40, 50
+    dims = (Ni, Nj)
+    Npts = prod(dims)
 
     # Create points and point data.
     pts_ijk = Array{FloatType}(2, Ni, Nj)
@@ -76,7 +76,7 @@ function mesh_data(::Val{2})
     end
 
     # Create cells (all quads in this case) and cell data.
-    const celltype = VTKCellTypes.VTK_QUAD
+    celltype = VTKCellTypes.VTK_QUAD
     cells = MeshCell[]
     cdata = FloatType[]
 
@@ -103,8 +103,8 @@ end
 
 # 1D mesh
 function mesh_data(::Val{1})
-    const Ni = 40
-    const Npts = Ni
+    Ni = 40
+    Npts = Ni
 
     # Create points and point data.
     pts_ijk = Array{FloatType}(1, Ni)
@@ -116,7 +116,7 @@ function mesh_data(::Val{1})
     end
 
     # Create cells (all lines in this case) and cell data.
-    const celltype = VTKCellTypes.VTK_LINE
+    celltype = VTKCellTypes.VTK_LINE
     cells = MeshCell[]
     cdata = FloatType[]
 

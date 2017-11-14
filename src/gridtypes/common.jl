@@ -13,9 +13,9 @@ const VTKDataType = Union{Int8, UInt8, Int16, UInt16, Int32, UInt32,
 # Note: the VTK type names are exactly the same as the Julia type names
 # (e.g.  Float64 -> "Float64"), so that we can simply use the `string`
 # function.
-datatype_str{T<:VTKDataType}(::Type{T}) = string(T)
+datatype_str(::Type{T}) where T <: VTKDataType = string(T)
 
-datatype_str{T}(::Type{T}) =
+datatype_str(::Type{T}) where T =
     throw(ArgumentError("Data type not supported by VTK: $T"))
 
 
@@ -69,9 +69,9 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
                               Nc::Integer)
     @assert vtk.appended
 
-    const buf = vtk.buf    # append buffer
-    const compress = vtk.compression_level > 0
-    const T = eltype(data)
+    buf = vtk.buf    # append buffer
+    compress = vtk.compression_level > 0
+    T = eltype(data)
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
@@ -82,10 +82,10 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
     set_attribute(xDA, "NumberOfComponents", string(Nc))
 
     # Size of data array (in bytes).
-    const nb = length(data) * sizeof(eltype(data))
+    nb = length(data) * sizeof(eltype(data))
 
     if compress
-        const initpos = buf.position
+        initpos = buf.position
 
         # Write temporary array that will be replaced later by the real header.
         header = zeros(UInt32, 4)
@@ -117,8 +117,8 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
                             data::AbstractArray, varname::AbstractString,
                             Nc::Integer)
     @assert !vtk.appended
-    const compress = vtk.compression_level > 0
-    const T = eltype(data)
+    compress = vtk.compression_level > 0
+    T = eltype(data)
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
@@ -128,7 +128,7 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
     set_attribute(xDA, "NumberOfComponents", "$Nc")
 
     # Number of bytes of data.
-    const nb = length(data) * sizeof(eltype(data))
+    nb = length(data) * sizeof(eltype(data))
 
     # Write data to a buffer, which is then base64-encoded and added to the
     # XML document.
@@ -278,16 +278,16 @@ Return the "extent" attribute required for structured (including rectilinear)
 grids.
 """
 function extent_attribute(Ni, Nj, Nk, extent::Void=nothing)
-    return @sprintf("%d %d %d %d %d %d", 0, Ni-1, 0, Nj-1, 0, Nk-1)
+    @sprintf("%d %d %d %d %d %d", 0, Ni-1, 0, Nj-1, 0, Nk-1)
 end
 
-function extent_attribute{T<:Integer}(Ni, Nj, Nk, extent::Array{T})
+function extent_attribute(Ni, Nj, Nk, extent::Array{T}) where T <: Integer
     length(extent) == 6 || throw(ArgumentError("Extent must have length 6."))
     (extent[2] - extent[1] + 1 == Ni) &&
     (extent[4] - extent[3] + 1 == Nj) &&
     (extent[6] - extent[5] + 1 == Nk) ||
     throw(ArgumentError("Extent is not consistent with dataset dimensions."))
-    return @sprintf("%d %d %d %d %d %d", extent...)
+    @sprintf("%d %d %d %d %d %d", extent...)
 end
 
 
