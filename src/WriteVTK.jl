@@ -16,6 +16,9 @@ export vtk_write_array
 using LightXML
 using BufferedStreams: BufferedOutputStream, EmptyStream
 using Libz: ZlibDeflateOutputStream
+if VERSION >= v"0.7.0-DEV.2338"
+    using Base64.base64encode
+end
 
 import Base: close, isopen
 
