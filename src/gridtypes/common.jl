@@ -183,7 +183,7 @@ function vtk_point_or_cell_data(vtk::DatasetFile, data::AbstractArray,
     # DataArray node
     xDA = data_to_xml(vtk, xPD, data, name, Nc)
 
-    return
+    return vtk
 end
 
 
