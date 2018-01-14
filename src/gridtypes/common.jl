@@ -4,40 +4,85 @@ ZlibCompressStream(buf::IO, level) =
     ZlibDeflateOutputStream(buf; gzip=false, level=level)
 
 
+"""
+Types allowed as input to `vtk_point_data()` and `vtk_cell_data()`.
+
+Either (abstract) arrays or tuples of arrays are allowed.
+In the second case, the length of the tuple determines the number of components
+of the input data (e.g. if N = 3, it corresponds to a 3D vector field).
+"""
+const InputDataType =
+    Union{AbstractArray,
+          NTuple{N, T} where {N, T <: AbstractArray}}
+
+"""
+Determine number of components of input data.
+"""
+function num_components(data::AbstractArray, num_points_or_cells::Int)
+    Nc = div(length(data), num_points_or_cells)
+    if Nc * num_points_or_cells != length(data)
+        throw(ArgumentError("Incorrect dimensions of input array."))
+    end
+    Nc
+end
+
+num_components(data::NTuple, ::Int) = length(data)
+
 "Union of data types allowed by VTK (see file-formats.pdf, page 15)."
 const VTKDataType = Union{Int8, UInt8, Int16, UInt16, Int32, UInt32,
                           Int64, UInt64, Float32, Float64}
 
-
-"Return the VTK string representation of a numerical data type."
+"""
+Return the VTK string representation of a numerical data type.
+"""
 # Note: the VTK type names are exactly the same as the Julia type names
 # (e.g.  Float64 -> "Float64"), so that we can simply use the `string`
 # function.
 datatype_str(::Type{T}) where T <: VTKDataType = string(T)
-
 datatype_str(::Type{T}) where T =
     throw(ArgumentError("Data type not supported by VTK: $T"))
+datatype_str(::AbstractArray{T}) where T = datatype_str(T)
+datatype_str(::NTuple{N, T} where N) where T <: AbstractArray =
+    datatype_str(eltype(T))
+
+
+"""
+Total size of data in bytes.
+"""
+sizeof_data(x::Array) = sizeof(x)
+sizeof_data(x::AbstractArray) = length(x) * sizeof(eltype(x))
+sizeof_data(x::NTuple) = sum(sizeof_data, x)
 
 
 "Write array of numerical data to stream."
-@inline function write_array(io, data::AbstractArray)
+function write_array(io, data::AbstractArray)
     write(io, data)
     nothing
 end
 
+function write_array(io, data::NTuple{N, T} where T <: AbstractArray) where N
+    # We assume that all arrays in the tuple have the same size.
+    L = length(data[1])
+    for i = 1:L, x in data
+        write(io, x[i])
+    end
+    nothing
+end
 
-"""Add numerical data to VTK XML file.
+
+"""
+Add numerical data to VTK XML file.
 
 Data is written under the `xParent` XML node.
 
 `Nc` corresponds to the number of components of the data.
 """
-function data_to_xml(vtk::DatasetFile, xParent::XMLElement, data::AbstractArray,
+function data_to_xml(vtk::DatasetFile, xParent::XMLElement, data::InputDataType,
                      varname::AbstractString, Nc::Integer=1)
     @assert name(xParent) in ("Points", "PointData", "Coordinates", "Cells",
                               "CellData")
     func :: Function = vtk.appended ? data_to_xml_appended : data_to_xml_inline
-    return func(vtk, xParent, data, varname, Nc) :: XMLElement
+    func(vtk, xParent, data, varname, Nc) :: XMLElement
 end
 
 
@@ -65,24 +110,23 @@ containing the size of the data array in bytes.
 
 """
 function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
-                              data::AbstractArray, varname::AbstractString,
+                              data::InputDataType, varname::AbstractString,
                               Nc::Integer)
     @assert vtk.appended
 
     buf = vtk.buf    # append buffer
     compress = vtk.compression_level > 0
-    T = eltype(data)
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
-    set_attribute(xDA, "type", datatype_str(T))
+    set_attribute(xDA, "type", datatype_str(data))
     set_attribute(xDA, "Name", varname)
     set_attribute(xDA, "format", "appended")
     set_attribute(xDA, "offset", string(buf.position - 1))
     set_attribute(xDA, "NumberOfComponents", string(Nc))
 
     # Size of data array (in bytes).
-    nb = length(data) * sizeof(eltype(data))
+    nb = sizeof_data(data)
 
     if compress
         initpos = buf.position
@@ -108,27 +152,26 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
         write_array(buf, data)
     end
 
-    return xDA::XMLElement
+    xDA::XMLElement
 end
 
 
 "Add inline, base64-encoded data to VTK XML file."
 function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
-                            data::AbstractArray, varname::AbstractString,
+                            data::InputDataType, varname::AbstractString,
                             Nc::Integer)
     @assert !vtk.appended
     compress = vtk.compression_level > 0
-    T = eltype(data)
 
     # DataArray node
     xDA = new_child(xParent, "DataArray")
-    set_attribute(xDA, "type", datatype_str(T))
+    set_attribute(xDA, "type", datatype_str(data))
     set_attribute(xDA, "Name", varname)
     set_attribute(xDA, "format", "binary")   # here, binary means base64-encoded
     set_attribute(xDA, "NumberOfComponents", "$Nc")
 
     # Number of bytes of data.
-    nb = length(data) * sizeof(eltype(data))
+    nb = sizeof_data(data)
 
     # Write data to a buffer, which is then base64-encoded and added to the
     # XML document.
@@ -160,15 +203,16 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
 
     close(buf)
 
-    return xDA::XMLElement
+    xDA::XMLElement
 end
 
 
-"""Add either point or cell data to VTK file.
+"""
+Add either point or cell data to VTK file.
 
 Here `Nc` is the number of components of the data (Nc >= 1).
 """
-function vtk_point_or_cell_data(vtk::DatasetFile, data::AbstractArray,
+function vtk_point_or_cell_data(vtk::DatasetFile, data::InputDataType,
                                 name::AbstractString, nodetype::AbstractString,
                                 Nc::Integer)
     # Find Piece node.
@@ -183,27 +227,18 @@ function vtk_point_or_cell_data(vtk::DatasetFile, data::AbstractArray,
     # DataArray node
     xDA = data_to_xml(vtk, xPD, data, name, Nc)
 
-    return vtk
+    vtk
+end
+
+function vtk_point_data(vtk::DatasetFile, data::InputDataType, name::AbstractString)
+    Nc = num_components(data, vtk.Npts)
+    vtk_point_or_cell_data(vtk, data, name, "PointData", Nc)
 end
 
 
-function vtk_point_data(vtk::DatasetFile, data::AbstractArray, name::AbstractString)
-    # Number of components.
-    Nc = div(length(data), vtk.Npts)
-    if Nc * vtk.Npts != length(data)
-        throw(ArgumentError("Incorrect dimensions of input array."))
-    end
-    return vtk_point_or_cell_data(vtk, data, name, "PointData", Nc)
-end
-
-
-function vtk_cell_data(vtk::DatasetFile, data::AbstractArray, name::AbstractString)
-    # Number of components.
-    Nc = div(length(data), vtk.Ncls)
-    if Nc * vtk.Ncls != length(data)
-        throw(ArgumentError("Incorrect dimensions of input array."))
-    end
-    return vtk_point_or_cell_data(vtk, data, name, "CellData", Nc)
+function vtk_cell_data(vtk::DatasetFile, data::InputDataType, name::AbstractString)
+    Nc = num_components(data, vtk.Ncls)
+    vtk_point_or_cell_data(vtk, data, name, "CellData", Nc)
 end
 
 
@@ -221,7 +256,8 @@ function vtk_save(vtk::DatasetFile)
 end
 
 
-"""Write VTK XML file containing appended binary data to disk.
+"""
+Write VTK XML file containing appended binary data to disk.
 
 In this case, the XML file is written manually instead of using the `save_file`
 function of `LightXML`, which doesn't allow to write raw binary data.
@@ -252,7 +288,7 @@ function save_with_appended_data(vtk::DatasetFile)
         close(vtk.buf)
     end
 
-    return
+    nothing
 end
 
 
@@ -269,7 +305,7 @@ function vtk_xml_write_header(vtk::DatasetFile)
         set_attribute(xroot, "compressor", "vtkZLibDataCompressor")
         set_attribute(xroot, "header_type", "UInt32")
     end
-    return xroot::XMLElement
+    xroot::XMLElement
 end
 
 
@@ -291,17 +327,17 @@ function extent_attribute(Ni, Nj, Nk, extent::Array{T}) where T <: Integer
 end
 
 
-"""Number of cells in structured grids.
+"""
+Number of cells in structured grids.
 
 In 3D, all cells are hexahedrons (i.e. VTK_HEXAHEDRON), and the number of
 cells is (Ni-1)*(Nj-1)*(Nk-1). In 2D, they are quadrilaterals (VTK_QUAD), and in
 1D they are line segments (VTK_LINE).
-
 """
 function num_cells_structured(Ni, Nj, Nk)
     Ncls = one(Ni)
     for N in (Ni, Nj, Nk)
         Ncls *= max(1, N - 1)
     end
-    return Ncls
+    Ncls
 end
