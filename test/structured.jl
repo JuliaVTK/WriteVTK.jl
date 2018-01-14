@@ -6,11 +6,6 @@ using WriteVTK
 const FloatType = Float32
 const vtk_filename_noext = "structured"
 
-# True if `squeeze` should be called to explicitly reduce the number of
-# dimensions in this kind of array slices. This will usually be true in Julia <
-# v0.5.
-const WITH_SQUEEZE = ndims(zeros(1, 1)[1, :]) == 2
-
 
 function main()
     outfiles = String[]
@@ -77,11 +72,6 @@ function main()
             x = xyz[1, :, :, :]
             y = xyz[2, :, :, :]
             z = xyz[3, :, :, :]
-            if WITH_SQUEEZE
-                x = squeeze(x, 1)
-                y = squeeze(y, 1)
-                z = squeeze(z, 1)
-            end
         end
 
         @time begin
@@ -96,10 +86,13 @@ function main()
                 vtk = vtk_grid(fname, xyz; extent=ext)
             end
 
+            vec_tuple = (vec[1, :, :, :], vec[2, :, :, :], vec[3, :, :, :])
+
             # Add data.
             vtk_point_data(vtk, psub, "p_values")
             vtk_point_data(vtk, q, "q_values")
             vtk_point_data(vtk, vec, "myVector")
+            # vtk_point_data(vtk, vec_tuple, "myVector")
             vtk_cell_data(vtk, cdata, "myCellData")
 
             # Save and close vtk file.
