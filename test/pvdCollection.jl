@@ -1,6 +1,9 @@
 #!/usr/bin/env julia
 
 using WriteVTK
+
+using Compat.Printf
+
 const FloatType = Float32
 const vtk_filename_noext = "collection"
 
