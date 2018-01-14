@@ -86,14 +86,17 @@ function main()
                 vtk = vtk_grid(fname, xyz; extent=ext)
             end
 
-            vec_tuple = (vec[1, :, :, :], vec[2, :, :, :], vec[3, :, :, :])
-
             # Add data.
             vtk_point_data(vtk, psub, "p_values")
             vtk_point_data(vtk, q, "q_values")
             vtk_point_data(vtk, vec, "myVector")
-            # vtk_point_data(vtk, vec_tuple, "myVector")
             vtk_cell_data(vtk, cdata, "myCellData")
+
+            # Test writing vector data as tuple of scalar arrays.
+            @views vec_tuple = (vec[1, :, :, :],
+                                vec[2, :, :, :],
+                                vec[3, :, :, :])
+            vtk_point_data(vtk, vec_tuple, "myVector.tuple")
 
             # Save and close vtk file.
             append!(outfiles, vtk_save(vtk))
