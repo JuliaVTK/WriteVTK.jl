@@ -91,6 +91,15 @@ The shape of the array should be `[Ni, Nj, Nk]` for scalars, and
 `[Ncomp, Ni, Nj, Nk]` for vectors, where `Ncomp` is the number of components of
 the vector.
 
+Vector datasets can also be given as a tuple of scalar datasets, where each
+scalar represents a component of the vector field.
+Example:
+```julia
+acc = (acc_x, acc_y, acc_z)  # acc_x, acc_y and acc_z have size [Ni, Nj, Nk]
+vtk_point_data(vtkfile, acc, "Acceleration")
+```
+This can be useful to avoid copies of data in some cases.
+
 Cell data can also be added, using `vtk_cell_data`:
 
 ``` julia
