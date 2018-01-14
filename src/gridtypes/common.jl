@@ -313,9 +313,8 @@ end
 Return the "extent" attribute required for structured (including rectilinear)
 grids.
 """
-function extent_attribute(Ni, Nj, Nk, extent::Void=nothing)
-    @sprintf("%d %d %d %d %d %d", 0, Ni-1, 0, Nj-1, 0, Nk-1)
-end
+extent_attribute(Ni, Nj, Nk, ::Void=nothing) =
+    "0 $(Ni - 1) 0 $(Nj - 1) 0 $(Nk - 1)"
 
 function extent_attribute(Ni, Nj, Nk, extent::Array{T}) where T <: Integer
     length(extent) == 6 || throw(ArgumentError("Extent must have length 6."))
@@ -323,7 +322,7 @@ function extent_attribute(Ni, Nj, Nk, extent::Array{T}) where T <: Integer
     (extent[4] - extent[3] + 1 == Nj) &&
     (extent[6] - extent[5] + 1 == Nk) ||
     throw(ArgumentError("Extent is not consistent with dataset dimensions."))
-    @sprintf("%d %d %d %d %d %d", extent...)
+    join(extent, " ")
 end
 
 
