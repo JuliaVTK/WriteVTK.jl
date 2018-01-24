@@ -4,6 +4,7 @@
 # This corresponds to a rectilinear grid with uniform spacing in each direction.
 
 using WriteVTK
+using Compat.Random
 
 function main()
     Ni, Nj, Nk = 20, 30, 40
