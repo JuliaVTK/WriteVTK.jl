@@ -1,2 +1,3 @@
 SHA 0.3.0
 Compat 0.47.0  # Compat.Random
+StaticArrays 0.6.6
