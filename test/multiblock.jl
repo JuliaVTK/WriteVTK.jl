@@ -5,6 +5,8 @@
 # i.e., compress=false and append=false.
 
 using WriteVTK
+using StaticArrays: SVector
+
 const FloatType = Float32
 const vtm_filename_noext = "multiblock"
 
@@ -76,15 +78,15 @@ function third_block_data()
 
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
-        inds = Array{Int32}(8)
-        inds[1] = sub2ind(dims, i-1, j-1, k-1)
-        inds[2] = sub2ind(dims, i  , j-1, k-1)
-        inds[3] = sub2ind(dims, i  , j  , k-1)
-        inds[4] = sub2ind(dims, i-1, j  , k-1)
-        inds[5] = sub2ind(dims, i-1, j-1, k  )
-        inds[6] = sub2ind(dims, i  , j-1, k  )
-        inds[7] = sub2ind(dims, i  , j  , k  )
-        inds[8] = sub2ind(dims, i-1, j  , k  )
+        inds = SVector{8, Int32}(
+            sub2ind(dims, i-1, j-1, k-1),
+            sub2ind(dims, i  , j-1, k-1),
+            sub2ind(dims, i  , j  , k-1),
+            sub2ind(dims, i-1, j  , k-1),
+            sub2ind(dims, i-1, j-1, k  ),
+            sub2ind(dims, i  , j-1, k  ),
+            sub2ind(dims, i  , j  , k  ),
+            sub2ind(dims, i-1, j  , k  ))
 
         # Define cell.
         c = MeshCell(celltype, inds)

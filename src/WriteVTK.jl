@@ -80,18 +80,18 @@ struct CollectionFile <: VTKFile
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
-# Cells in unstructured meshes.
-struct MeshCell
+struct MeshCell{V <: AbstractVector{<:Integer}}
     ctype::VTKCellTypes.VTKCellType  # cell type identifier (see VTKCellTypes.jl)
-    connectivity::Vector{Int32}      # indices of points (one-based, following the convention in Julia)
-    function MeshCell(ctype::VTKCellTypes.VTKCellType,
-                      connectivity::Vector{T}) where T<:Integer
-        if ctype.nodes ∉ (length(connectivity), -1)
-            throw(ArgumentError("Wrong number of nodes in connectivity vector."))
+    connectivity::V      # indices of points (one-based, following the convention in Julia)
+    function MeshCell{V}(ctype::VTKCellTypes.VTKCellType, conn::V) where V
+        if ctype.nodes ∉ (length(conn), -1)
+            error("Wrong number of nodes in connectivity vector.")
         end
-        new(ctype, connectivity)
+        new(ctype, conn)
     end
 end
+
+MeshCell(ctype, conn::V) where V = MeshCell{V}(ctype, conn)
 
 close(vtk::VTKFile) = free(vtk.xdoc)
 isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
