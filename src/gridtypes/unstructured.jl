@@ -1,5 +1,5 @@
 function unstructured_grid(filename_noext::AbstractString, points::AbstractArray,
-                           cells::Vector{MeshCell};
+                           cells::Vector{<:MeshCell};
                            compress=true, append::Bool=true)
     @assert size(points, 1) == 3
     Npts = prod(size(points)[2:end])
@@ -70,7 +70,7 @@ end
 # Variant of vtk_grid with 2-D array "points".
 #   size(points) = (dim, num_points), with dim ∈ {1, 2, 3}
 function vtk_grid(filename_noext::AbstractString, points::AbstractArray{T,2},
-                  cells::Vector{MeshCell}; kwargs...) where T
+                  cells::Vector{<:MeshCell}; kwargs...) where T
     dim, Npts = size(points)
     if dim == 3
         return unstructured_grid(filename_noext, points, cells; kwargs...)
@@ -94,7 +94,7 @@ end
 # Size of each array: (num_points)
 function vtk_grid(filename_noext::AbstractString, x::AbstractVector{T},
                   y::AbstractVector{T}, z::AbstractVector{T},
-                  cells::Vector{MeshCell}; kwargs...) where T
+                  cells::Vector{<:MeshCell}; kwargs...) where T
     if !(length(x) == length(y) == length(z))
         throw(ArgumentError("Length of x, y and z arrays must be the same."))
     end
@@ -110,18 +110,19 @@ end
 
 # 2D version
 vtk_grid(filename_noext::AbstractString, x::AbstractVector{T},
-         y::AbstractVector{T}, cells::Vector{MeshCell}; kwargs...) where T =
+         y::AbstractVector{T}, cells::Vector{<:MeshCell};
+         kwargs...) where T =
     vtk_grid(filename_noext, x, y, zero(x), cells; kwargs...)
 
 # 1D version
 vtk_grid(filename_noext::AbstractString, x::AbstractVector{T},
-         cells::Vector{MeshCell}; kwargs...) where T =
+         cells::Vector{<:MeshCell}; kwargs...) where T =
     vtk_grid(filename_noext, x, zero(x), zero(x), cells; kwargs...)
 
 # Variant with 4-D Array (for "pseudo-unstructured" datasets, i.e., those that
 # actually have a 3D structure) -- maybe this variant should be removed...
 function vtk_grid(filename_noext::AbstractString, points::AbstractArray{T,4},
-                  cells::Vector{MeshCell}; kwargs...) where T
+                  cells::Vector{<:MeshCell}; kwargs...) where T
     dim, Ni, Nj, Nk = size(points)
     points_r = reshape(points, (dim, Ni*Nj*Nk))
     unstructured_grid(filename_noext, points_r, cells; kwargs...)
