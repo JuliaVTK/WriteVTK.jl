@@ -96,6 +96,21 @@ MeshCell(ctype, conn::V) where V = MeshCell{V}(ctype, conn)
 close(vtk::VTKFile) = free(vtk.xdoc)
 isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
+# Add a default extension to the filename,
+# unless the user have already given the correct one
+function add_extension(filename, default_extension)
+    path, ext = splitext(filename)
+    if ext != default_extension
+        if ext in ("vtu", "vtr", "vts", "vti", "pvd", "vtm")
+            warn("detected extension '$(ext)' does not correspond to dataset type. ",
+                "Appending '$(default_extension)' to filename.")
+        end
+        return filename * default_extension
+    else
+        return filename
+    end
+end
+
 # Multiblock-specific functions and types.
 include("gridtypes/multiblock.jl")
 include("gridtypes/ParaviewCollection.jl")

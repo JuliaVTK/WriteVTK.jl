@@ -1,6 +1,6 @@
-function vtk_multiblock(filename_noext::AbstractString)
+function vtk_multiblock(filename::AbstractString)
     # Initialise VTK multiblock file (extension .vtm).
-    # filename_noext: filename without the extension (.vtm).
+    # filename: filename with or without the extension (.vtm).
     xvtm = XMLDocument()
     xroot = create_root(xvtm, "VTKFile")
     set_attribute(xroot, "type", "vtkMultiBlockDataSet")
@@ -11,7 +11,7 @@ function vtk_multiblock(filename_noext::AbstractString)
         set_attribute(xroot, "byte_order", "BigEndian")
     end
     new_child(xroot, "vtkMultiBlockDataSet")
-    return MultiblockFile(xvtm, string(filename_noext, ".vtm"))
+    return MultiblockFile(xvtm, add_extension(filename, ".vtm"))
 end
 
 function vtk_grid(vtm::MultiblockFile, griddata...; kwargs...)
