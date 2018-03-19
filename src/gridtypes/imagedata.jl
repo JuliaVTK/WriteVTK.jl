@@ -1,4 +1,4 @@
-function vtk_grid(filename_noext::AbstractString,
+function vtk_grid(filename::AbstractString,
                   Nx::Integer, Ny::Integer, Nz::Integer=1;
                   origin::AbstractArray=[0.0, 0.0, 0.0],
                   spacing::AbstractArray=[1.0, 1.0, 1.0],
@@ -8,7 +8,7 @@ function vtk_grid(filename_noext::AbstractString,
     ext = extent_attribute(Nx, Ny, Nz, extent)
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(xvtk, filename_noext*".vti", "ImageData",
+    vtk = DatasetFile(xvtk, add_extension(filename, ".vti"), "ImageData",
                       Npts, Ncls, compress, append)
 
     # VTKFile node

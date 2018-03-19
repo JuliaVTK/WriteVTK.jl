@@ -1,4 +1,4 @@
-function rectilinear_grid(filename_noext::AbstractString, x::AbstractVector,
+function rectilinear_grid(filename::AbstractString, x::AbstractVector,
                           y::AbstractVector, z::AbstractVector;
                           compress=true, append::Bool=true,
                           extent=nothing)
@@ -8,7 +8,7 @@ function rectilinear_grid(filename_noext::AbstractString, x::AbstractVector,
     ext = extent_attribute(Ni, Nj, Nk, extent)
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(xvtk, filename_noext*".vtr", "RectilinearGrid",
+    vtk = DatasetFile(xvtk, add_extension(filename, ".vtr"), "RectilinearGrid",
                       Npts, Ncls, compress, append)
 
     # VTKFile node
@@ -34,11 +34,11 @@ function rectilinear_grid(filename_noext::AbstractString, x::AbstractVector,
 end
 
 # 3D variant
-vtk_grid(filename_noext::AbstractString, x::AbstractVector{T},
+vtk_grid(filename::AbstractString, x::AbstractVector{T},
          y::AbstractVector{T}, z::AbstractVector{T}; kwargs...) where T =
-    rectilinear_grid(filename_noext, x, y, z; kwargs...)
+    rectilinear_grid(filename, x, y, z; kwargs...)
 
 # 2D variant
-vtk_grid(filename_noext::AbstractString, x::AbstractVector{T},
+vtk_grid(filename::AbstractString, x::AbstractVector{T},
          y::AbstractVector{T}; kwargs...) where T =
-    rectilinear_grid(filename_noext, x, y, zeros(T, 1); kwargs...)
+    rectilinear_grid(filename, x, y, zeros(T, 1); kwargs...)
