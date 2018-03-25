@@ -7,7 +7,7 @@ This module allows to write VTK XML files, that can be visualised for example
 with [ParaView](http://www.paraview.org/).
 
 The data is written compressed by default, using the
-[Libz](https://github.com/BioJulia/Libz.jl) package.
+[CodecZlib](https://github.com/bicycle1885/CodecZlib.jl) package.
 
 Rectilinear (.vtr), structured (.vts), image data (.vti) and unstructured
 (.vtu) grids are supported.
