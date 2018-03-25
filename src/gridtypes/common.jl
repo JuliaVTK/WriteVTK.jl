@@ -1,7 +1,7 @@
 # Contains common functions for all grid types.
 
 ZlibCompressStream(buf::IO, level) =
-    ZlibDeflateOutputStream(buf; gzip=false, level=level)
+    CodecZlib.ZlibCompressorStream(buf; level=level)
 
 
 """
@@ -122,14 +122,14 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
     set_attribute(xDA, "type", datatype_str(data))
     set_attribute(xDA, "Name", varname)
     set_attribute(xDA, "format", "appended")
-    set_attribute(xDA, "offset", string(buf.position - 1))
+    set_attribute(xDA, "offset", position(buf))
     set_attribute(xDA, "NumberOfComponents", string(Nc))
 
     # Size of data array (in bytes).
     nb = sizeof_data(data)
 
     if compress
-        initpos = buf.position
+        initpos = position(buf)
 
         # Write temporary array that will be replaced later by the real header.
         header = zeros(UInt32, 4)
@@ -138,15 +138,16 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
         # Write compressed data.
         zWriter = ZlibCompressStream(buf, vtk.compression_level)
         write_array(zWriter, data)
+        write(zWriter, TranscodingStreams.TOKEN_END)
         flush(zWriter)
 
         # Go back to `initpos` and write real header.
-        endpos = buf.position
-        compbytes = buf.position - initpos - sizeof(header)
+        endpos = position(buf)
+        compbytes = endpos - initpos - sizeof(header)
         header[:] = [1, nb, nb, compbytes]
-        buf.position = initpos
+        seek(buf, initpos)
         write(buf, header)
-        buf.position = endpos
+        seek(buf, endpos)
     else
         write(buf, UInt32(nb))  # header (uncompressed version)
         write_array(buf, data)
@@ -175,7 +176,7 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
 
     # Write data to a buffer, which is then base64-encoded and added to the
     # XML document.
-    buf = BufferedOutputStream()
+    buf = IOBuffer()
 
     # NOTE: in the compressed case, the header and the data need to be
     # base64-encoded separately!!
@@ -185,6 +186,7 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
         # Write compressed data.
         zWriter = ZlibCompressStream(buf, vtk.compression_level)
         write_array(zWriter, data)
+        write(zWriter, TranscodingStreams.TOKEN_END)
         flush(zWriter)
     else
         write_array(buf, data)
@@ -193,7 +195,7 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
     # Write buffer with data to XML document.
     add_text(xDA, "\n")
     if compress
-        header = UInt32[1, nb, nb, buf.position - 1]
+        header = UInt32[1, nb, nb, position(buf)]
         add_text(xDA, base64encode(header))
     else
         add_text(xDA, base64encode(UInt32(nb)))     # header (uncompressed version)

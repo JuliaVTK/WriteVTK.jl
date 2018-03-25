@@ -13,9 +13,10 @@ export vtk_multiblock
 export paraview_collection, collection_add_timestep
 export vtk_write_array
 
+import CodecZlib
+import TranscodingStreams
+
 using LightXML
-using BufferedStreams: BufferedOutputStream, EmptyStream
-using Libz: ZlibDeflateOutputStream
 using Compat.Printf
 if VERSION >= v"0.7.0-DEV.2338"
     using Base64.base64encode
@@ -35,8 +36,6 @@ const IS_LITTLE_ENDIAN = ENDIAN_BOM == 0x04030201
 ## Types ##
 abstract type VTKFile end
 
-const DataBuffer = BufferedOutputStream{EmptyStream}
-
 _compression_level(x::Bool) = x ? DEFAULT_COMPRESSION_LEVEL : 0
 _compression_level(x) = Int(x)
 
@@ -48,10 +47,10 @@ struct DatasetFile <: VTKFile
     Ncls::Int           # Number of cells.
     compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
-    buf::DataBuffer     # Buffer with appended data.
+    buf::IOBuffer       # Buffer with appended data.
     function DatasetFile(xdoc, path, grid_type, Npts, Ncls, compression,
                          appended)
-        buf = BufferedOutputStream(EmptyStream())
+        buf = IOBuffer()
         if !appended  # in this case we don't need a buffer
             close(buf)
         end
