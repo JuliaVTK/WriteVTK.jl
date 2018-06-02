@@ -56,11 +56,11 @@ end
 function third_block_data()
     # This is basically the same as in the unstructured example.
     Ni, Nj, Nk = 40, 50, 20
-    dims = (Ni, Nj, Nk)
+    indices = LinearIndices((1:Ni, 1:Nj, 1:Nk))
 
     # Create points and point data.
-    pts = Array{FloatType}(3, Ni, Nj, Nk)
-    pdata = Array{FloatType}(Ni, Nj, Nk)
+    pts = Array{FloatType}(undef, 3, Ni, Nj, Nk)
+    pdata = Array{FloatType}(undef, Ni, Nj, Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         r = 1 + (i - 1)/(Ni - 1)
@@ -79,14 +79,14 @@ function third_block_data()
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
         inds = SVector{8, Int32}(
-            sub2ind(dims, i-1, j-1, k-1),
-            sub2ind(dims, i  , j-1, k-1),
-            sub2ind(dims, i  , j  , k-1),
-            sub2ind(dims, i-1, j  , k-1),
-            sub2ind(dims, i-1, j-1, k  ),
-            sub2ind(dims, i  , j-1, k  ),
-            sub2ind(dims, i  , j  , k  ),
-            sub2ind(dims, i-1, j  , k  ))
+            indices[i-1, j-1, k-1],
+            indices[i  , j-1, k-1],
+            indices[i  , j  , k-1],
+            indices[i-1, j  , k-1],
+            indices[i-1, j-1, k  ],
+            indices[i  , j-1, k  ],
+            indices[i  , j  , k  ],
+            indices[i-1, j  , k  ])
 
         # Define cell.
         c = MeshCell(celltype, inds)

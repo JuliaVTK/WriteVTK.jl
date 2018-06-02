@@ -51,7 +51,7 @@ function vtk_grid(filename::AbstractString, x::AbstractArray{T,3},
         throw(ArgumentError("Size of x, y and z arrays must be the same."))
     end
     Ni, Nj, Nk = size(x)
-    xyz = Array{T}(3, Ni, Nj, Nk)
+    xyz = Array{T}(undef, 3, Ni, Nj, Nk)
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         xyz[1, i, j, k] = x[i, j, k]
         xyz[2, i, j, k] = y[i, j, k]

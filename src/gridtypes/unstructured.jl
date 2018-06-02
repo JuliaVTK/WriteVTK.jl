@@ -30,8 +30,8 @@ function unstructured_grid(filename::AbstractString, points::AbstractArray,
     xCells = new_child(xPiece, "Cells")
 
     # Create data arrays.
-    offsets = Array{Int32}(Ncls)
-    types = Array{UInt8}(Ncls)
+    offsets = Array{Int32}(undef, Ncls)
+    types = Array{UInt8}(undef, Ncls)
 
     Nconn = 0     # length of the connectivity array
     if Ncls >= 1  # it IS possible to have no cells
@@ -48,7 +48,7 @@ function unstructured_grid(filename::AbstractString, points::AbstractArray,
     end
 
     # Create connectivity array.
-    conn = Array{Int32}(Nconn)
+    conn = Array{Int32}(undef, Nconn)
     ONE = one(Int32)
     n = 1
     for c in cells
@@ -99,7 +99,7 @@ function vtk_grid(filename::AbstractString, x::AbstractVector{T},
         throw(ArgumentError("Length of x, y and z arrays must be the same."))
     end
     Npts = length(x)
-    points = Array{T}(3, Npts)
+    points = Array{T}(undef, 3, Npts)
     for n = 1:Npts
         points[1, n] = x[n]
         points[2, n] = y[n]

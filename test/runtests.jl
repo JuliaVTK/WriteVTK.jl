@@ -36,9 +36,8 @@ for test in tests
         if OVERWRITE_CHECKSUMS
             write(csio, sha_str)
         else
-            # Returns 0:-1 if string is not found.
-            cmp = search(checksum_list, sha_str)
-            @test cmp != 0:-1
+            # Returns `nothing` if string is not found.
+            @test findfirst(sha_str, checksum_list) != nothing
         end
     end
     println()

@@ -11,12 +11,12 @@ function mesh_data(::Val{3})
     # This is basically a structured grid, but defined as an unstructured one.
     # Based on the structured.jl example.
     Ni, Nj, Nk = 40, 50, 20
-    dims = (Ni, Nj, Nk)
-    Npts = prod(dims)
+    indices = LinearIndices((1:Ni, 1:Nj, 1:Nk))
+    Npts = length(indices)
 
     # Create points and point data.
-    pts_ijk = Array{FloatType}(3, Ni, Nj, Nk)
-    pdata_ijk = Array{FloatType}(Ni, Nj, Nk)
+    pts_ijk = Array{FloatType}(undef, 3, Ni, Nj, Nk)
+    pdata_ijk = Array{FloatType}(undef, Ni, Nj, Nk)
 
     for k = 1:Nk, j = 1:Nj, i = 1:Ni
         r = 1 + (i - 1)/(Ni - 1)
@@ -34,15 +34,15 @@ function mesh_data(::Val{3})
 
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
-        inds = Array{Int32}(8)
-        inds[1] = sub2ind(dims, i-1, j-1, k-1)
-        inds[2] = sub2ind(dims, i  , j-1, k-1)
-        inds[3] = sub2ind(dims, i  , j  , k-1)
-        inds[4] = sub2ind(dims, i-1, j  , k-1)
-        inds[5] = sub2ind(dims, i-1, j-1, k  )
-        inds[6] = sub2ind(dims, i  , j-1, k  )
-        inds[7] = sub2ind(dims, i  , j  , k  )
-        inds[8] = sub2ind(dims, i-1, j  , k  )
+        inds = Array{Int32}(undef, 8)
+        inds[1] = indices[i-1, j-1, k-1]
+        inds[2] = indices[i  , j-1, k-1]
+        inds[3] = indices[i  , j  , k-1]
+        inds[4] = indices[i-1, j  , k-1]
+        inds[5] = indices[i-1, j-1, k  ]
+        inds[6] = indices[i  , j-1, k  ]
+        inds[7] = indices[i  , j  , k  ]
+        inds[8] = indices[i-1, j  , k  ]
 
         # Define cell.
         c = MeshCell(celltype, inds)
@@ -60,12 +60,12 @@ end
 # 2D mesh
 function mesh_data(::Val{2})
     Ni, Nj = 40, 50
-    dims = (Ni, Nj)
-    Npts = prod(dims)
+    indices = LinearIndices((1:Ni, 1:Nj))
+    Npts = length(indices)
 
     # Create points and point data.
-    pts_ijk = Array{FloatType}(2, Ni, Nj)
-    pdata_ijk = Array{FloatType}(Ni, Nj)
+    pts_ijk = Array{FloatType}(undef, 2, Ni, Nj)
+    pdata_ijk = Array{FloatType}(undef, Ni, Nj)
 
     for j = 1:Nj, i = 1:Ni
         r = 1 + (i - 1)/(Ni - 1)
@@ -82,11 +82,11 @@ function mesh_data(::Val{2})
 
     for j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
-        inds = Array{Int32}(4)
-        inds[1] = sub2ind(dims, i-1, j-1)
-        inds[2] = sub2ind(dims, i  , j-1)
-        inds[3] = sub2ind(dims, i  , j  )
-        inds[4] = sub2ind(dims, i-1, j  )
+        inds = Array{Int32}(undef, 4)
+        inds[1] = indices[i-1, j-1]
+        inds[2] = indices[i  , j-1]
+        inds[3] = indices[i  , j  ]
+        inds[4] = indices[i-1, j  ]
 
         # Define cell.
         c = MeshCell(celltype, inds)
@@ -107,8 +107,8 @@ function mesh_data(::Val{1})
     Npts = Ni
 
     # Create points and point data.
-    pts_ijk = Array{FloatType}(1, Ni)
-    pdata_ijk = Array{FloatType}(Ni)
+    pts_ijk = Array{FloatType}(undef, 1, Ni)
+    pdata_ijk = Array{FloatType}(undef, Ni)
 
     for i = 1:Ni
         pts_ijk[1, i] = (i-1)^2 / (Ni-1)^2
@@ -122,7 +122,7 @@ function mesh_data(::Val{1})
 
     for i = 2:Ni
         # Define connectivity of cell.
-        inds = Array{Int32}(2)
+        inds = Array{Int32}(undef, 2)
         inds[1] = i-1
         inds[2] = i
 

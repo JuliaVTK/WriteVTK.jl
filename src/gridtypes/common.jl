@@ -35,10 +35,12 @@ const VTKDataType = Union{Int8, UInt8, Int16, UInt16, Int32, UInt32,
 """
 Return the VTK string representation of a numerical data type.
 """
-# Note: the VTK type names are exactly the same as the Julia type names
-# (e.g.  Float64 -> "Float64"), so that we can simply use the `string`
-# function.
-datatype_str(::Type{T}) where T <: VTKDataType = string(T)
+function datatype_str(::Type{T}) where T <: VTKDataType
+    # Note: the VTK type names are exactly the same as the Julia type names
+    # (e.g.  Float64 -> "Float64"), so that we can simply use the `string`
+    # function.
+    string(T)
+end
 datatype_str(::Type{T}) where T =
     throw(ArgumentError("Data type not supported by VTK: $T"))
 datatype_str(::AbstractArray{T}) where T = datatype_str(T)
@@ -268,7 +270,7 @@ function save_with_appended_data(vtk::DatasetFile)
     @assert vtk.appended
 
     # Convert XML document to a string, and split the last two lines.
-    lines = rsplit(string(vtk.xdoc), '\n', limit=3, keep=true)
+    lines = rsplit(string(vtk.xdoc), '\n', limit=3, keepempty=true)
 
     # Verify that the last two lines are what they're supposed to be.
     @assert lines[2] == "</VTKFile>"
@@ -315,7 +317,7 @@ end
 Return the "extent" attribute required for structured (including rectilinear)
 grids.
 """
-extent_attribute(Ni, Nj, Nk, ::Void=nothing) =
+extent_attribute(Ni, Nj, Nk, ::Nothing=nothing) =
     "0 $(Ni - 1) 0 $(Nj - 1) 0 $(Nk - 1)"
 
 function extent_attribute(Ni, Nj, Nk, extent::Array{T}) where T <: Integer

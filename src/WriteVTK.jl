@@ -19,7 +19,7 @@ import TranscodingStreams
 using LightXML
 using Compat.Printf
 if VERSION >= v"0.7.0-DEV.2338"
-    using Base64.base64encode
+    using Base64: base64encode
 end
 
 import Base: close, isopen
