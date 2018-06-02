@@ -17,10 +17,11 @@ import CodecZlib
 import TranscodingStreams
 
 using LightXML
+
+# Compatibility with versions older than 0.7
 using Compat.Printf
-if VERSION >= v"0.7.0-DEV.2338"
-    using Base64: base64encode
-end
+using Compat.Base64
+using Compat: Nothing, undef
 
 import Base: close, isopen
 

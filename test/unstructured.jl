@@ -3,6 +3,9 @@
 # Create unstructured grid VTK file.
 
 using WriteVTK
+using Compat.LinearIndices
+using Compat: undef
+
 const FloatType = Float32
 const vtk_filename_noext = "unstructured"
 
