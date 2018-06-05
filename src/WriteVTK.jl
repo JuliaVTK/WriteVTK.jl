@@ -17,9 +17,18 @@ import CodecZlib
 import TranscodingStreams
 
 using LightXML
+
+# Compatibility with versions older than 0.7
 using Compat.Printf
-if VERSION >= v"0.7.0-DEV.2338"
-    using Base64.base64encode
+using Compat.Base64
+using Compat: Nothing, undef
+
+@static if VERSION < v"0.7.0-DEV.4724"
+    # https://github.com/JuliaLang/julia/pull/26647
+    rsplit(s::AbstractString; limit::Integer=0, keepempty::Bool=false) =
+        Base.rsplit(s; limit=limit, keep=keepempty)
+    rsplit(s::AbstractString, dlm; limit::Integer=0, keepempty::Bool=false) =
+        Base.rsplit(s, dlm; limit=limit, keep=keepempty)
 end
 
 import Base: close, isopen
