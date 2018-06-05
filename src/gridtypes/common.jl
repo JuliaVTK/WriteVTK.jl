@@ -270,9 +270,7 @@ function save_with_appended_data(vtk::DatasetFile)
     @assert vtk.appended
 
     # Convert XML document to a string, and split the last two lines.
-    # TODO julia 0.7: "keep" is deprecated, use "keepempty" instead
-    # (https://github.com/JuliaLang/julia/pull/26647)
-    lines = rsplit(string(vtk.xdoc), '\n', limit=3, keep=true)
+    lines = rsplit(string(vtk.xdoc), '\n', limit=3, keepempty=true)
 
     # Verify that the last two lines are what they're supposed to be.
     @assert lines[2] == "</VTKFile>"
