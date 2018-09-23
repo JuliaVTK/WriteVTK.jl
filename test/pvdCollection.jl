@@ -2,8 +2,7 @@
 
 using WriteVTK
 
-using Compat: CartesianIndices
-using Compat.Printf: @sprintf
+using Printf: @sprintf
 
 const FloatType = Float32
 const vtk_filename_noext = "collection"

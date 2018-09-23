@@ -18,25 +18,13 @@ import TranscodingStreams
 
 using LightXML
 
-# Compatibility with versions older than 0.7
-using Compat.Printf
-using Compat.Base64
-using Compat: Nothing, undef
-
-@static if VERSION < v"0.7.0-DEV.4724"
-    # https://github.com/JuliaLang/julia/pull/26647
-    rsplit(s::AbstractString; limit::Integer=0, keepempty::Bool=false) =
-        Base.rsplit(s; limit=limit, keep=keepempty)
-    rsplit(s::AbstractString, dlm; limit::Integer=0, keepempty::Bool=false) =
-        Base.rsplit(s, dlm; limit=limit, keep=keepempty)
-end
+using Printf: @sprintf
+using Base64: base64encode
 
 import Base: close, isopen
 
 # Cell type definitions as in vtkCellType.h
 include("VTKCellTypes.jl")
-
-Base.@deprecate_binding VTKCellType VTKCellTypes
 
 ## Constants ##
 const DEFAULT_COMPRESSION_LEVEL = 6

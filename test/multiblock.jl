@@ -6,7 +6,6 @@
 
 using WriteVTK
 using StaticArrays: SVector
-using Compat: undef, LinearIndices
 
 const FloatType = Float32
 const vtm_filename_noext = "multiblock"

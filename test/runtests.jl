@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 
 using WriteVTK
-using Compat.Test
+using Test: @test
 using SHA: sha1
 
 const tests = ["multiblock.jl",
