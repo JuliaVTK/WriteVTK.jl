@@ -2,7 +2,8 @@
 
 using WriteVTK
 
-using Compat.Printf
+using Compat: CartesianIndices
+using Compat.Printf: @sprintf
 
 const FloatType = Float32
 const vtk_filename_noext = "collection"
@@ -10,7 +11,7 @@ const vtk_filename_noext = "collection"
 function update_point_data!(p, q, vec, time)
     E = exp(-time)
     for I in CartesianIndices(p)
-        i, j, k = Tuple(I)
+        i, j, k = I[1], I[2], I[3]
         p[I] = E * (i * i + k)
         q[I] = E * k * sqrt(j)
         vec[1, i, j, k] = E * i
@@ -25,7 +26,7 @@ function update_cell_data!(cdata, time)
     α = 3pi / (Nj - 2)
     E = exp(-time)
     for I in CartesianIndices(cdata)
-        i, j, k = Tuple(I)
+        i, j, k = I[1], I[2], I[3]
         cdata[I] = E * (2i + 3k * sin(α * (j - 1)))
     end
     cdata
