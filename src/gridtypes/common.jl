@@ -1,9 +1,5 @@
 # Contains common functions for all grid types.
 
-ZlibCompressStream(buf::IO, level) =
-    CodecZlib.ZlibCompressorStream(buf; level=level)
-
-
 """
 Types allowed as input to `vtk_point_data()` and `vtk_cell_data()`.
 
@@ -138,7 +134,7 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
         write(buf, header)
 
         # Write compressed data.
-        zWriter = ZlibCompressStream(buf, vtk.compression_level)
+        zWriter = vtk.zbuf
         write_array(zWriter, data)
         write(zWriter, TranscodingStreams.TOKEN_END)
         flush(zWriter)
@@ -184,9 +180,10 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
     # base64-encoded separately!!
     # That's why we don't use a single buffer that contains both, like in the
     # other data_to_xml function.
+    local zWriter
     if compress
         # Write compressed data.
-        zWriter = ZlibCompressStream(buf, vtk.compression_level)
+        zWriter = ZlibCompressorStream(buf, level=vtk.compression_level)
         write_array(zWriter, data)
         write(zWriter, TranscodingStreams.TOKEN_END)
         flush(zWriter)
@@ -205,6 +202,9 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
     add_text(xDA, base64encode(take!(buf)))
     add_text(xDA, "\n")
 
+    if compress
+        close(zWriter)
+    end
     close(buf)
 
     xDA::XMLElement
@@ -268,6 +268,7 @@ function of `LightXML`, which doesn't allow to write raw binary data.
 """
 function save_with_appended_data(vtk::DatasetFile)
     @assert vtk.appended
+    @assert isopen(vtk.buf)
 
     # Convert XML document to a string, and split the last two lines.
     lines = rsplit(string(vtk.xdoc), '\n', limit=3, keepempty=true)
@@ -288,6 +289,10 @@ function save_with_appended_data(vtk::DatasetFile)
         write(io, take!(vtk.buf))
         write(io, "\n  </AppendedData>")
         write(io, "\n</VTKFile>")
+
+        if isopen(vtk.zbuf)
+            close(vtk.zbuf)
+        end
 
         close(vtk.buf)
     end

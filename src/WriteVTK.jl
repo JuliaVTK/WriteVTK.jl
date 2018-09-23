@@ -13,7 +13,7 @@ export vtk_multiblock
 export paraview_collection, collection_add_timestep
 export vtk_write_array
 
-import CodecZlib
+import CodecZlib: ZlibCompressorStream
 import TranscodingStreams
 
 using LightXML
@@ -57,18 +57,21 @@ struct DatasetFile <: VTKFile
     compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     buf::IOBuffer       # Buffer with appended data.
+    zbuf::ZlibCompressorStream{IOBuffer}  # Compression stream wrapping `buf`.
     function DatasetFile(xdoc, path, grid_type, Npts, Ncls, compression,
                          appended)
         buf = IOBuffer()
-        if !appended  # in this case we don't need a buffer
-            close(buf)
-        end
         clevel = _compression_level(compression)
         if !(0 ≤ clevel ≤ 9)
             error("Unexpected value of `compress` argument: $compression.\n",
                   "It must be a `Bool` or a value between 0 and 9.")
         end
-        new(xdoc, path, grid_type, Npts, Ncls, clevel, appended, buf)
+        zbuf = ZlibCompressorStream(buf, level=clevel)
+        if !appended  # in this case we don't need a buffer
+            close(zbuf)
+            close(buf)
+        end
+        new(xdoc, path, grid_type, Npts, Ncls, clevel, appended, buf, zbuf)
     end
 end
 
