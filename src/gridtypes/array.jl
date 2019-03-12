@@ -2,15 +2,18 @@
     vtk_write_array(filename, arrays, labels)
     vtk_write_array(filename, array, label="array")
 
-Write a Julia array to a VTK image data file (.vti).
+Write Julia arrays to a VTK image data file (.vti).
 
 Useful for general visualisation of arrays.
 The input can be a 2D or 3D array.
 
+If multiple arrays are given, they must have the same dimensions.
+
 """
 function vtk_write_array(filename::AbstractString,
                          arrays::AbstractVector{A},
-                         labels::AbstractVector{String}) where {T<:Real,N,A<:AbstractArray{T,N}}
+                         labels::AbstractVector{String}) where
+        {T<:Real,N,A<:AbstractArray{T,N}}
     if !(2 <= N <= 3)
         throw(ArgumentError("Input should be a 2D or 3D array."))
     end
