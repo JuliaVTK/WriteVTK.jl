@@ -14,7 +14,6 @@ function main()
     # reproducibility).
     rng = MersenneTwister(42)
     data = randn(rng, Ni, Nj, Nk)
-    data2 = randn(rng, 3, 4)
 
     # Write 2D and 3D arrays.
     @time begin
@@ -23,7 +22,7 @@ function main()
         append!(outfiles,
                 vtk_write_array("arraydata_3D", data, "array3D"))
         append!(outfiles,
-                vtk_write_array("arrays", [data, data2], ["A", "B"]))
+                vtk_write_array("arrays", [data, 2 .* data], ["A", "B"]))
     end
 
     println("Saved:  ", join(outfiles, "  "))
