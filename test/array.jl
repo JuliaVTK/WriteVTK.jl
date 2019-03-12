@@ -22,7 +22,7 @@ function main()
         append!(outfiles,
                 vtk_write_array("arraydata_3D", data, "array3D"))
         append!(outfiles,
-                vtk_write_array("arrays", [data, 2 .* data], ["A", "B"]))
+                vtk_write_array("arrays", (data, 2 .* data), ("A", "B")))
     end
 
     println("Saved:  ", join(outfiles, "  "))
