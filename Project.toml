@@ -1,5 +1,5 @@
 name = "WriteVTK"
-uuid = "91fa3326-56ab-11e9-1fae-1b2c8fcaae55"
+uuid = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 authors = ["Juan Ignacio Polanco <jipolanc@gmail.com>"]
 version = "1.0.1"
 
