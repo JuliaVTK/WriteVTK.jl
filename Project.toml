@@ -1,0 +1,19 @@
+name = "WriteVTK"
+uuid = "91fa3326-56ab-11e9-1fae-1b2c8fcaae55"
+authors = ["Juan Ignacio Polanco <jipolanc@gmail.com>"]
+version = "1.0.1"
+
+[deps]
+Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+LightXML = "9c8b4983-aa76-5018-a973-4c85ecc9e179"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
+
+[extras]
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "SHA", "StaticArrays"]
