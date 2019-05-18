@@ -45,7 +45,6 @@ struct DatasetFile <: VTKFile
     compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     buf::IOBuffer       # Buffer with appended data.
-    zbuf::ZlibCompressorStream{IOBuffer}  # Compression stream wrapping `buf`.
     function DatasetFile(xdoc, path, grid_type, Npts, Ncls, compression,
                          appended)
         buf = IOBuffer()
@@ -54,12 +53,10 @@ struct DatasetFile <: VTKFile
             error("Unexpected value of `compress` argument: $compression.\n",
                   "It must be a `Bool` or a value between 0 and 9.")
         end
-        zbuf = ZlibCompressorStream(buf, level=clevel)
         if !appended  # in this case we don't need a buffer
-            close(zbuf)
             close(buf)
         end
-        new(xdoc, path, grid_type, Npts, Ncls, clevel, appended, buf, zbuf)
+        new(xdoc, path, grid_type, Npts, Ncls, clevel, appended, buf)
     end
 end
 

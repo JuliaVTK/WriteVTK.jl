@@ -134,7 +134,7 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
         write(buf, header)
 
         # Write compressed data.
-        zWriter = vtk.zbuf
+        zWriter = ZlibCompressorStream(buf, level=vtk.compression_level)
         write_array(zWriter, data)
         write(zWriter, TranscodingStreams.TOKEN_END)
         flush(zWriter)
@@ -289,10 +289,6 @@ function save_with_appended_data(vtk::DatasetFile)
         write(io, take!(vtk.buf))
         write(io, "\n  </AppendedData>")
         write(io, "\n</VTKFile>")
-
-        if isopen(vtk.zbuf)
-            close(vtk.zbuf)
-        end
 
         close(vtk.buf)
     end
