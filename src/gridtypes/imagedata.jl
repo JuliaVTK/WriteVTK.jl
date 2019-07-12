@@ -55,15 +55,30 @@ function vtk_grid(filename::AbstractString,
 end
 
 """
-    vtk_grid(filename, x::LinRange, y::LinRange, z::LinRange; kwargs...)
+    vtk_grid(filename, x::AbstractRange{T}, y::AbstractRange{T}, z::AbstractRange{T};
+             kwargs...)
 
 Create image data (`.vti`) file.
 
-Along each direction, the grid is specified in terms of a
-`LinRange(start, stop, len)` object.
+Along each direction, the grid is specified in terms of an AbstractRange object.
+
+# Examples
+
+```jldoctest
+julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3, 4:1.:5)
+VTK file 'abc.vti' (ImageData file, open)
+
+julia> vtk = vtk_grid("def",
+                      LinRange(0., 5., 10),
+                      LinRange(0., 2π, 16),
+                      LinRange(1., 10., 12))
+VTK file 'def.vti' (ImageData file, open)
+
+```
+
 """
 function vtk_grid(filename::AbstractString,
-                  x::LinRange{T}, y::LinRange{T}, z::LinRange{T};
+                  x::AbstractRange{T}, y::AbstractRange{T}, z::AbstractRange{T};
                   kwargs...) where T
     xyz = (x, y, z)
     Nxyz = map(length, xyz)
