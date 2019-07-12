@@ -1,7 +1,10 @@
+const TupleOrVec = Union{NTuple{N, T} where {N, T <: Real},
+                         AbstractVector{T} where T <: Real}
+
 function vtk_grid(filename::AbstractString,
                   Nx::Integer, Ny::Integer, Nz::Integer=1;
-                  origin::AbstractArray=[0.0, 0.0, 0.0],
-                  spacing::AbstractArray=[1.0, 1.0, 1.0],
+                  origin::TupleOrVec=(0.0, 0.0, 0.0),
+                  spacing::TupleOrVec=(1.0, 1.0, 1.0),
                   compress=true, append::Bool=true, extent=nothing)
     Npts = Nx*Ny*Nz
     Ncls = num_cells_structured(Nx, Ny, Nz)
