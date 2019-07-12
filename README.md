@@ -138,6 +138,17 @@ vtk = vtk_grid("my_vti_file", Nx, Ny, Nz, origin=origin, spacing=spacing)
 vtk_save(vtk)
 ```
 
+Coordinates may also be specified using ranges (more precisely, any subtype of `AbstractRange`).
+Some examples:
+
+```julia
+# Using StepRangeLen objects
+vtk_grid("vti_file_1", 0:0.1:10, 0:0.2:10, 1:0.3:4)
+
+# Using LinRange objects
+vtk_grid("vti_file_2", LinRange(0, 4.2, 10), LinRange(1, 3.1, 42), LinRange(0.2, 12.1, 32))
+```
+
 ## Usage: julia array
 
 A convenience function is provided to quickly save Julia arrays as image data:
