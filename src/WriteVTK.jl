@@ -21,7 +21,7 @@ using LightXML
 using Printf: @sprintf
 using Base64: base64encode
 
-import Base: close, isopen
+import Base: close, isopen, show
 
 # Cell type definitions as in vtkCellType.h
 include("VTKCellTypes.jl")
@@ -58,6 +58,11 @@ struct DatasetFile <: VTKFile
         end
         new(xdoc, path, grid_type, Npts, Ncls, clevel, appended, buf)
     end
+end
+
+function show(io::IO, vtk::DatasetFile)
+    open_str = isopen(vtk) ? "open" : "closed"
+    print(io, "VTK file '$(vtk.path)' ($(vtk.grid_type) file, $open_str)")
 end
 
 struct MultiblockFile <: VTKFile
