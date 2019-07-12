@@ -4,7 +4,7 @@ function vtk_grid(filename::AbstractString,
                   spacing::AbstractArray=[1.0, 1.0, 1.0],
                   compress=true, append::Bool=true, extent=nothing)
     Npts = Nx*Ny*Nz
-    Ncls = (Nx - 1) * (Ny - 1) * (Nz - 1)
+    Ncls = num_cells_structured(Nx, Ny, Nz)
     ext = extent_attribute(Nx, Ny, Nz, extent)
 
     xvtk = XMLDocument()
@@ -18,14 +18,29 @@ function vtk_grid(filename::AbstractString,
     xGrid = new_child(xroot, vtk.grid_type)
     set_attribute(xGrid, "WholeExtent", ext)
 
-    if length(origin) != 3
-        throw(ArgumentError("origin array must have length 3"))
-    elseif length(spacing) != 3
-        throw(ArgumentError("spacing array must have length 3"))
+    No = length(origin)
+    Ns = length(spacing)
+
+    if No > 3
+        throw(ArgumentError("origin array must have length <= 3"))
+    elseif Ns > 3
+        throw(ArgumentError("spacing array must have length <= 3"))
     end
 
     origin_str = join(origin, " ")
     spacing_str = join(spacing, " ")
+
+    while No != 3
+        # Fill additional dimensions (e.g. the z dimension if 2D grid)
+        origin_str *= (" 0.0")
+        No += 1
+    end
+
+    while Ns != 3
+        spacing_str *= (" 1.0")
+        Ns += 1
+    end
+
     set_attribute(xGrid, "Origin", origin_str)
     set_attribute(xGrid, "Spacing", spacing_str)
 

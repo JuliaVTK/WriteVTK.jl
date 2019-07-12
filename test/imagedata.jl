@@ -48,6 +48,15 @@ function main()
     end
     println("Saved:   ", outfiles...)
 
+    # Test 2D dataset
+    @time outfiles = vtk_grid(vtk_filename_noext * "_2D", Ni, Nj,
+                              # extent=extent[1:2],  # doesn't work for now (TODO)
+                              origin=origin[1:2], spacing=spacing[1:2]) do vtk
+        vtk_point_data(vtk, p[:, :, 1], "p_values")
+        vtk_point_data(vtk, vec[:, :, :, 1], "myVector")
+        vtk_cell_data(vtk, cdata[:, :, 1], "myCellData")
+    end
+
     return outfiles::Vector{String}
 end
 
