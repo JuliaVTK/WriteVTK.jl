@@ -56,6 +56,15 @@ function main()
         vtk_cell_data(vtk, cdata[:, :, 1], "myCellData")
     end
 
+    # Test specifying coordinates using LinRange
+    let xyz = (LinRange(0., 5., Ni), LinRange(1., 3., Nj), LinRange(2., 6., Nk))
+        @time outfiles_LR = vtk_grid(vtk_filename_noext * "_LinRange", xyz) do vtk
+            vtk_point_data(vtk, vec, "myVector")
+            vtk_cell_data(vtk, cdata, "myCellData")
+        end
+        append!(outfiles, outfiles_LR)
+    end
+
     append!(outfiles, outfiles_2D)
     println("Saved:   ", join(outfiles, "  "))
 
