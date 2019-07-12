@@ -53,3 +53,21 @@ function vtk_grid(filename::AbstractString,
 
     return vtk::DatasetFile
 end
+
+"""
+    vtk_grid(filename, x::LinRange, y::LinRange, z::LinRange; kwargs...)
+
+Create image data (`.vti`) file.
+
+Along each direction, the grid is specified in terms of a
+`LinRange(start, stop, len)` object.
+"""
+function vtk_grid(filename::AbstractString,
+                  x::LinRange{T}, y::LinRange{T}, z::LinRange{T};
+                  kwargs...) where T
+    xyz = (x, y, z)
+    Nxyz = map(length, xyz)
+    origin = map(first, xyz)
+    spacing = map(step, xyz)
+    vtk_grid(filename, Nxyz, origin=origin, spacing=spacing, kwargs...)
+end
