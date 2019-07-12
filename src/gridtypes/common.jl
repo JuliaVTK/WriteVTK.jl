@@ -345,3 +345,9 @@ function num_cells_structured(Ni, Nj, Nk)
     end
     Ncls
 end
+
+# Accept passing coordinates as a tuple.
+vtk_grid(filename, xyz::NTuple{3, T} where T; kwargs...) =
+    vtk_grid(filename, xyz...; kwargs...)
+vtk_grid(filename, xy::NTuple{2, T} where T; kwargs...) =
+    vtk_grid(filename, xy...; kwargs...)
