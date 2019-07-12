@@ -56,6 +56,8 @@ function main()
         vtk_cell_data(vtk, cdata[:, :, 1], "myCellData")
     end
 
+    append!(outfiles, outfiles_2D)
+
     # Test specifying coordinates using LinRange
     let xyz = (LinRange(0., 5., Ni), LinRange(1., 3., Nj), LinRange(2., 6., Nk))
         @time outfiles_LR = vtk_grid(vtk_filename_noext * "_LinRange", xyz) do vtk
@@ -65,7 +67,13 @@ function main()
         append!(outfiles, outfiles_LR)
     end
 
-    append!(outfiles, outfiles_2D)
+    # Similar using StepRangeLen
+    let xyz = (0:0.08:5, 1.2:0.05:2., 1.2:0.1:2.)
+        @time outfiles_SR = vtk_grid(vtk_filename_noext * "_StepRangeLen", xyz) do vtk
+        end
+        append!(outfiles, outfiles_SR)
+    end
+
     println("Saved:   ", join(outfiles, "  "))
 
     return outfiles::Vector{String}
