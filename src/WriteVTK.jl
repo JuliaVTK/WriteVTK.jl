@@ -99,17 +99,16 @@ isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
 # Add a default extension to the filename,
 # unless the user have already given the correct one
-function add_extension(filename, default_extension)
+function add_extension(filename, default_extension) :: String
     path, ext = splitext(filename)
-    if ext != default_extension
-        if ext in ("vtu", "vtr", "vts", "vti", "pvd", "vtm")
-            warn("detected extension '$(ext)' does not correspond to dataset type. ",
-                "Appending '$(default_extension)' to filename.")
-        end
-        return filename * default_extension
-    else
+    if ext == default_extension
         return filename
     end
+    if !isempty(ext)
+        @warn("detected extension '$(ext)' does not correspond to " *
+              "dataset type.\nAppending '$(default_extension)' to filename.")
+    end
+    filename * default_extension
 end
 
 # Multiblock-specific functions and types.
