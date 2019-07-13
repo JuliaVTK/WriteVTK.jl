@@ -275,7 +275,7 @@ outfiles = vtk_save(vtmfile)
 ```
 
 Assuming that the two blocks are structured grids, this generates the files
-`my_vtm_file.vtm`, `my_vtm_file.z01.vts` and `my_vtm_file.z02.vts`, where the
+`my_vtm_file.vtm`, `my_vtm_file_1.vts` and `my_vtm_file_2.vts`, where the
 `vtm` file points to the two `vts` files.
 
 
