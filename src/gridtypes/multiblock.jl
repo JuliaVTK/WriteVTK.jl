@@ -14,16 +14,34 @@ function vtk_multiblock(filename::AbstractString)
     return MultiblockFile(xvtm, add_extension(filename, ".vtm"))
 end
 
-function vtk_grid(vtm::MultiblockFile, griddata...; kwargs...)
-    # Creates new dataset file that is added to the multiblock file.
-    # "griddata" can be any combination of arrays that define a VTK grid.
-    path_base = splitext(vtm.path)[1]
-    vtkFilename_noext = @sprintf("%s.z%02d", path_base, 1 + length(vtm.blocks))
-    vtk = vtk_grid(vtkFilename_noext, griddata...; kwargs...)
+"""
+    vtk_grid(vtm::MultiblockFile, [filename], griddata...; kwargs...)
+
+Create new dataset file that is added to an existent multiblock file.
+The VTK grid is specified by the elements of `griddata`.
+
+If the filename is not given, it is determined automatically from the filename
+of the vtm file and the number of existent blocks.
+"""
+function vtk_grid(vtm::MultiblockFile, vtk_filename::AbstractString,
+                  griddata...; kwargs...)
+    vtk = vtk_grid(vtk_filename, griddata...; kwargs...)
     multiblock_add_block(vtm, vtk)
-    return vtk::DatasetFile
+    vtk :: DatasetFile
 end
 
+function vtk_grid(vtm::MultiblockFile, griddata...; kwargs...)
+    vtm_basename, _ = splitext(vtm.path)
+    vtk_basename = string(vtm_basename, "_", 1 + length(vtm.blocks))
+    vtk_grid(vtm, vtk_basename, griddata...; kwargs...)
+end
+
+"""
+    vtk_save(vtm::MultiblockFile)
+
+Save and close multiblock file (.vtm).
+The VTK files included in the multiblock file are also saved.
+"""
 function vtk_save(vtm::MultiblockFile)
     # Saves VTK multiblock file (.vtm).
     # Also saves the contained block files (vtm.blocks) recursively.
