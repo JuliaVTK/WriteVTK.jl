@@ -128,6 +128,20 @@ include("gridtypes/common.jl")
 # This allows using do-block syntax for generation of VTK files.
 for func in (:vtk_grid, :vtk_multiblock, :paraview_collection)
     @eval begin
+        """
+            $($func)(f::Function, args...; kwargs...)
+
+        Create VTK file and apply `f` to it.
+        The file is automatically closed by the end of the call.
+
+        This allows to use the do-block syntax for creating VTK files:
+
+        ```julia
+        saved_files = $($func)(args...; kwargs...) do vtk
+            # do stuff with the `vtk` file handler
+        end
+        ```
+        """
         function ($func)(f::Function, args...; kwargs...)
             vtk = ($func)(args...; kwargs...)
             local outfiles
