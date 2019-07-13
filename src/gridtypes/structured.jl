@@ -1,7 +1,17 @@
-function structured_grid(filename::AbstractString, xyz::AbstractArray;
+# Structured dataset coordinates can be specified using either a 4D array
+# (3, Ni, Nj, Nk), or a tuple (x, y, z).
+const Array4 = AbstractArray{T, 4} where T
+const Array3Tuple3 = NTuple{3, A} where A <: AbstractArray{T, 3} where T
+const StructuredCoords = Union{Array4, Array3Tuple3}
+
+structured_dims(xyz::Array4) = size(xyz)[2:4]
+structured_dims(xyz::Array3Tuple3) = size(first(xyz))
+
+function structured_grid(filename::AbstractString,
+                         xyz::StructuredCoords;
                          compress=true, append::Bool=true, extent=nothing)
-    _, Ni, Nj, Nk = size(xyz)
-    Npts = Ni*Nj*Nk
+    Ni, Nj, Nk = structured_dims(xyz)
+    Npts = Ni * Nj * Nk
     Ncomp = num_components(xyz, Npts)
     Ncls = num_cells_structured(Ni, Nj, Nk)
     ext = extent_attribute(Ni, Nj, Nk, extent)
@@ -37,7 +47,6 @@ function structured_grid(filename::AbstractString, xyz::AbstractArray;
     return vtk::DatasetFile
 end
 
-
 # 3D variant of vtk_grid with 4D array xyz.
 vtk_grid(filename::AbstractString, xyz::AbstractArray{T,4};
          kwargs...) where T =
@@ -51,16 +60,8 @@ function vtk_grid(filename::AbstractString, x::AbstractArray{T,3},
     if !(size(x) == size(y) == size(z))
         throw(ArgumentError("Size of x, y and z arrays must be the same."))
     end
-    Ni, Nj, Nk = size(x)
-    xyz = Array{T}(undef, 3, Ni, Nj, Nk)
-    for k = 1:Nk, j = 1:Nj, i = 1:Ni
-        xyz[1, i, j, k] = x[i, j, k]
-        xyz[2, i, j, k] = y[i, j, k]
-        xyz[3, i, j, k] = z[i, j, k]
-    end
-    structured_grid(filename, xyz; kwargs...)
+    structured_grid(filename, (x, y, z); kwargs...)
 end
-
 
 # 2D variant of vtk_grid with 3D array xy
 function vtk_grid(filename::AbstractString, xy::AbstractArray{T,3};
