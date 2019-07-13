@@ -18,7 +18,6 @@ import TranscodingStreams
 
 using LightXML
 
-using Printf: @sprintf
 using Base64: base64encode
 
 import Base: close, isopen, show
