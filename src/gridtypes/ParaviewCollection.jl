@@ -20,7 +20,7 @@ function collection_add_timestep(pvd::CollectionFile, datfile::VTKFile,
     xroot = root(pvd.xdoc)
     xMBDS = find_element(xroot, "Collection")
     xDataSet = new_child(xMBDS, "DataSet")
-    fname = relpath(datfile.path |> abspath ,pvd.path |> abspath |> splitdir |> first)
+    fname = relpath(abspath(datfile.path), first(splitdir(abspath(pvd.path))))
     set_attribute(xDataSet, "timestep", string(t))
     set_attribute(xDataSet, "part", "0")
     set_attribute(xDataSet, "file", fname)
