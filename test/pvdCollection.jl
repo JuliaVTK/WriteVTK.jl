@@ -73,8 +73,21 @@ function main()
             collection_add_timestep(pvd, vtk, Float64(it+1))
         end
     end
-    println("Saved:  ", join(outfiles, "  "))
 
+    # Create a copy of above pvd for reloading
+    cp(vtk_filename_noext*".pvd",vtk_filename_noext*"_reload.pvd",force=true)
+    pvd_reload = paraview_collection_load(vtk_filename_noext*"_reload")
+
+    # add a vtk file
+    vtk_reload = vtk_grid("collection_reload",[1,2,3],[1,2,3])
+    collection_add_timestep(pvd_reload,vtk_reload,5.0)
+    # Remove the file again, its not needed for testing
+    rm(vtk_reload.path)
+    vtk_save(pvd_reload)
+    push!(outfiles,vtk_filename_noext*"_reload.pvd")
+
+    println("Saved:  ", join(outfiles, "  "))
+    
     return outfiles::Vector{String}
 end
 
