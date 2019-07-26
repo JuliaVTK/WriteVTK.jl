@@ -26,11 +26,11 @@ function paraview_collection_load(filename::AbstractString)
     # This also preserves the formatting of the resulting
     # file as the empty textnodes created during loading
     # are removed.
-    for c in child_elements(find_element(root(xpvd),"Collection"))
+    for c in child_elements(find_element(root(xpvd), "Collection"))
         xDataSet = new_child(xMBDS, "DataSet")
-        set_attribute(xDataSet, "timestep",attribute(c,"timestep"))
-        set_attribute(xDataSet, "part",attribute(c,"part"))
-        set_attribute(xDataSet, "file",attribute(c,"file"))
+        set_attribute(xDataSet, "timestep", attribute(c, "timestep"))
+        set_attribute(xDataSet, "part", attribute(c, "part"))
+        set_attribute(xDataSet, "file", attribute(c, "file"))
     end
     return pvd
 end
