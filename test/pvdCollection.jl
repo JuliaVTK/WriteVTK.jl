@@ -81,10 +81,8 @@ function main()
     # add a vtk file
     vtk_reload = vtk_grid("collection_reload",[1,2,3],[1,2,3])
     collection_add_timestep(pvd_reload,vtk_reload,5.0)
-    # Remove the file again, its not needed for testing
-    rm(vtk_reload.path)
-    vtk_save(pvd_reload)
-    push!(outfiles,vtk_filename_noext*"_reload.pvd")
+    pvd_reload_files = vtk_save(pvd_reload)
+    append!(outfiles, pvd_reload_files)
 
     println("Saved:  ", join(outfiles, "  "))
     
