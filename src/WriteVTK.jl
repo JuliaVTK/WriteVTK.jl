@@ -10,7 +10,7 @@ export VTKCellTypes, VTKCellType
 export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
-export paraview_collection, collection_add_timestep
+export paraview_collection, collection_add_timestep, paraview_collection_load
 export vtk_write_array
 
 import CodecZlib: ZlibCompressorStream
