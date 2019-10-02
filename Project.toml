@@ -1,7 +1,7 @@
 name = "WriteVTK"
 uuid = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 authors = ["Juan Ignacio Polanco <jipolanc@gmail.com>"]
-version = "1.2.0"
+version = "1.2.1"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
