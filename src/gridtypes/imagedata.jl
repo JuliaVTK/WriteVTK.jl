@@ -84,5 +84,5 @@ function vtk_grid(filename::AbstractString,
     Nxyz = map(length, xyz)
     origin = map(first, xyz)
     spacing = map(step, xyz)
-    vtk_grid(filename, Nxyz, origin=origin, spacing=spacing, kwargs...)
+    vtk_grid(filename, Nxyz; origin=origin, spacing=spacing, kwargs...)
 end
