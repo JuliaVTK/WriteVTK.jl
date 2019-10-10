@@ -125,7 +125,8 @@ include("gridtypes/array.jl")
 include("gridtypes/common.jl")
 
 # This allows using do-block syntax for generation of VTK files.
-for func in (:vtk_grid, :vtk_multiblock, :paraview_collection)
+for func in (:vtk_grid, :vtk_multiblock, :paraview_collection,
+             :paraview_collection_load)
     @eval begin
         """
             $($func)(f::Function, args...; kwargs...)
