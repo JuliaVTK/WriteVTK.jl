@@ -78,7 +78,7 @@ function main()
     cp(vtk_filename_noext * ".pvd",
        vtk_filename_noext * "_reload.pvd",
        force=true)
-    pvd_reload = paraview_collection_load(vtk_filename_noext * "_reload")
+    pvd_reload = paraview_collection(vtk_filename_noext * "_reload", append=true)
 
     # add a vtk file
     vtk_reload = vtk_grid("collection_reload", [1, 2, 3], [1, 2, 3])

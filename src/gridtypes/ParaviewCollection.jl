@@ -1,6 +1,14 @@
-function paraview_collection(filename::AbstractString)
+function paraview_collection(filename::AbstractString;
+                             append=false) :: CollectionFile
     # Initialise Paraview collection file (extension .pvd).
     # filename: filename with or without the extension (.pvd).
+    filename_full = add_extension(filename, ".pvd")
+
+    if append && isfile(filename_full)
+        # Append to existent PVD file.
+        return paraview_collection_load(filename_full)
+    end
+
     xpvd = XMLDocument()
     xroot = create_root(xpvd, "VTKFile")
     set_attribute(xroot, "type", "Collection")
@@ -12,7 +20,8 @@ function paraview_collection(filename::AbstractString)
     end
     set_attribute(xroot, "compressor", "vtkZLibDataCompressor")
     new_child(xroot, "Collection")
-    return CollectionFile(xpvd, add_extension(filename, ".pvd"))
+
+    return CollectionFile(xpvd, filename_full)
 end
 
 function paraview_collection_load(filename::AbstractString)
