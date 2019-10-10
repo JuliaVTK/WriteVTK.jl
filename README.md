@@ -288,12 +288,12 @@ different time steps in a simulation. A `pvd` file is initialised with:
 pvd = paraview_collection("my_pvd_file")
 ```
 
-This overwrites existent `pvd` files.
-To append new datasets to an existent `pvd` file, use
-`paraview_collection_load` instead:
+By default this overwrites existent `pvd` files.
+To append new datasets to an existent `pvd` file, set the `append` option to
+`true`:
 
 ```julia
-pvd = paraview_collection_load("my_pvd_file")
+pvd = paraview_collection("my_pvd_file", append=true)
 ```
 
 VTK files are then added to the `pvd` file with
