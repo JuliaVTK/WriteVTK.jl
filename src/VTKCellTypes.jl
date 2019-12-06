@@ -13,6 +13,14 @@ struct VTKCellType
     nodes::Int
 end
 
+# Construction of VTKCellType objects from the integer vtk id
+function VTKCellType(vtkid::Integer)
+  id = UInt8(vtkid)
+  if ! haskey(VTK_CELL_TYPES,id)
+    throw(ArgumentError("Unknown vtkid = $vtkid"))
+  end
+  VTK_CELL_TYPES[id]
+end
 
 # Linear cells
 const VTK_EMPTY_CELL       = VTKCellType("VTK_EMPTY_CELL",      UInt8(0),  0)
@@ -76,5 +84,73 @@ const VTK_HIGHER_ORDER_TETRAHEDRON = VTKCellType("VTK_HIGHER_ORDER_TETRAHEDRON",
 const VTK_HIGHER_ORDER_WEDGE       = VTKCellType("VTK_HIGHER_ORDER_WEDGE",      UInt8(65),-1)
 const VTK_HIGHER_ORDER_PYRAMID     = VTKCellType("VTK_HIGHER_ORDER_PYRAMID",    UInt8(66),-1)
 const VTK_HIGHER_ORDER_HEXAHEDRON  = VTKCellType("VTK_HIGHER_ORDER_HEXAHEDRON", UInt8(67),-1)
+
+# Dictionary with all pre-defined VTKCellType objects
+
+function _init_VTK_CELL_TYPES()
+
+  # A better way to get a vector of predefined VTK cell types?
+  all_types = [
+    VTK_EMPTY_CELL,
+    VTK_VERTEX,
+    VTK_POLY_VERTEX,
+    VTK_LINE,
+    VTK_POLY_LINE,
+    VTK_TRIANGLE,
+    VTK_TRIANGLE_STRIP,
+    VTK_POLYGON,
+    VTK_PIXEL,
+    VTK_QUAD,
+    VTK_TETRA,
+    VTK_VOXEL,
+    VTK_HEXAHEDRON,
+    VTK_WEDGE,
+    VTK_PYRAMID,
+    VTK_PENTAGONAL_PRISM,
+    VTK_HEXAGONAL_PRISM,
+    VTK_QUADRATIC_EDGE,
+    VTK_QUADRATIC_TRIANGLE,
+    VTK_QUADRATIC_QUAD,
+    VTK_QUADRATIC_POLYGON,
+    VTK_QUADRATIC_TETRA,
+    VTK_QUADRATIC_HEXAHEDRON,
+    VTK_QUADRATIC_WEDGE,
+    VTK_QUADRATIC_PYRAMID,
+    VTK_BIQUADRATIC_QUAD,
+    VTK_TRIQUADRATIC_HEXAHEDRON,
+    VTK_QUADRATIC_LINEAR_QUAD,
+    VTK_QUADRATIC_LINEAR_WEDGE,
+    VTK_BIQUADRATIC_QUADRATIC_WEDGE,
+    VTK_BIQUADRATIC_QUADRATIC_HEXAHEDRON,
+    VTK_BIQUADRATIC_TRIANGLE,
+    VTK_CUBIC_LINE,
+    VTK_CONVEX_POINT_SET,
+    VTK_POLYHEDRON,
+    VTK_PARAMETRIC_CURVE,
+    VTK_PARAMETRIC_SURFACE,
+    VTK_PARAMETRIC_TRI_SURFACE,
+    VTK_PARAMETRIC_QUAD_SURFACE,
+    VTK_PARAMETRIC_TETRA_REGION,
+    VTK_PARAMETRIC_HEX_REGION,
+    VTK_HIGHER_ORDER_EDGE,
+    VTK_HIGHER_ORDER_TRIANGLE,
+    VTK_HIGHER_ORDER_QUAD,
+    VTK_HIGHER_ORDER_POLYGON,
+    VTK_HIGHER_ORDER_TETRAHEDRON,
+    VTK_HIGHER_ORDER_WEDGE,
+    VTK_HIGHER_ORDER_PYRAMID,
+    VTK_HIGHER_ORDER_HEXAHEDRON]
+
+  dict = Dict{UInt8,VTKCellType}()
+
+  for ctyp in all_types
+    dict[ctyp.vtk_id] = ctyp
+  end
+
+  dict
+
+end
+
+const VTK_CELL_TYPES = _init_VTK_CELL_TYPES()
 
 end # module
