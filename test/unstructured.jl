@@ -4,6 +4,8 @@
 
 using WriteVTK
 
+using Test
+
 const FloatType = Float32
 const vtk_filename_noext = "unstructured"
 
@@ -32,6 +34,8 @@ function mesh_data(::Val{3})
     celltype = VTKCellTypes.VTK_HEXAHEDRON
     cells = MeshCell[]
     cdata = FloatType[]
+
+    @test VTKCellType(celltype.vtk_id) === celltype
 
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
@@ -81,6 +85,8 @@ function mesh_data(::Val{2})
     cells = MeshCell[]
     cdata = FloatType[]
 
+    @test VTKCellType(celltype.vtk_id) === celltype
+
     for j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
         inds = Array{Int32}(undef, 4)
@@ -120,6 +126,8 @@ function mesh_data(::Val{1})
     celltype = VTKCellTypes.VTK_LINE
     cells = MeshCell[]
     cdata = FloatType[]
+
+    @test VTKCellType(celltype.vtk_id) === celltype
 
     for i = 2:Ni
         # Define connectivity of cell.
