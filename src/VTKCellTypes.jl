@@ -7,6 +7,8 @@ __precompile__()
 
 module VTKCellTypes
 
+export VTKCellType
+
 struct VTKCellType
     vtk_name::String
     vtk_id::UInt8
