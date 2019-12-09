@@ -27,7 +27,7 @@ function VTKCellType(vtkid::Integer)
 end
 
 # Define a VTK cell type
-macro add(ctype, id, nodes)
+macro add(ctype, id, nodes=-1)
     name = string(ctype)
     quote
         const $(esc(ctype)) = VTKCellType($name, $id, $nodes)
@@ -75,27 +75,27 @@ end
 @add VTK_CUBIC_LINE 35 4
 
 # Special class of cells formed by convex group of points
-@add VTK_CONVEX_POINT_SET 41 -1
+@add VTK_CONVEX_POINT_SET 41
 
 # Polyhedron cell (consisting of polygonal faces)
-@add VTK_POLYHEDRON 42 -1
+@add VTK_POLYHEDRON 42
 
 # Higher order cells in parametric form
-@add VTK_PARAMETRIC_CURVE 51 -1
-@add VTK_PARAMETRIC_SURFACE 52 -1
-@add VTK_PARAMETRIC_TRI_SURFACE 53 -1
-@add VTK_PARAMETRIC_QUAD_SURFACE 54 -1
-@add VTK_PARAMETRIC_TETRA_REGION 55 -1
-@add VTK_PARAMETRIC_HEX_REGION 56 -1
+@add VTK_PARAMETRIC_CURVE 51
+@add VTK_PARAMETRIC_SURFACE 52
+@add VTK_PARAMETRIC_TRI_SURFACE 53
+@add VTK_PARAMETRIC_QUAD_SURFACE 54
+@add VTK_PARAMETRIC_TETRA_REGION 55
+@add VTK_PARAMETRIC_HEX_REGION 56
 
 # Higher order cells
-@add VTK_HIGHER_ORDER_EDGE 60 -1
-@add VTK_HIGHER_ORDER_TRIANGLE 61 -1
-@add VTK_HIGHER_ORDER_QUAD 62 -1
-@add VTK_HIGHER_ORDER_POLYGON 63 -1
-@add VTK_HIGHER_ORDER_TETRAHEDRON 64 -1
-@add VTK_HIGHER_ORDER_WEDGE 65 -1
-@add VTK_HIGHER_ORDER_PYRAMID 66 -1
-@add VTK_HIGHER_ORDER_HEXAHEDRON 67 -1
+@add VTK_HIGHER_ORDER_EDGE 60
+@add VTK_HIGHER_ORDER_TRIANGLE 61
+@add VTK_HIGHER_ORDER_QUAD 62
+@add VTK_HIGHER_ORDER_POLYGON 63
+@add VTK_HIGHER_ORDER_TETRAHEDRON 64
+@add VTK_HIGHER_ORDER_WEDGE 65
+@add VTK_HIGHER_ORDER_PYRAMID 66
+@add VTK_HIGHER_ORDER_HEXAHEDRON 67
 
 end # module
