@@ -98,4 +98,13 @@ end
 @add VTK_HIGHER_ORDER_PYRAMID 66
 @add VTK_HIGHER_ORDER_HEXAHEDRON 67
 
+# Arbitrary order Lagrange elements (formulated separated from generic higher order cells)
+@add VTK_LAGRANGE_CURVE 68
+@add VTK_LAGRANGE_TRIANGLE 69
+@add VTK_LAGRANGE_QUADRILATERAL 70
+@add VTK_LAGRANGE_TETRAHEDRON 71
+@add VTK_LAGRANGE_HEXAHEDRON 72
+@add VTK_LAGRANGE_WEDGE 73
+@add VTK_LAGRANGE_PYRAMID 74
+
 end # module
