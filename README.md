@@ -175,8 +175,9 @@ cell = MeshCell(cell_type, connectivity)
     determines the type of the cell, as defined in the
     [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf) (see figures 2 and 3 in
     that document). For convenience, WriteVTK includes a `VTKCellTypes` module that contains
-    these definitions. For instance, a triangle is associated to the value
-    `cell_type = VTKCellTypes.VTK_TRIANGLE`.
+    these definitions. For instance, a triangle is associated to the value `cell_type = VTKCellTypes.VTK_TRIANGLE`.
+    Cell types may also be constructed from their associated integer identifier.
+    For instance, `VTKCellType(5)` also returns a `VTK_TRIANGLE` cell type.
 
   - `connectivity` is a vector of indices that determine the mesh points that are connected
     by the cell. In the case of a triangle, this would be an integer array of length 3.
