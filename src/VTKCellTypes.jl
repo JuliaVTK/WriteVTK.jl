@@ -15,15 +15,19 @@ struct VTKCellType
     nodes::Int
 end
 
-const VTK_CELL_TYPES = Dict{UInt8, VTKCellType}()
+const INVALID_CELL_TYPE = VTKCellType("INVALID", typemax(UInt8), -1)
+
+# Array of known cell types
+const VTK_CELL_TYPES = fill(INVALID_CELL_TYPE, typemax(UInt8))
 
 # Construction of VTKCellType objects from the integer vtk id
 function VTKCellType(vtkid::Integer)
-    id = UInt8(vtkid)
-    if !haskey(VTK_CELL_TYPES, id)
+    n = vtkid + 1  # ids start at zero
+    cell = VTK_CELL_TYPES[n]
+    if cell === INVALID_CELL_TYPE
         throw(ArgumentError("unknown vtkid = $vtkid"))
     end
-    VTK_CELL_TYPES[id]
+    cell
 end
 
 # Define a VTK cell type
@@ -31,7 +35,7 @@ macro add(ctype, id, nodes=-1)
     name = string(ctype)
     quote
         const $(esc(ctype)) = VTKCellType($name, $id, $nodes)
-        VTK_CELL_TYPES[$id] = $(esc(ctype))
+        VTK_CELL_TYPES[$id + 1] = $(esc(ctype))
     end
 end
 

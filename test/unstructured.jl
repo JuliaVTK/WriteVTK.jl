@@ -36,6 +36,8 @@ function mesh_data(::Val{3})
     cdata = FloatType[]
 
     @test VTKCellType(celltype.vtk_id) === celltype
+    @test_throws BoundsError   VTKCellType(-3)   # ids start at 0
+    @test_throws ArgumentError VTKCellType(200)  # 200 is an unknown cell type
 
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
