@@ -29,7 +29,13 @@ function num_components(data::AbstractArray, num_points_or_cells::Int)
     Nc
 end
 
-num_components(data::NTuple, ::Int) = length(data)
+num_components(data::AbstractArray, vtk::DatasetFile, ::VTKPointData) =
+    num_components(data, vtk.Npts)
+
+num_components(data::AbstractArray, vtk::DatasetFile, ::VTKCellData) =
+    num_components(data, vtk.Ncls)
+
+num_components(data::NTuple, args...) = length(data)
 
 "Union of data types allowed by VTK (see file-formats.pdf, page 15)."
 const VTKDataType = Union{Int8, UInt8, Int16, UInt16, Int32, UInt32,
@@ -218,12 +224,9 @@ end
 
 """
 Add either point or cell data to VTK file.
-
-Here `Nc` is the number of components of the data (Nc >= 1).
 """
 function vtk_point_or_cell_data(vtk::DatasetFile, data::InputDataType,
-                                name::AbstractString, loc::DataLocation,
-                                Nc::Integer)
+                                name::AbstractString, loc::DataLocation)
     # Find Piece node.
     xroot = root(vtk.xdoc)
     xGrid = find_element(xroot, vtk.grid_type)
@@ -235,17 +238,14 @@ function vtk_point_or_cell_data(vtk::DatasetFile, data::InputDataType,
     xPD = (xtmp === nothing) ? new_child(xPiece, nodetype) : xtmp
 
     # DataArray node
+    Nc = num_components(data, vtk, loc)
     xDA = data_to_xml(vtk, xPD, data, name, Nc)
 
     vtk
 end
 
-function vtk_point_data(vtk::DatasetFile, data::InputDataType, name::AbstractString)
-    Nc = num_components(data, vtk.Npts)
-    vtk_point_or_cell_data(vtk, data, name, VTKPointData(), Nc)
-end
+vtk_point_data(vtk::DatasetFile, data::InputDataType, name::AbstractString) =
+    vtk_point_or_cell_data(vtk, data, name, VTKPointData())
 
-function vtk_cell_data(vtk::DatasetFile, data::InputDataType, name::AbstractString)
-    Nc = num_components(data, vtk.Ncls)
-    vtk_point_or_cell_data(vtk, data, name, VTKCellData(), Nc)
-end
+vtk_cell_data(vtk::DatasetFile, data::InputDataType, name::AbstractString) =
+    vtk_point_or_cell_data(vtk, data, name, VTKCellData())
