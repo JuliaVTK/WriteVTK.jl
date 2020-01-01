@@ -75,39 +75,41 @@ This is actually more efficient than the previous formulation.
 
 ### Add some data to the file
 
-The function `vtk_point_data` adds point data to the file.
-The required input is a VTK file object created by `vtk_grid`, an array and a
-string:
+In a VTK file, field data can be associated to grid points or to data cells
+(see [Unstructured meshes](#usage-unstructured-meshes) for details on cells).
+Data is written to a VTK file object using the syntax
+```julia
+vtkfile["Velocity"] = vel
+vtkfile["Pressure"] = p
+vtkfile["Concentration"] = C
+```
+where the "index" is the name of the dataset in the VTK file.
 
-``` julia
-vtk_point_data(vtkfile, p, "Pressure")
-vtk_point_data(vtkfile, C, "Concentration")
-vtk_point_data(vtkfile, vel, "Velocity")
+By default, the input data is automatically associated either to grid points or
+to data cells according to the input data dimensions.
+If more control is desired, one can explicitly pass a `VTKPointData` or
+a `VTKCellData` instance as a second index:
+```julia
+vtkfile["Velocity", VTKPointData()] = vel
+vtkfile["Pressure", VTKCellData()] = p
 ```
 
-The array can represent either scalar or vectorial data.
-The shape of the array should be `[Ni, Nj, Nk]` for scalars, and
-`[Ncomp, Ni, Nj, Nk]` for vectors, where `Ncomp` is the number of components of
+Note that in rectilinear and structured meshes, the cell dimensions are
+always `(Ni - 1, Nj - 1, Nk - 1)`, and the dimensions of the data arrays associated to cells should be consistent with these dimensions.
+
+The input array can represent either scalar or vectorial data.
+The shape of the array should be `(Ni, Nj, Nk)` for scalars, and
+`(Nc, Ni, Nj, Nk)` for vectors, where `Nc` is the number of components of
 the vector.
 
 Vector datasets can also be given as a tuple of scalar datasets, where each
 scalar represents a component of the vector field.
 Example:
 ```julia
-acc = (acc_x, acc_y, acc_z)  # acc_x, acc_y and acc_z have size [Ni, Nj, Nk]
-vtk_point_data(vtkfile, acc, "Acceleration")
+acc = (acc_x, acc_y, acc_z)  # acc_x, acc_y and acc_z have size (Ni, Nj, Nk)
+vtkfile["Acceleration"] = acc
 ```
 This can be useful to avoid copies of data in some cases.
-
-Cell data can also be added, using `vtk_cell_data`:
-
-``` julia
-vtk_cell_data(vtkfile, T, "Temperature")
-```
-
-Note that in rectilinear and structured meshes, the cell resolution is
-always `[Ni-1, Nj-1, Nk-1]`, and the dimensions of the data arrays should
-be consistent with that resolution.
 
 ### Save the file
 
@@ -149,7 +151,7 @@ vtk_grid("vti_file_1", 0:0.1:10, 0:0.2:10, 1:0.3:4)
 vtk_grid("vti_file_2", LinRange(0, 4.2, 10), LinRange(1, 3.1, 42), LinRange(0.2, 12.1, 32))
 ```
 
-## Usage: julia array
+## Usage: Julia arrays
 
 A convenience function is provided to quickly save Julia arrays as image data:
 
@@ -224,19 +226,18 @@ These two last methods are less efficient though.
 
 Now add some data to the file.
 It is possible to add both point data and cell data:
-
 ``` julia
-vtk_point_data(vtkfile, pdata, "my_point_data")
-vtk_cell_data(vtkfile, cdata, "my_cell_data")
+vtkfile["my_point_data", VTKPointData()] = pdata
+vtkfile["my_cell_data", VTKCellData()] = cdata
 ```
-
 The `pdata` and `cdata` arrays must have sizes consistent with the number of
 points and cells in the mesh, respectively.
-The arrays can contain scalar and vectorial data (see
-[here](#add-some-data-to-the-file)).
+Note that, as discussed [above](#add-some-data-to-the-file), the second
+argument (`VTKPointData()` or `VTKCellData()`) can be generally omitted.
+In this case, its value will be automatically determined from the input data
+dimensions.
 
 Finally, close and save the file:
-
 ``` julia
 outfiles = vtk_save(vtkfile)
 ```
@@ -262,11 +263,11 @@ as the first argument:
 ``` julia
 # First block.
 vtkfile = vtk_grid(vtmfile, x1, y1, z1)
-vtk_point_data(vtkfile, p1, "Pressure")
+vtkfile["Pressure"] = p1
 
 # Second block.
 vtkfile = vtk_grid(vtmfile, x2, y2, z2)
-vtk_point_data(vtkfile, p2, "Pressure")
+vtkfile["Pressure"] = p2
 ```
 
 Finally, only the multiblock file needs to be saved explicitly:
@@ -284,28 +285,24 @@ Assuming that the two blocks are structured grids, this generates the files
 
 A `pvd` file is a collection of VTK files, typically for holding results at
 different time steps in a simulation. A `pvd` file is initialised with:
-
 ``` julia
 pvd = paraview_collection("my_pvd_file")
 ```
-
 By default this overwrites existent `pvd` files.
 To append new datasets to an existent `pvd` file, set the `append` option to
 `true`:
-
 ```julia
 pvd = paraview_collection("my_pvd_file", append=true)
 ```
 
 VTK files are then added to the `pvd` file with
-
-``` julia
-collection_add_timestep(pvd, vtkfile, time)
+```julia
+pvd[time] = vtkfile
 ```
+Here, `time` is a real number that represents the current time (or timestep) in
+the simulation.
 
-Here, `time` is a number that represents the current time (or step) in the simulation.
 When all the files are added to the `pvd` file, it can be saved using:
-
 ``` julia
 vtk_save(pvd)
 ```
@@ -321,17 +318,17 @@ Example:
 ``` julia
 # Rectilinear or structured grid
 outfiles = vtk_grid("my_vtk_file", x, y, z) do vtk
-    vtk_point_data(vtk, p, "Pressure")
-    vtk_point_data(vtk, vel, "Velocity")
+    vtk["Pressure"] = p
+    vtk["Velocity"] = vel
 end
 
 # Multiblock file
 outfiles = vtk_multiblock("my_vtm_file") do vtm
     vtk = vtk_grid(vtm, x1, y1, z1)
-    vtk_point_data(vtk, vel1, "Velocity")
+    vtk["Velocity"] = vel1
 
     vtk = vtk_grid(vtm, x2, y2, z2)
-    vtk_point_data(vtk, vel2, "Velocity")
+    vtk["Velocity"] = vel2
 end
 ```
 
@@ -347,7 +344,7 @@ For instance, to disable both compressing and appending raw data in the case of
 unstructured meshes:
 
 ``` julia
-vtkfile = vtk_grid("my_vtk_file", points, cells; compress=false, append=false)
+vtk = vtk_grid("my_vtk_file", points, cells; compress=false, append=false)
 ```
 
   - If `append` is `true` (default), data is written appended at the end of the
