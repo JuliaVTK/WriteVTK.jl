@@ -17,7 +17,7 @@ function structured_grid(filename::AbstractString,
     ext = extent_attribute(Ni, Nj, Nk, extent)
 
     if Ncomp != 3  # three components (x, y, z)
-        msg = "Coordinate array `xyz` has incorrect dimensions.\n" *
+        msg = "coordinate array `xyz` has incorrect dimensions.\n" *
               "Expected dimensions: (3, Ni, Nj, Nk).\n" *
               "Actual dimensions: $(size(xyz))"
         throw(ArgumentError(msg))
@@ -58,7 +58,7 @@ function vtk_grid(filename::AbstractString, x::AbstractArray{T,3},
                   y::AbstractArray{T,3}, z::AbstractArray{T,3};
                   kwargs...) where T
     if !(size(x) == size(y) == size(z))
-        throw(ArgumentError("Size of x, y and z arrays must be the same."))
+        throw(ArgumentError("size of x, y and z arrays must be the same."))
     end
     structured_grid(filename, (x, y, z); kwargs...)
 end
@@ -68,7 +68,7 @@ function vtk_grid(filename::AbstractString, xy::AbstractArray{T,3};
                   kwargs...) where T
     Ncomp, Ni, Nj = size(xy)
     if Ncomp != 2
-        msg = "Coordinate array `xy` has incorrect dimensions.\n" *
+        msg = "coordinate array `xy` has incorrect dimensions.\n" *
               "Expected dimensions: (2, Ni, Nj).\n" *
               "Actual dimensions: $(size(xy))"
         throw(ArgumentError(msg))
@@ -86,7 +86,7 @@ end
 function vtk_grid(filename::AbstractString, x::AbstractArray{T,2},
                   y::AbstractArray{T,2}; kwargs...) where T
     if size(x) != size(y)
-        throw(ArgumentError("Size of x and y arrays must be the same."))
+        throw(ArgumentError("size of x and y arrays must be the same."))
     end
     Ni, Nj = size(x)
     Nk = 1

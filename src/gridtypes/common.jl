@@ -17,7 +17,7 @@ Determine number of components of input data.
 function num_components(data::AbstractArray, num_points_or_cells::Int)
     Nc = div(length(data), num_points_or_cells)
     if Nc * num_points_or_cells != length(data)
-        throw(ArgumentError("Incorrect dimensions of input array."))
+        throw(ArgumentError("incorrect dimensions of input array."))
     end
     Nc
 end
@@ -38,7 +38,7 @@ function datatype_str(::Type{T}) where T <: VTKDataType
     string(T)
 end
 datatype_str(::Type{T}) where T =
-    throw(ArgumentError("Data type not supported by VTK: $T"))
+    throw(ArgumentError("data type not supported by VTK: $T"))
 datatype_str(::AbstractArray{T}) where T = datatype_str(T)
 datatype_str(::NTuple{N, T} where N) where T <: AbstractArray =
     datatype_str(eltype(T))
@@ -239,7 +239,6 @@ function vtk_point_data(vtk::DatasetFile, data::InputDataType, name::AbstractStr
     vtk_point_or_cell_data(vtk, data, name, "PointData", Nc)
 end
 
-
 function vtk_cell_data(vtk::DatasetFile, data::InputDataType, name::AbstractString)
     Nc = num_components(data, vtk.Ncls)
     vtk_point_or_cell_data(vtk, data, name, "CellData", Nc)
@@ -322,11 +321,11 @@ extent_attribute(Ni, Nj, Nk, ::Nothing=nothing) =
     "0 $(Ni - 1) 0 $(Nj - 1) 0 $(Nk - 1)"
 
 function extent_attribute(Ni, Nj, Nk, extent::Array{T}) where T <: Integer
-    length(extent) == 6 || throw(ArgumentError("Extent must have length 6."))
+    length(extent) == 6 || throw(ArgumentError("extent must have length 6."))
     (extent[2] - extent[1] + 1 == Ni) &&
     (extent[4] - extent[3] + 1 == Nj) &&
     (extent[6] - extent[5] + 1 == Nk) ||
-    throw(ArgumentError("Extent is not consistent with dataset dimensions."))
+    throw(ArgumentError("extent is not consistent with dataset dimensions."))
     join(extent, " ")
 end
 

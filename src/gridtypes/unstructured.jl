@@ -96,7 +96,7 @@ function vtk_grid(filename::AbstractString, x::AbstractVector{T},
                   y::AbstractVector{T}, z::AbstractVector{T},
                   cells::Vector{<:MeshCell}; kwargs...) where T
     if !(length(x) == length(y) == length(z))
-        throw(ArgumentError("Length of x, y and z arrays must be the same."))
+        throw(ArgumentError("length of x, y and z arrays must be the same."))
     end
     Npts = length(x)
     points = Array{T}(undef, 3, Npts)
