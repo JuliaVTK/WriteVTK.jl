@@ -111,6 +111,11 @@ function add_extension(filename, default_extension) :: String
     filename * default_extension
 end
 
+# Common functions.
+include("write_data.jl")
+include("save_files.jl")
+include("gridtypes/common.jl")
+
 # Multiblock-specific functions and types.
 include("gridtypes/multiblock.jl")
 include("gridtypes/ParaviewCollection.jl")
@@ -121,9 +126,6 @@ include("gridtypes/unstructured.jl")
 include("gridtypes/rectilinear.jl")
 include("gridtypes/imagedata.jl")
 include("gridtypes/array.jl")
-
-# Common functions.
-include("gridtypes/common.jl")
 
 # This allows using do-block syntax for generation of VTK files.
 for func in (:vtk_grid, :vtk_multiblock, :paraview_collection,
