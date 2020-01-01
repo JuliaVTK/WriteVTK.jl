@@ -1,3 +1,12 @@
+# Numerical data may be associated either to grid points or to cells.
+abstract type DataLocation end
+struct VTKPointData <: DataLocation end
+struct VTKCellData <: DataLocation end
+
+# These are the VTK names associated to each data "location".
+node_type(::VTKPointData) = "PointData"
+node_type(::VTKCellData) = "CellData"
+
 """
 Types allowed as input to `vtk_point_data()` and `vtk_cell_data()`.
 
@@ -213,7 +222,7 @@ Add either point or cell data to VTK file.
 Here `Nc` is the number of components of the data (Nc >= 1).
 """
 function vtk_point_or_cell_data(vtk::DatasetFile, data::InputDataType,
-                                name::AbstractString, nodetype::AbstractString,
+                                name::AbstractString, loc::DataLocation,
                                 Nc::Integer)
     # Find Piece node.
     xroot = root(vtk.xdoc)
@@ -221,6 +230,7 @@ function vtk_point_or_cell_data(vtk::DatasetFile, data::InputDataType,
     xPiece = find_element(xGrid, "Piece")
 
     # Find or create "nodetype" (PointData or CellData) node.
+    nodetype = node_type(loc)
     xtmp = find_element(xPiece, nodetype)
     xPD = (xtmp === nothing) ? new_child(xPiece, nodetype) : xtmp
 
@@ -232,10 +242,10 @@ end
 
 function vtk_point_data(vtk::DatasetFile, data::InputDataType, name::AbstractString)
     Nc = num_components(data, vtk.Npts)
-    vtk_point_or_cell_data(vtk, data, name, "PointData", Nc)
+    vtk_point_or_cell_data(vtk, data, name, VTKPointData(), Nc)
 end
 
 function vtk_cell_data(vtk::DatasetFile, data::InputDataType, name::AbstractString)
     Nc = num_components(data, vtk.Ncls)
-    vtk_point_or_cell_data(vtk, data, name, "CellData", Nc)
+    vtk_point_or_cell_data(vtk, data, name, VTKCellData(), Nc)
 end
