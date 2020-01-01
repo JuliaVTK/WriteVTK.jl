@@ -165,8 +165,8 @@ function main()
             #                cells)
 
             # Add some point and cell data.
-            vtk_point_data(vtk, pdata, "my_point_data")
-            vtk_cell_data(vtk, cdata, "my_cell_data")
+            vtk["my_point_data"] = pdata
+            vtk["my_cell_data"] = cdata
 
             # Save and close vtk file.
             append!(outfiles, vtk_save(vtk))

@@ -41,19 +41,19 @@ function main()
     @time outfiles = vtk_grid(vtk_filename_noext, Ni, Nj, Nk, extent=extent,
                               origin=origin, spacing=spacing) do vtk
         # Add data.
-        vtk_point_data(vtk, p, "p_values")
-        vtk_point_data(vtk, q, "q_values")
-        vtk_point_data(vtk, vec, "myVector")
-        vtk_cell_data(vtk, cdata, "myCellData")
+        vtk["p_values"] = p
+        vtk["q_values"] = q
+        vtk["myVector"] = vec
+        vtk["myCellData"] = cdata
     end
 
     # Test 2D dataset
     @time outfiles_2D = vtk_grid(vtk_filename_noext * "_2D", Ni, Nj,
                                  # extent=extent[1:2],  # doesn't work for now (TODO)
                                  origin=origin[1:2], spacing=spacing[1:2]) do vtk
-        vtk_point_data(vtk, p[:, :, 1], "p_values")
-        vtk_point_data(vtk, vec[:, :, :, 1], "myVector")
-        vtk_cell_data(vtk, cdata[:, :, 1], "myCellData")
+        vtk["p_values"] = p[:, :, 1]
+        vtk["myVector"] = vec[:, :, :, 1]
+        vtk["myCellData"] = cdata[:, :, 1]
     end
 
     append!(outfiles, outfiles_2D)
@@ -62,8 +62,8 @@ function main()
     let xyz = (LinRange(0., 5., Ni), LinRange(1., 3., Nj), LinRange(2., 6., Nk))
         @time outfiles_LR = vtk_grid(vtk_filename_noext * "_LinRange", xyz,
                                      compress=true) do vtk
-            vtk_point_data(vtk, vec, "myVector")
-            vtk_cell_data(vtk, cdata, "myCellData")
+            vtk["myVector"] = vec
+            vtk["myCellData"] = cdata
         end
         append!(outfiles, outfiles_LR)
     end

@@ -108,16 +108,16 @@ function main()
     @time outfiles = vtk_multiblock(vtm_filename_noext) do vtm
         # First block.
         vtk = vtk_grid(vtm, x1, y1, z1; compress=false, append=false)
-        vtk_point_data(vtk, q1, "q_values")
+        vtk["q_values"] = q1
 
         # Second block.
         vtk = vtk_grid(vtm, x2, y2, z2; compress=false)
-        vtk_point_data(vtk, q2, "q_values")
+        vtk["q_values"] = q2
 
         # Third block.
         vtk = vtk_grid(vtm, points3, cells3; append=false)
-        vtk_point_data(vtk, q3, "q_values")
-        vtk_cell_data(vtk, c3, "c_values")
+        vtk["q_values"] = q3
+        vtk["c_values"] = c3
     end
     println("Saved:  ", join(outfiles, "  "))
 

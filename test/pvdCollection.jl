@@ -65,10 +65,10 @@ function main()
             # Add data for current time-step
             update_point_data!(p, q, vec, it + 1)
             update_cell_data!(cdata, it + 1)
-            vtk_point_data(vtk, p, "p_values")
-            vtk_point_data(vtk, q, "q_values")
-            vtk_point_data(vtk, vec, "myVector")
-            vtk_cell_data(vtk, cdata, "myCellData")
+            vtk["p_values"] = p
+            vtk["q_values"] = q
+            vtk["myVector"] = vec
+            vtk["myCellData"] = cdata
             vtk_save(vtk)
             pvd[float(it + 1)] = vtk
         end

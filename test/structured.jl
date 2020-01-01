@@ -87,16 +87,16 @@ function main()
             end
 
             # Add data.
-            vtk_point_data(vtk, psub, "p_values")
-            vtk_point_data(vtk, q, "q_values")
-            vtk_point_data(vtk, vec, "myVector")
-            vtk_cell_data(vtk, cdata, "myCellData")
+            vtk["p_values"] = psub
+            vtk["q_values"] = q
+            vtk["myVector"] = vec
+            vtk["myCellData"] = cdata
 
             # Test writing vector data as tuple of scalar arrays.
             @views vec_tuple = (vec[1, :, :, :],
                                 vec[2, :, :, :],
                                 vec[3, :, :, :])
-            vtk_point_data(vtk, vec_tuple, "myVector.tuple")
+            vtk["myVector.tuple"] = vec_tuple
 
             # Save and close vtk file.
             append!(outfiles, vtk_save(vtk))

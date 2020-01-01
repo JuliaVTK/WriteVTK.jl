@@ -23,7 +23,7 @@ function vtk_write_array(filename::AbstractString,
     end
     vtkfile = vtk_grid(filename, size(arrays[1])...)
     for (array, label) in Iterators.zip(arrays, labels)
-      vtk_point_data(vtkfile, array, label)
+        vtkfile[label, VTKPointData()] = array
     end
     vtk_save(vtkfile)
 end
