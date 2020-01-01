@@ -1,14 +1,18 @@
 # Numerical data may be associated either to grid points or to cells.
-abstract type DataLocation end
-struct VTKPointData <: DataLocation end
-struct VTKCellData <: DataLocation end
+struct VTKPointData end
+struct VTKCellData end
+
+const DataLocation = Union{VTKPointData, VTKCellData}
 
 # These are the VTK names associated to each data "location".
 node_type(::VTKPointData) = "PointData"
 node_type(::VTKCellData) = "CellData"
 
 """
-Types allowed as input to `vtk_point_data()` and `vtk_cell_data()`.
+    InputDataType
+
+Types allowed as input to `setindex!(vtk, ...)`, `vtk_point_data()` and
+`vtk_cell_data()`.
 
 Either (abstract) arrays or tuples of arrays are allowed.
 In the second case, the length of the tuple determines the number of components
@@ -36,6 +40,25 @@ num_components(data::AbstractArray, vtk::DatasetFile, ::VTKCellData) =
     num_components(data, vtk.Ncls)
 
 num_components(data::NTuple, args...) = length(data)
+
+# Guess from data dimensions whether data should be associated to points or
+# cells.
+function guess_data_location(data::AbstractArray,
+                             vtk::DatasetFile) :: DataLocation
+    N = length(data)
+    if rem(N, vtk.Npts) == 0
+        return VTKPointData()
+    elseif rem(N, vtk.Ncls) == 0
+        return VTKCellData()
+    end
+    throw(ArgumentError(
+        "data dimensions are not compatible with geometry dimensions"))
+end
+
+guess_data_location(data::NTuple, args...) =
+    guess_data_location(first(data), args...)
+
+guess_data_location(data::NTuple{0}, args...) = VTKPointData()
 
 "Union of data types allowed by VTK (see file-formats.pdf, page 15)."
 const VTKDataType = Union{Int8, UInt8, Int16, UInt16, Int32, UInt32,
@@ -249,3 +272,39 @@ vtk_point_data(vtk::DatasetFile, data::InputDataType, name::AbstractString) =
 
 vtk_cell_data(vtk::DatasetFile, data::InputDataType, name::AbstractString) =
     vtk_point_or_cell_data(vtk, data, name, VTKCellData())
+
+"""
+    setindex!(vtk::DatasetFile, data, name::AbstractString, [location])
+
+Add a new dataset to VTK file.
+
+The number of components of the dataset (e.g. for scalar or vector fields) is
+determined automatically from the input data dimensions.
+
+The optional argument `location` must be an instance of `VTKPointData` or
+`VTKCellData`, and determines whether the data should be associated to grid
+points or cells. If not given, this is determined automatically from the input
+data dimensions.
+
+# Example
+
+Add "velocity" dataset to VTK file.
+
+```julia
+vel = rand(3, 12, 14, 42)  # vector field
+vtk = vtk_grid(...)
+vtk["velocity", VTKPointData()] = vel
+
+# This should also work, and will generally give the same result:
+vtk["velocity"] = vel
+```
+
+"""
+Base.setindex!(vtk::DatasetFile, data::InputDataType, name::AbstractString,
+               loc::DataLocation) = vtk_point_or_cell_data(vtk, data, name, loc)
+
+function Base.setindex!(vtk::DatasetFile, data::InputDataType,
+                        name::AbstractString)
+    loc = guess_data_location(data, vtk) :: DataLocation
+    setindex!(vtk, data, name, loc)
+end

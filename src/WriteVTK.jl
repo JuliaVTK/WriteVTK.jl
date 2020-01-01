@@ -11,6 +11,7 @@ export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
 export paraview_collection, collection_add_timestep, paraview_collection_load
 export vtk_write_array
+export VTKPointData, VTKCellData  # singleton types
 
 import CodecZlib: ZlibCompressorStream
 import TranscodingStreams

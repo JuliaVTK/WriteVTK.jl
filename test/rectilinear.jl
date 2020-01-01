@@ -3,6 +3,9 @@
 # Create rectilinear grid VTK file.
 
 using WriteVTK
+
+using Test
+
 const FloatType = Float32
 const vtk_filename_noext = "rectilinear"
 
@@ -67,10 +70,14 @@ function main()
             end
 
             # Add data.
-            vtk_point_data(vtk, p, "p_values")
-            vtk_point_data(vtk, q, "q_values")
-            vtk_point_data(vtk, vec, "myVector")
-            vtk_cell_data(vtk, cdata, "myCellData")
+            vtk["p_values"] = p
+            vtk["q_values"] = q
+
+            # Test passing the second optional argument.
+            @test_throws ArgumentError vtk["myVector", VTKCellData()] = vec
+            vtk["myVector", VTKPointData()] = vec
+
+            vtk["myCellData"] = cdata
 
             # Save and close vtk file.
             append!(outfiles, vtk_save(vtk))
