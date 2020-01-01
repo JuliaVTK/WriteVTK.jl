@@ -76,7 +76,7 @@ This is actually more efficient than the previous formulation.
 ### Add some data to the file
 
 In a VTK file, field data can be associated to grid points or to data cells
-(see [Unstructured meshes](#usage-unstructured-meshes) for details on cells).
+(see [Defining cells](#defining-cells) for details on cells).
 Data is written to a VTK file object using the syntax
 ```julia
 vtkfile["Velocity"] = vel
