@@ -70,7 +70,7 @@ function main()
             vtk_point_data(vtk, vec, "myVector")
             vtk_cell_data(vtk, cdata, "myCellData")
             vtk_save(vtk)
-            collection_add_timestep(pvd, vtk, Float64(it+1))
+            pvd[float(it + 1)] = vtk
         end
     end
 
@@ -82,7 +82,7 @@ function main()
 
     # add a vtk file
     vtk_reload = vtk_grid("collection_reload", [1, 2, 3], [1, 2, 3])
-    collection_add_timestep(pvd_reload, vtk_reload, 5.0)
+    pvd_reload[5.0] = vtk_reload
     pvd_reload_files = vtk_save(pvd_reload)
     append!(outfiles, pvd_reload_files)
 

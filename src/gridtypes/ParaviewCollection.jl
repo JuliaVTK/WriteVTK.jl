@@ -45,17 +45,20 @@ function paraview_collection_load(filename::AbstractString)
 end
 
 function collection_add_timestep(pvd::CollectionFile, datfile::VTKFile,
-                                 t::Real)
+                                 time::Real)
     xroot = root(pvd.xdoc)
     xMBDS = find_element(xroot, "Collection")
     xDataSet = new_child(xMBDS, "DataSet")
     fname = relpath(abspath(datfile.path), first(splitdir(abspath(pvd.path))))
-    set_attribute(xDataSet, "timestep", string(t))
+    set_attribute(xDataSet, "timestep", string(time))
     set_attribute(xDataSet, "part", "0")
     set_attribute(xDataSet, "file", fname)
     append!(pvd.timeSteps, vtk_save(datfile))
     return
 end
+
+Base.setindex!(pvd::CollectionFile, datfile::VTKFile, time::Real) =
+    collection_add_timestep(pvd, datfile, time)
 
 function vtk_save(pvd::CollectionFile)
     # Saves paraview collection file (.pvd).
