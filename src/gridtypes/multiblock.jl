@@ -26,7 +26,7 @@ of the vtm file and the number of existent blocks.
 function vtk_grid(vtm::MultiblockFile, vtk_filename::AbstractString,
                   griddata...; kwargs...)
     vtk = vtk_grid(vtk_filename, griddata...; kwargs...)
-    multiblock_add_block(vtm, vtk)
+    push!(vtm, vtk)
     vtk :: DatasetFile
 end
 
@@ -78,5 +78,7 @@ function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile)
     # Add the block file to vtm.
     push!(vtm.blocks, vtk)
 
-    return
+    nothing
 end
+
+Base.push!(vtm::MultiblockFile, vtk::VTKFile) = multiblock_add_block(vtm, vtk)
