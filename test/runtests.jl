@@ -13,7 +13,7 @@ const tests = ["multiblock.jl",
                "array.jl"]
 
 # Only toggle to generate new checksums, if new tests are added.
-const OVERWRITE_CHECKSUMS = false
+const OVERWRITE_CHECKSUMS = "--generate" in ARGS
 const checksums_file = joinpath(dirname(@__FILE__), "checksums.sha1")
 const checksum_list = read(checksums_file, String)
 
