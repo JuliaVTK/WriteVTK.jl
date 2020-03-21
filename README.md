@@ -1,6 +1,7 @@
 # WriteVTK
 
 [![Build Status](https://travis-ci.com/jipolanco/WriteVTK.jl.svg?branch=master)](https://travis-ci.com/jipolanco/WriteVTK.jl)
+[![DOI](https://zenodo.org/badge/32700186.svg)](https://zenodo.org/badge/latestdoi/32700186)
 
 This module allows to write VTK XML files, that can be visualised for example
 with [ParaView](http://www.paraview.org/).
