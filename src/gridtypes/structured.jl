@@ -4,7 +4,7 @@ const Array4 = AbstractArray{T, 4} where T
 const Array3Tuple3 = NTuple{3, A} where A <: AbstractArray{T, 3} where T
 const StructuredCoords = Union{Array4, Array3Tuple3}
 
-structured_dims(xyz::Array4) = size(xyz)[2:4]
+structured_dims(xyz::Array4) = ntuple(d -> size(xyz, d + 1), 3)
 structured_dims(xyz::Array3Tuple3) = size(first(xyz))
 
 function structured_grid(filename::AbstractString,
