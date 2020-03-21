@@ -55,7 +55,7 @@ function vtk_grid(filename::AbstractString,
 end
 
 """
-    vtk_grid(filename, x::AbstractRange{T}, y::AbstractRange{T}, z::AbstractRange{T};
+    vtk_grid(filename, x::AbstractRange{T}, y::AbstractRange{T}, [z::AbstractRange{T}];
              kwargs...)
 
 Create image data (`.vti`) file.
@@ -65,7 +65,12 @@ Along each direction, the grid is specified in terms of an AbstractRange object.
 # Examples
 
 ```jldoctest
+# 3D dataset
 julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3, 4:1.:5)
+VTK file 'abc.vti' (ImageData file, open)
+
+# 2D dataset
+julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3)
 VTK file 'abc.vti' (ImageData file, open)
 
 julia> vtk = vtk_grid("def",
@@ -77,12 +82,10 @@ VTK file 'def.vti' (ImageData file, open)
 ```
 
 """
-function vtk_grid(filename::AbstractString,
-                  x::AbstractRange{T}, y::AbstractRange{T}, z::AbstractRange{T};
-                  kwargs...) where T
-    xyz = (x, y, z)
-    Nxyz = map(length, xyz)
-    origin = map(first, xyz)
-    spacing = map(step, xyz)
+function vtk_grid(filename::AbstractString, xyz::Vararg{AbstractRange{T}};
+                  kwargs...) where {T}
+    Nxyz = length.(xyz)
+    origin = first.(xyz)
+    spacing = step.(xyz)
     vtk_grid(filename, Nxyz; origin=origin, spacing=spacing, kwargs...)
 end
