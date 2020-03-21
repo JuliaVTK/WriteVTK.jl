@@ -59,20 +59,27 @@ function main()
     append!(outfiles, outfiles_2D)
 
     # Test specifying coordinates using LinRange
-    let xyz = (LinRange(0., 5., Ni), LinRange(1., 3., Nj), LinRange(2., 6., Nk))
-        @time outfiles_LR = vtk_grid(vtk_filename_noext * "_LinRange", xyz,
-                                     compress=true) do vtk
-            vtk["myVector"] = vec
-            vtk["myCellData"] = cdata
+    for D in (2, 3)  # test 2D and 3D datasets
+        suffix = D == 2 ? "_2D" : ""
+        let xyz = (LinRange(0., 5., Ni),
+                   LinRange(1., 3., Nj),
+                   LinRange(2., 6., Nk))
+            coords = xyz[1:D]
+            @time saved = vtk_grid(vtk_filename_noext * "_LinRange" * suffix,
+                                   coords, compress=true) do vtk
+                vtk["myVector"] = D == 3 ? vec : view(vec, 1:2, :, :, 1)
+                vtk["myCellData"] = D == 3 ? cdata : view(cdata, :, :, 1)
+            end
+            append!(outfiles, saved)
         end
-        append!(outfiles, outfiles_LR)
-    end
 
-    # Similar using StepRangeLen
-    let xyz = (0:0.08:5, 1.2:0.05:2., 1.2:0.1:2.)
-        @time outfiles_SR = vtk_grid(vtk_filename_noext * "_StepRangeLen", xyz) do vtk
+        # Similar using StepRangeLen
+        let xyz = (0:0.08:5, 1.2:0.05:2., 1.2:0.1:2.)
+            coords = xyz[1:D]
+            @time saved = vtk_grid(
+                identity, vtk_filename_noext * "_StepRangeLen" * suffix, coords)
+            append!(outfiles, saved)
         end
-        append!(outfiles, outfiles_SR)
     end
 
     println("Saved:   ", join(outfiles, "  "))
