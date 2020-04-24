@@ -13,7 +13,15 @@ function main()
     # Initialise random number generator with deterministic seed (for
     # reproducibility).
     rng = MersenneTwister(42)
-    data = randn(rng, Ni, Nj, Nk)
+
+    # Workaround recent improvements in randn! for arrays (Julia 1.5).
+    # See issue #62 and https://github.com/JuliaLang/julia/pull/35078.
+    # We avoid using the new randn! implementation for arrays, so that the
+    # results don't change between Julia versions.
+    data = zeros(Ni, Nj, Nk)
+    for n in eachindex(data)
+        data[n] = randn(rng)
+    end
 
     # Write 2D and 3D arrays.
     @time begin
