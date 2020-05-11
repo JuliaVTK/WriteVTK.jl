@@ -111,4 +111,13 @@ end
 @add VTK_LAGRANGE_WEDGE 73
 @add VTK_LAGRANGE_PYRAMID 74
 
+# Arbitrary order Bezier elements (formulated separated from generic higher order cells)
+@add VTK_BEZIER_CURVE 75
+@add VTK_BEZIER_TRIANGLE 76
+@add VTK_BEZIER_QUADRILATERAL 77
+@add VTK_BEZIER_TETRAHEDRON 78
+@add VTK_BEZIER_HEXAHEDRON 79
+@add VTK_BEZIER_WEDGE 80
+@add VTK_BEZIER_PYRAMID 81
+
 end # module
