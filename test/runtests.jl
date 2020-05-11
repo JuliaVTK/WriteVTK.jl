@@ -9,6 +9,7 @@ const tests = ["multiblock.jl",
                "imagedata.jl",
                "structured.jl",
                "unstructured.jl",
+               "bezier.jl",
                "pvdCollection.jl",
                "array.jl"]
 
