@@ -15,20 +15,6 @@ node_type(::VTKPointData) = "PointData"
 node_type(::VTKCellData) = "CellData"
 node_type(::VTKFieldData) = "FieldData"
 
-"""
-    InputDataType
-
-Types allowed as input to `setindex!(vtk, ...)`, `vtk_point_data`,
-`vtk_cell_data` and `vtk_field_data`.
-
-Either (abstract) arrays or tuples of arrays are allowed.
-In the second case, the length of the tuple determines the number of components
-of the input data (e.g. if N = 3, it corresponds to a 3D vector field).
-"""
-const InputDataType =
-    Union{AbstractArray,
-          NTuple{N, T} where {N, T <: AbstractArray}}
-
 # Determine number of components of input data.
 function num_components(data::AbstractArray, num_points_or_cells::Int)
     Nc = div(length(data), num_points_or_cells)
@@ -45,6 +31,10 @@ num_components(data::AbstractArray, vtk::DatasetFile, ::VTKCellData) =
 num_components(data::AbstractArray, ::DatasetFile, ::VTKFieldData) = 1
 
 num_components(data::NTuple, args...) = length(data)
+
+# This is for the NumberOfTuples attribute of FieldData.
+num_field_tuples(data::AbstractArray) = length(data)
+num_field_tuples(data::NTuple) = num_field_tuples(first(data))
 
 # Guess from data dimensions whether data should be associated to points,
 # cells or none.
@@ -79,12 +69,12 @@ function datatype_str(::Type{T}) where T <: VTKDataType
     # function.
     string(T)
 end
+
 datatype_str(::Type{T}) where T =
     throw(ArgumentError("data type not supported by VTK: $T"))
 datatype_str(::AbstractArray{T}) where T = datatype_str(T)
 datatype_str(::NTuple{N, T} where N) where T <: AbstractArray =
     datatype_str(eltype(T))
-
 
 # Total size of data in bytes.
 sizeof_data(x::Array) = sizeof(x)
@@ -111,9 +101,19 @@ function set_num_components(xDA, vtk, data, loc)
     nothing
 end
 
+# In the specific case of FieldData, we alseo need to set the number of "tuples"
+# (number of elements per field component).
+function set_num_components(xDA, vtk, data, loc::VTKFieldData)
+    Nc = num_components(data, vtk, loc)
+    Nt = num_field_tuples(data)
+    set_attribute(xDA, "NumberOfComponents", Nc)
+    set_attribute(xDA, "NumberOfTuples", Nt)
+    nothing
+end
+
 """
     data_to_xml(
-        vtk::DatasetFile, xParent::XMLElement, data::InputDataType,
+        vtk::DatasetFile, xParent::XMLElement, data,
         name::AbstractString, Nc::Union{Int,AbstractFieldData} = 1,
     )
 
@@ -143,7 +143,7 @@ function data_to_xml(vtk, xParent, data, name,
 end
 
 """
-    data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data::InputDataType)
+    data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
 
 Add appended raw binary data to VTK XML file.
 
@@ -167,8 +167,7 @@ Otherwise, if compression is disabled, the header is just a single UInt32 value
 containing the size of the data array in bytes.
 
 """
-function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement,
-                              data::InputDataType)
+function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
     @assert vtk.appended
 
     buf = vtk.buf    # append buffer
@@ -210,12 +209,11 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement,
 end
 
 """
-    data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data::InputDataType)
+    data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
 
 Add inline, base64-encoded data to VTK XML file.
 """
-function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement,
-                            data::InputDataType)
+function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     @assert !vtk.appended
     compress = vtk.compression_level > 0
 
@@ -264,13 +262,13 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement,
 end
 
 """
-    add_field_data(vtk::DatasetFile, data::InputDataType,
-                           name::AbstractString, loc::AbstractFieldData)
+    add_field_data(vtk::DatasetFile, data,
+                   name::AbstractString, loc::AbstractFieldData)
 
 Add either point or cell data to VTK file.
 """
-function add_field_data(vtk::DatasetFile, data::InputDataType,
-                        name::AbstractString, loc::AbstractFieldData)
+function add_field_data(vtk::DatasetFile, data, name::AbstractString,
+                        loc::AbstractFieldData)
     # Find Piece node.
     xroot = root(vtk.xdoc)
     xGrid = find_element(xroot, vtk.grid_type)
@@ -327,11 +325,10 @@ vtk["velocity"] = vel
 vtk["time"] = time
 ```
 """
-Base.setindex!(vtk::DatasetFile, data::InputDataType, name::AbstractString,
+Base.setindex!(vtk::DatasetFile, data, name::AbstractString,
                loc::AbstractFieldData) = add_field_data(vtk, data, name, loc)
 
-function Base.setindex!(vtk::DatasetFile, data::InputDataType,
-                        name::AbstractString)
+function Base.setindex!(vtk::DatasetFile, data, name::AbstractString)
     loc = guess_data_location(data, vtk) :: AbstractFieldData
     setindex!(vtk, data, name, loc)
 end
