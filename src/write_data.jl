@@ -155,9 +155,9 @@ function data_to_xml_appended(vtk::DatasetFile, xParent::XMLElement,
     xDA = new_child(xParent, "DataArray")
     set_attribute(xDA, "type", datatype_str(data))
     set_attribute(xDA, "Name", varname)
+    set_attribute(xDA, "NumberOfComponents", Nc)
     set_attribute(xDA, "format", "appended")
     set_attribute(xDA, "offset", position(buf))
-    set_attribute(xDA, "NumberOfComponents", string(Nc))
 
     # Size of data array (in bytes).
     nb = sizeof_data(data)
@@ -201,8 +201,8 @@ function data_to_xml_inline(vtk::DatasetFile, xParent::XMLElement,
     xDA = new_child(xParent, "DataArray")
     set_attribute(xDA, "type", datatype_str(data))
     set_attribute(xDA, "Name", varname)
+    set_attribute(xDA, "NumberOfComponents", Nc)
     set_attribute(xDA, "format", "binary")   # here, binary means base64-encoded
-    set_attribute(xDA, "NumberOfComponents", "$Nc")
 
     # Number of bytes of data.
     nb = sizeof_data(data)
