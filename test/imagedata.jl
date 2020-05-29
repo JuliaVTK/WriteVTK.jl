@@ -47,9 +47,11 @@ function main()
         vtk["myCellData"] = cdata
 
         # Field data
-        # vtk["time"] = 3.2
-        vtk["field_tuple"] = ([2.0, 3.0, 4.0], [1.0, 2.0, 3.0])  # 2 components
-        vtk["field_matrix", VTKFieldData()] = (1:4) * (2:5)'
+        vtk["time"] = 4.2
+        vtk["field_tuple"] =
+            ([2.0, 3.0, 4.0], [1.0, 2.0, 3.0])  # 2 components, 3 "tuples"
+        vtk["field_matrix", VTKFieldData()] =
+            (1:4) * (2:5)'  # 1 component, 16 "tuples"
     end
 
     # Test 2D dataset

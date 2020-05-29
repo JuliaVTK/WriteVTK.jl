@@ -15,8 +15,10 @@ node_type(::VTKPointData) = "PointData"
 node_type(::VTKCellData) = "CellData"
 node_type(::VTKFieldData) = "FieldData"
 
+const ArrayOrValue = Union{AbstractArray, Number}
+
 # Determine number of components of input data.
-function num_components(data::AbstractArray, num_points_or_cells::Int)
+function num_components(data::ArrayOrValue, num_points_or_cells)
     Nc = div(length(data), num_points_or_cells)
     if Nc * num_points_or_cells != length(data)
         throw(DimensionMismatch("incorrect dimensions of input array."))
@@ -24,16 +26,15 @@ function num_components(data::AbstractArray, num_points_or_cells::Int)
     Nc
 end
 
-num_components(data::AbstractArray, vtk::DatasetFile, ::VTKPointData) =
+num_components(data::ArrayOrValue, vtk, ::VTKPointData) =
     num_components(data, vtk.Npts)
-num_components(data::AbstractArray, vtk::DatasetFile, ::VTKCellData) =
+num_components(data::ArrayOrValue, vtk, ::VTKCellData) =
     num_components(data, vtk.Ncls)
-num_components(data::AbstractArray, ::DatasetFile, ::VTKFieldData) = 1
-
+num_components(data::ArrayOrValue, vtk, ::VTKFieldData) = 1
 num_components(data::NTuple, args...) = length(data)
 
 # This is for the NumberOfTuples attribute of FieldData.
-num_field_tuples(data::AbstractArray) = length(data)
+num_field_tuples(data::ArrayOrValue) = length(data)
 num_field_tuples(data::NTuple) = num_field_tuples(first(data))
 
 # Guess from data dimensions whether data should be associated to points,
@@ -72,12 +73,13 @@ end
 
 datatype_str(::Type{T}) where T =
     throw(ArgumentError("data type not supported by VTK: $T"))
+datatype_str(v) = datatype_str(typeof(v))
 datatype_str(::AbstractArray{T}) where T = datatype_str(T)
 datatype_str(::NTuple{N, T} where N) where T <: AbstractArray =
     datatype_str(eltype(T))
 
 # Total size of data in bytes.
-sizeof_data(x::Array) = sizeof(x)
+sizeof_data(x) = sizeof(x)
 sizeof_data(x::AbstractArray) = length(x) * sizeof(eltype(x))
 sizeof_data(x::NTuple) = sum(sizeof_data, x)
 
