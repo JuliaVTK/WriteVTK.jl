@@ -88,11 +88,15 @@ where the "index" is the name of the dataset in the VTK file.
 
 By default, the input data is automatically associated either to grid points or
 to data cells according to the input data dimensions.
-If more control is desired, one can explicitly pass a `VTKPointData` or
-a `VTKCellData` instance as a second index:
+If none of them is possible, it is written as "field data", with dimensions
+that are independent of the discrete geometry (this may be used to include
+custom metadata such as time information).
+If more control is desired, one can explicitly pass a `VTKPointData`,
+a `VTKCellData` or a `VTKFieldData` instance as a second index:
 ```julia
 vtkfile["Velocity", VTKPointData()] = vel
 vtkfile["Pressure", VTKCellData()] = p
+vtkfile["Time", VTKFieldData()] = 42.0
 ```
 
 Note that in rectilinear and structured meshes, the cell dimensions are
