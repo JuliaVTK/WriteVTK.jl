@@ -45,6 +45,16 @@ function main()
         vtk["q_values"] = q
         vtk["myVector"] = vec
         vtk["myCellData"] = cdata
+
+        # Field data
+        vtk["time"] = 4.2
+        vtk["field_tuple"] =
+            ([2.0, 3.0, 4.0], [1.0, 2.0, 3.0])  # 2 components, 3 "tuples"
+        vtk["field_matrix", VTKFieldData()] =
+            (1:4) * (2:5)'  # 1 component, 16 "tuples"
+        vtk["a_string"] = "blabla"
+        vtk["some_strings"] = ["blabla", "ab©dé", "ñeee"]
+        vtk["string_tuple"] = ("blabla", "ab©dé", "ñeee")
     end
 
     # Test 2D dataset

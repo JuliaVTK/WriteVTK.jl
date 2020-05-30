@@ -76,7 +76,7 @@ This is actually more efficient than the previous formulation.
 
 ### Add some data to the file
 
-In a VTK file, field data can be associated to grid points or to data cells
+In a VTK file, data can be associated to grid points or to data cells
 (see [Defining cells](#defining-cells) for details on cells).
 Data is written to a VTK file object using the syntax
 ```julia
@@ -86,13 +86,25 @@ vtkfile["Concentration"] = C
 ```
 where the "index" is the name of the dataset in the VTK file.
 
-By default, the input data is automatically associated either to grid points or
-to data cells according to the input data dimensions.
-If more control is desired, one can explicitly pass a `VTKPointData` or
-a `VTKCellData` instance as a second index:
+It is also possible to write datasets whose dimensions are independent of the
+discrete geometry.
+In VTK this is called "field data", and can be used to write metadata such as
+time information or strings:
+```julia
+vtkfile["Time"] = 42.0
+vtkfile["Date"] = "30/05/2020"
+vtkfile["Distances"] = [2.0, 4.0, 8.0]
+```
+
+For convenience, the input data is automatically associated either to grid
+points or data cells, or interpreted as field data, according to the input data
+dimensions.
+If more control is desired, one can explicitly pass a `VTKPointData`,
+a `VTKCellData` or a `VTKFieldData` instance as a second index:
 ```julia
 vtkfile["Velocity", VTKPointData()] = vel
 vtkfile["Pressure", VTKCellData()] = p
+vtkfile["Time", VTKFieldData()] = 42.0
 ```
 
 Note that in rectilinear and structured meshes, the cell dimensions are
