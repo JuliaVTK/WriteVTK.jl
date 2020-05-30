@@ -121,7 +121,7 @@ function set_num_components(xDA, vtk, data, loc::VTKFieldData)
 end
 
 xml_data_array_name(::Any) = "DataArray"
-xml_data_array_name(::String) = "Array"
+xml_data_array_name(::Union{String,ListOfStrings}) = "Array"
 
 """
     data_to_xml(
