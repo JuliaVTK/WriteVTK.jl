@@ -15,7 +15,9 @@ node_type(::VTKPointData) = "PointData"
 node_type(::VTKCellData) = "CellData"
 node_type(::VTKFieldData) = "FieldData"
 
-const ArrayOrValue = Union{AbstractArray, Number}
+const ArrayOrValue = Union{AbstractArray, Number, String}
+const NumericArray = AbstractArray{T} where {T <: Number}
+const ListOfStrings = Union{Tuple{Vararg{String}}, AbstractArray{String}}
 
 # Determine number of components of input data.
 function num_components(data::ArrayOrValue, num_points_or_cells)
@@ -26,15 +28,19 @@ function num_components(data::ArrayOrValue, num_points_or_cells)
     Nc
 end
 
-num_components(data::ArrayOrValue, vtk, ::VTKPointData) =
+num_components(data::NumericArray, vtk, ::VTKPointData) =
     num_components(data, vtk.Npts)
-num_components(data::ArrayOrValue, vtk, ::VTKCellData) =
+num_components(data::NumericArray, vtk, ::VTKCellData) =
     num_components(data, vtk.Ncls)
-num_components(data::ArrayOrValue, vtk, ::VTKFieldData) = 1
+num_components(data::NumericArray, vtk, ::VTKFieldData) = 1
+num_components(::Union{Number,String}, args...) = 1
+num_components(data::ListOfStrings, args...) = 1
 num_components(data::NTuple, args...) = length(data)
 
 # This is for the NumberOfTuples attribute of FieldData.
 num_field_tuples(data::ArrayOrValue) = length(data)
+num_field_tuples(data::ListOfStrings) = length(data)
+num_field_tuples(data::String) = 1
 num_field_tuples(data::NTuple) = num_field_tuples(first(data))
 
 # Guess from data dimensions whether data should be associated to points,
@@ -58,10 +64,10 @@ guess_data_location(data::Tuple{}, args...) = VTKPointData()
 """
     VTKDataType
 
-Union of data types allowed by VTK (see file-formats.pdf, page 15).
+Union of data types allowed by VTK.
 """
 const VTKDataType = Union{Int8, UInt8, Int16, UInt16, Int32, UInt32,
-                          Int64, UInt64, Float32, Float64}
+                          Int64, UInt64, Float32, Float64, String}
 
 # Return the VTK string representation of a numerical data type.
 function datatype_str(::Type{T}) where T <: VTKDataType
@@ -77,24 +83,25 @@ datatype_str(v) = datatype_str(typeof(v))
 datatype_str(::AbstractArray{T}) where T = datatype_str(T)
 datatype_str(::NTuple{N, T} where N) where T <: AbstractArray =
     datatype_str(eltype(T))
+datatype_str(::ListOfStrings) = datatype_str(String)
 
 # Total size of data in bytes.
 sizeof_data(x) = sizeof(x)
+sizeof_data(x::String) = sizeof(x) + sizeof("\0")
 sizeof_data(x::AbstractArray) = length(x) * sizeof(eltype(x))
+sizeof_data(x::ListOfStrings) = sum(sizeof_data, x)
 sizeof_data(x::NTuple) = sum(sizeof_data, x)
 
-# Write array of numerical data to stream.
-function write_array(io, data)
-    write(io, data)
-    nothing
-end
+write_array(io, data) = write(io, data)
+write_array(io, x::String) = write(io, x, '\0')
+write_array(io, x::ListOfStrings) = sum(s -> write_array(io, s), x)
 
 function write_array(io, data::NTuple)
-    # All arrays in the tuple should have the same size...
+    n = 0
     for i in eachindex(data...), x in data
-        write(io, x[i])
+        n += write(io, x[i])
     end
-    nothing
+    n
 end
 
 function set_num_components(xDA, vtk, data, loc)
@@ -103,7 +110,7 @@ function set_num_components(xDA, vtk, data, loc)
     nothing
 end
 
-# In the specific case of FieldData, we alseo need to set the number of "tuples"
+# In the specific case of FieldData, we also need to set the number of "tuples"
 # (number of elements per field component).
 function set_num_components(xDA, vtk, data, loc::VTKFieldData)
     Nc = num_components(data, vtk, loc)
@@ -112,6 +119,9 @@ function set_num_components(xDA, vtk, data, loc::VTKFieldData)
     set_attribute(xDA, "NumberOfTuples", Nt)
     nothing
 end
+
+xml_data_array_name(::Any) = "DataArray"
+xml_data_array_name(::String) = "Array"
 
 """
     data_to_xml(
@@ -129,7 +139,7 @@ dimensions and the type of field data.
 """
 function data_to_xml(vtk, xParent, data, name,
                      Nc::Union{Int,AbstractFieldData}=1)
-    xDA = new_child(xParent, "DataArray")
+    xDA = new_child(xParent, xml_data_array_name(data))
     set_attribute(xDA, "type", datatype_str(data))
     set_attribute(xDA, "Name", name)
     if Nc isa Int
@@ -204,7 +214,8 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
         seek(buf, endpos)
     else
         write(buf, UInt32(nb))  # header (uncompressed version)
-        write_array(buf, data)
+        nb_write = write_array(buf, data)
+        @assert nb_write == nb
     end
 
     xDA::XMLElement
