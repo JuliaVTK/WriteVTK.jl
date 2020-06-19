@@ -1,18 +1,12 @@
-__precompile__()
-
 module WriteVTK
 
-# All the code is based on the VTK file specification [1], plus some
-# undocumented stuff found around the internet...
-# [1] http://www.vtk.org/VTK/img/file-formats.pdf
-
-export MeshCell
+export MeshCell, PolyCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
 export paraview_collection, collection_add_timestep, paraview_collection_load
 export vtk_write_array
-export VTKPointData, VTKCellData, VTKFieldData  # singleton types
-export VTKPolyLine  # for PolyData files
+export VTKPointData, VTKCellData, VTKFieldData
+export PolyData
 
 import CodecZlib: ZlibCompressorStream
 import TranscodingStreams
@@ -84,6 +78,35 @@ struct CollectionFile <: VTKFile
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
+"""
+    MeshCell
+
+Single cell element in unstructured grid.
+
+It is characterised by a cell type (for instance, `VTKCellType.TRIANGLE`) and by
+a connectivity vector determining the points on the grid defining this cell.
+
+---
+
+    MeshCell(cell_type, connectivity::AbstractVector)
+
+Define a single cell element of an unstructured grid.
+
+The `cell_type` argument characterises the type of cell (e.g. vertex, triangle,
+hexaedron, ...). Cell types are defined in the [`VTKCellTypes`](@ref) module,
+which is exported by `WriteVTK`.
+
+The `connectivity` argument is a vector containing the indices of the points
+passed to [`vtk_grid`](@ref) which define this cell.
+
+# Example
+
+Define a triangular cell passing by points with indices `[3, 5, 42]`.
+
+```julia
+cell = MeshCell(VTKCellTypes.VTK_TRIANGLE, [3, 5, 42])
+```
+"""
 struct MeshCell{V <: AbstractVector{<:Integer}}
     ctype::VTKCellTypes.VTKCellType  # cell type identifier (see VTKCellTypes.jl)
     connectivity::V      # indices of points (one-based, following the convention in Julia)
