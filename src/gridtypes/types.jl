@@ -35,13 +35,6 @@ abstract type UnstructuredVTKDataset <: AbstractVTKDataset end
 struct VTKPolyData <: UnstructuredVTKDataset end
 struct VTKUnstructuredGrid <: UnstructuredVTKDataset end
 
-"""
-    ParaviewCollection <: AbstractVTKDataset
-
-Represents a ParaView collection file (`*.pvd`).
-"""
-abstract type ParaviewCollection <: AbstractVTKDataset end
-
 file_extension(::VTKImageData) = ".vti"
 file_extension(::VTKRectilinearGrid) = ".vtr"
 file_extension(::VTKStructuredGrid) = ".vts"
