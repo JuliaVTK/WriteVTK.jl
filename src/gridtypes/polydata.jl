@@ -55,40 +55,14 @@ struct PolyCell{Cell <: PolyData.CellType, Indices <: AbstractVector{<:Integer}}
 end
 
 cell_type(::Type{<:PolyCell{C}}) where {C} = C
+Base.eltype(::Type{T}) where {T <: PolyCell} = cell_type(T)
 
 # Add different types of PolyCell (lines, vertices, ...) recursively.
-function add_poly_cells!(vtk, xml_piece, cells::AbstractArray{<:PolyCell}, etc...)
-    ctype = cell_type(eltype(cells))
-    Nc = length(cells)
-    set_attribute(xml_piece, PolyData.number_attr(ctype), Nc)
-
-    offsets = Array{Int32}(undef, Nc)
-    Nconn = 0   # length of the connectivity array
-    if Nc >= 1  # it IS possible to have no cells
-        offsets[1] = length(cells[1].connectivity)
-    end
-
-    for (n, c) in enumerate(cells)
-        Npts_cell = length(c.connectivity)
-        Nconn += Npts_cell
-        if n >= 2
-            offsets[n] = offsets[n-1] + Npts_cell
-        end
-    end
-
-    # Create connectivity array.
-    conn = Array{Int32}(undef, Nconn)
-    n = 1
-    for c in cells, i in c.connectivity
-        # We transform to zero-based indexing, required by VTK.
-        conn[n] = i - 1
-        n += 1
-    end
-
-    xnode = new_child(xml_piece, PolyData.xml_node(ctype))
-    data_to_xml(vtk, xnode, conn, "connectivity")
-    data_to_xml(vtk, xnode, offsets, "offsets")
-
+function add_poly_cells!(vtk, xml_piece, cells::AbstractArray{<:PolyCell},
+                         etc...)
+    ctype = eltype(eltype(cells))
+    add_cells!(vtk, xml_piece, PolyData.number_attr(ctype),
+               PolyData.xml_node(ctype), cells, with_types=false)
     add_poly_cells!(vtk, xml_piece, etc...)
 end
 

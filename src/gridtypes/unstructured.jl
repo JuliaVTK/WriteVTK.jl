@@ -1,36 +1,16 @@
-function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
-                  points::AbstractArray, cells::Vector{<:MeshCell};
-                  kwargs...)
-    @assert size(points, 1) == 3
-    Npts = prod(size(points)[2:end])
+function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
+                    with_types=true)
+    Cell = eltype(cells)
     Ncls = length(cells)
-
-    xvtk = XMLDocument()
-    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
-
-    # VTKFile node
-    xroot = vtk_xml_write_header(vtk)
-
-    # UnstructuredGrid node
-    xGrid = new_child(xroot, vtk.grid_type)
-
-    # Piece node
-    xPiece = new_child(xGrid, "Piece")
-    set_attribute(xPiece, "NumberOfPoints", vtk.Npts)
-    set_attribute(xPiece, "NumberOfCells",  vtk.Ncls)
-
-    # Points node
-    xPoints = new_child(xPiece, "Points")
-
-    # DataArray node
-    data_to_xml(vtk, xPoints, points, "Points", 3)
-
-    # Cells node (below the Piece node)
-    xCells = new_child(xPiece, "Cells")
 
     # Create data arrays.
     offsets = Array{Int32}(undef, Ncls)
-    types = Array{UInt8}(undef, Ncls)
+
+    # Write `types` array? This must be true for unstructured grids,
+    # and false for polydata.
+    if with_types
+        types = Array{UInt8}(undef, Ncls)
+    end
 
     Nconn = 0     # length of the connectivity array
     if Ncls >= 1  # it IS possible to have no cells
@@ -40,7 +20,9 @@ function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
     for (n, c) in enumerate(cells)
         Npts_cell = length(c.connectivity)
         Nconn += Npts_cell
-        types[n] = c.ctype.vtk_id
+        if with_types
+            types[n] = cell_type(c).vtk_id
+        end
         if n >= 2
             offsets[n] = offsets[n-1] + Npts_cell
         end
@@ -57,11 +39,40 @@ function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
     end
 
     # Add arrays to the XML file (DataArray nodes).
-    data_to_xml(vtk, xCells, conn, "connectivity")
-    data_to_xml(vtk, xCells, offsets, "offsets")
-    data_to_xml(vtk, xCells, types, "types")
+    set_attribute(xml_piece, number_attr, Ncls)
 
-    vtk::DatasetFile
+    xnode = new_child(xml_piece, xml_name)
+    data_to_xml(vtk, xnode, conn, "connectivity")
+    data_to_xml(vtk, xnode, offsets, "offsets")
+    if with_types
+        data_to_xml(vtk, xnode, types, "types")
+    end
+
+    vtk
+end
+
+function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
+                  points::AbstractArray, cells::Vector{<:MeshCell};
+                  kwargs...)
+    @assert size(points, 1) == 3
+    Npts = prod(size(points)[2:end])
+    Ncls = length(cells)
+
+    xvtk = XMLDocument()
+    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
+
+    xroot = vtk_xml_write_header(vtk)
+    xGrid = new_child(xroot, vtk.grid_type)
+
+    xPiece = new_child(xGrid, "Piece")
+    set_attribute(xPiece, "NumberOfPoints", vtk.Npts)
+
+    xPoints = new_child(xPiece, "Points")
+    data_to_xml(vtk, xPoints, points, "Points", 3)
+
+    add_cells!(vtk, xPiece, "NumberOfCells", "Cells", cells)
+
+    vtk
 end
 
 # Variant of vtk_grid with 2-D array "points".

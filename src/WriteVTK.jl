@@ -110,15 +110,17 @@ cell = MeshCell(VTKCellTypes.VTK_TRIANGLE, [3, 5, 42])
 struct MeshCell{V <: AbstractVector{<:Integer}}
     ctype::VTKCellTypes.VTKCellType  # cell type identifier (see VTKCellTypes.jl)
     connectivity::V      # indices of points (one-based, following the convention in Julia)
-    function MeshCell{V}(ctype::VTKCellTypes.VTKCellType, conn::V) where V
+    function MeshCell(ctype::VTKCellTypes.VTKCellType, conn)
         if ctype.nodes ∉ (length(conn), -1)
             error("Wrong number of nodes in connectivity vector.")
         end
-        new(ctype, conn)
+        V = typeof(conn)
+        new{V}(ctype, conn)
     end
 end
 
-MeshCell(ctype, conn::V) where V = MeshCell{V}(ctype, conn)
+Base.eltype(::Type{<:MeshCell}) = VTKCellTypes.VTKCellType
+cell_type(cell::MeshCell) = cell.ctype
 
 close(vtk::VTKFile) = free(vtk.xdoc)
 isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
