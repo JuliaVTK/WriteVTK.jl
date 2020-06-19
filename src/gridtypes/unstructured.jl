@@ -50,12 +50,10 @@ function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
     conn = Array{Int32}(undef, Nconn)
     ONE = one(Int32)
     n = 1
-    for c in cells
-        for i in c.connectivity
-            # We transform to zero-based indexing, required by VTK.
-            conn[n] = i - ONE
-            n += 1
-        end
+    for c in cells, i in c.connectivity
+        # We transform to zero-based indexing, required by VTK.
+        conn[n] = i - ONE
+        n += 1
     end
 
     # Add arrays to the XML file (DataArray nodes).
@@ -76,15 +74,15 @@ function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
     end
     # Reshape to 3D
     _points = zeros(T, 3, Npts)
-    if dim == 1
-        _points[1, :] = points
-    elseif dim == 2
-        _points[1:2, :] = points
-    else
+    Base.require_one_based_indexing(points)
+    if dim ∉ (1, 2)
         msg = string("`points` array must be of size (dim, Npts), ",
                      "where dim = 1, 2 or 3 and `Npts` the number of points.\n",
                      "Actual size of input: $(size(points))")
         throw(ArgumentError(msg))
+    end
+    for I in CartesianIndices(points)
+        _points[I] = points[I]
     end
     vtk_grid(VTKUnstructuredGrid(), filename, _points, cells; kwargs...)
 end

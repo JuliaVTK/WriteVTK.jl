@@ -3,8 +3,6 @@
 # Definitions copied from the vtkCellType.h file of the VTK source code:
 # https://raw.githubusercontent.com/Kitware/VTK/master/Common/DataModel/vtkCellType.h
 
-__precompile__()
-
 module VTKCellTypes
 
 export VTKCellType

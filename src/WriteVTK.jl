@@ -12,6 +12,7 @@ export vtk_multiblock
 export paraview_collection, collection_add_timestep, paraview_collection_load
 export vtk_write_array
 export VTKPointData, VTKCellData, VTKFieldData  # singleton types
+export VTKPolyLine  # for PolyData files
 
 import CodecZlib: ZlibCompressorStream
 import TranscodingStreams
@@ -73,7 +74,6 @@ struct MultiblockFile <: VTKFile
     xdoc::XMLDocument
     path::String
     blocks::Vector{VTKFile}
-    # Constructor.
     MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
@@ -81,7 +81,6 @@ struct CollectionFile <: VTKFile
     xdoc::XMLDocument
     path::String
     timeSteps::Vector{String}
-    # Constructor.
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
@@ -132,6 +131,7 @@ include("gridtypes/structured.jl")
 include("gridtypes/unstructured.jl")
 include("gridtypes/rectilinear.jl")
 include("gridtypes/imagedata.jl")
+include("gridtypes/polydata.jl")
 include("gridtypes/array.jl")
 
 # This allows using do-block syntax for generation of VTK files.
