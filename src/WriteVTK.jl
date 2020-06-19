@@ -61,6 +61,9 @@ struct DatasetFile <: VTKFile
     end
 end
 
+DatasetFile(dtype, xdoc::XMLDocument, fname::AbstractString, args...) =
+    DatasetFile(xdoc, add_extension(fname, dtype), xml_name(dtype), args...)
+
 function show(io::IO, vtk::DatasetFile)
     open_str = isopen(vtk) ? "open" : "closed"
     print(io, "VTK file '$(vtk.path)' ($(vtk.grid_type) file, $open_str)")
@@ -98,9 +101,9 @@ MeshCell(ctype, conn::V) where V = MeshCell{V}(ctype, conn)
 close(vtk::VTKFile) = free(vtk.xdoc)
 isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
-# Add a default extension to the filename,
-# unless the user have already given the correct one
-function add_extension(filename, default_extension) :: String
+# Add a default extension to the filename, unless the user have already given
+# the correct one.
+function add_extension(filename, default_extension::AbstractString) :: String
     path, ext = splitext(filename)
     if ext == default_extension
         return filename
@@ -112,9 +115,12 @@ function add_extension(filename, default_extension) :: String
     filename * default_extension
 end
 
-# Common functions.
+add_extension(filename, dtype) = add_extension(filename, file_extension(dtype))
+
+# Common functions and types.
 include("write_data.jl")
 include("save_files.jl")
+include("gridtypes/types.jl")
 include("gridtypes/common.jl")
 
 # Multiblock-specific functions and types.

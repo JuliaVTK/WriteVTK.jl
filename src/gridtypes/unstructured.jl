@@ -1,13 +1,12 @@
-function unstructured_grid(filename::AbstractString, points::AbstractArray,
-                           cells::Vector{<:MeshCell};
-                           compress=true, append::Bool=true)
+function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
+                  points::AbstractArray, cells::Vector{<:MeshCell};
+                  compress=true, append::Bool=true)
     @assert size(points, 1) == 3
     Npts = prod(size(points)[2:end])
     Ncls = length(cells)
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(xvtk, add_extension(filename, ".vtu"), "UnstructuredGrid",
-                      Npts, Ncls, compress, append)
+    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls, compress, append)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)
@@ -73,7 +72,7 @@ function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
                   cells::Vector{<:MeshCell}; kwargs...) where T
     dim, Npts = size(points)
     if dim == 3
-        return unstructured_grid(filename, points, cells; kwargs...)
+        return vtk_grid(VTKUnstructuredGrid(), filename, points, cells; kwargs...)
     end
     # Reshape to 3D
     _points = zeros(T, 3, Npts)
@@ -87,7 +86,7 @@ function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
                      "Actual size of input: $(size(points))")
         throw(ArgumentError(msg))
     end
-    unstructured_grid(filename, _points, cells; kwargs...)
+    vtk_grid(VTKUnstructuredGrid(), filename, _points, cells; kwargs...)
 end
 
 # Variant of vtk_grid with 1-D arrays x, y, z.
@@ -105,7 +104,7 @@ function vtk_grid(filename::AbstractString, x::AbstractVector{T},
         points[2, n] = y[n]
         points[3, n] = z[n]
     end
-    unstructured_grid(filename, points, cells; kwargs...)
+    vtk_grid(VTKUnstructuredGrid(), filename, points, cells; kwargs...)
 end
 
 # 2D version
@@ -125,5 +124,5 @@ function vtk_grid(filename::AbstractString, points::AbstractArray{T,4},
                   cells::Vector{<:MeshCell}; kwargs...) where T
     dim, Ni, Nj, Nk = size(points)
     points_r = reshape(points, (dim, Ni*Nj*Nk))
-    unstructured_grid(filename, points_r, cells; kwargs...)
+    vtk_grid(VTKUnstructuredGrid(), filename, points_r, cells; kwargs...)
 end

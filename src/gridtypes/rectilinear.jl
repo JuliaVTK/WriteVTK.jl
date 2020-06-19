@@ -1,15 +1,13 @@
-function rectilinear_grid(filename::AbstractString, x::AbstractVector,
-                          y::AbstractVector, z::AbstractVector;
-                          compress=true, append::Bool=true,
-                          extent=nothing)
+function vtk_grid(dtype::VTKRectilinearGrid, filename::AbstractString,
+                  x::AbstractVector, y::AbstractVector, z::AbstractVector;
+                  compress=true, append::Bool=true, extent=nothing)
     Ni, Nj, Nk = length(x), length(y), length(z)
     Npts = Ni*Nj*Nk
     Ncls = num_cells_structured(Ni, Nj, Nk)
     ext = extent_attribute(Ni, Nj, Nk, extent)
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(xvtk, add_extension(filename, ".vtr"), "RectilinearGrid",
-                      Npts, Ncls, compress, append)
+    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls, compress, append)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)
@@ -52,9 +50,9 @@ VTK file 'abc.vtr' (RectilinearGrid file, open)
 """
 vtk_grid(filename::AbstractString, x::AbstractVector{T},
          y::AbstractVector{T}, z::AbstractVector{T}; kwargs...) where T =
-    rectilinear_grid(filename, x, y, z; kwargs...)
+    vtk_grid(VTKRectilinearGrid(), filename, x, y, z; kwargs...)
 
 # 2D variant
 vtk_grid(filename::AbstractString, x::AbstractVector{T},
          y::AbstractVector{T}; kwargs...) where T =
-    rectilinear_grid(filename, x, y, zeros(T, 1); kwargs...)
+    vtk_grid(VTKRectilinearGrid(), filename, x, y, zeros(T, 1); kwargs...)
