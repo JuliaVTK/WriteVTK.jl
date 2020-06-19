@@ -1,12 +1,12 @@
 function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
                   points::AbstractArray, cells::Vector{<:MeshCell};
-                  compress=true, append::Bool=true)
+                  kwargs...)
     @assert size(points, 1) == 3
     Npts = prod(size(points)[2:end])
     Ncls = length(cells)
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls, compress, append)
+    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)

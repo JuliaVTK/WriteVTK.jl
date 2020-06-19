@@ -8,8 +8,7 @@ structured_dims(xyz::Array4) = ntuple(d -> size(xyz, d + 1), 3)
 structured_dims(xyz::Array3Tuple3) = size(first(xyz))
 
 function vtk_grid(dtype::VTKStructuredGrid, filename::AbstractString,
-                  xyz::StructuredCoords;
-                  compress=true, append::Bool=true, extent=nothing)
+                  xyz::StructuredCoords; extent=nothing, kwargs...)
     Ni, Nj, Nk = structured_dims(xyz)
     Npts = Ni * Nj * Nk
     Ncomp = num_components(xyz, Npts)
@@ -24,7 +23,7 @@ function vtk_grid(dtype::VTKStructuredGrid, filename::AbstractString,
     end
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls, compress, append)
+    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)

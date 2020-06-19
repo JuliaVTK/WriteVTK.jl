@@ -1,13 +1,13 @@
 function vtk_grid(dtype::VTKRectilinearGrid, filename::AbstractString,
                   x::AbstractVector, y::AbstractVector, z::AbstractVector;
-                  compress=true, append::Bool=true, extent=nothing)
+                  extent=nothing, kwargs...)
     Ni, Nj, Nk = length(x), length(y), length(z)
     Npts = Ni*Nj*Nk
     Ncls = num_cells_structured(Ni, Nj, Nk)
     ext = extent_attribute(Ni, Nj, Nk, extent)
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls, compress, append)
+    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)
@@ -28,7 +28,7 @@ function vtk_grid(dtype::VTKRectilinearGrid, filename::AbstractString,
     data_to_xml(vtk, xPoints, y, "y")
     data_to_xml(vtk, xPoints, z, "z")
 
-    return vtk::DatasetFile
+    vtk
 end
 
 """

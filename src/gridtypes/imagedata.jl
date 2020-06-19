@@ -5,13 +5,13 @@ function vtk_grid(dtype::VTKImageData, filename::AbstractString,
                   Nx::Integer, Ny::Integer, Nz::Integer=1;
                   origin::TupleOrVec=(0.0, 0.0, 0.0),
                   spacing::TupleOrVec=(1.0, 1.0, 1.0),
-                  compress=true, append::Bool=true, extent=nothing)
+                  extent=nothing, kwargs...)
     Npts = Nx*Ny*Nz
     Ncls = num_cells_structured(Nx, Ny, Nz)
     ext = extent_attribute(Nx, Ny, Nz, extent)
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls, compress, append)
+    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)
@@ -50,7 +50,7 @@ function vtk_grid(dtype::VTKImageData, filename::AbstractString,
     xPiece = new_child(xGrid, "Piece")
     set_attribute(xPiece, "Extent", ext)
 
-    return vtk::DatasetFile
+    vtk
 end
 
 vtk_grid(filename::AbstractString, xyz::Vararg{Integer}; kwargs...) =

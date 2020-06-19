@@ -46,23 +46,23 @@ struct DatasetFile <: VTKFile
     compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     buf::IOBuffer       # Buffer with appended data.
-    function DatasetFile(xdoc, path, grid_type, Npts, Ncls, compression,
-                         appended)
+    function DatasetFile(xdoc, path, grid_type, Npts, Ncls;
+                         compress=true, append=true)
         buf = IOBuffer()
-        clevel = _compression_level(compression)
+        clevel = _compression_level(compress)
         if !(0 ≤ clevel ≤ 9)
-            error("Unexpected value of `compress` argument: $compression.\n",
+            error("Unexpected value of `compress` argument: $compress.\n",
                   "It must be a `Bool` or a value between 0 and 9.")
         end
-        if !appended  # in this case we don't need a buffer
+        if !append  # in this case we don't need a buffer
             close(buf)
         end
-        new(xdoc, path, grid_type, Npts, Ncls, clevel, appended, buf)
+        new(xdoc, path, grid_type, Npts, Ncls, clevel, append, buf)
     end
 end
 
-DatasetFile(dtype, xdoc::XMLDocument, fname::AbstractString, args...) =
-    DatasetFile(xdoc, add_extension(fname, dtype), xml_name(dtype), args...)
+DatasetFile(dtype, xdoc::XMLDocument, fname::AbstractString, args...; kwargs...) =
+    DatasetFile(xdoc, add_extension(fname, dtype), xml_name(dtype), args...; kwargs...)
 
 function show(io::IO, vtk::DatasetFile)
     open_str = isopen(vtk) ? "open" : "closed"
