@@ -153,7 +153,7 @@ end
 function main()
     outfiles = String[]
     for dim in 1:3
-        pts, cells, pdata, cdata = mesh_data(Val{dim}())
+        pts, cells, pdata, cdata = mesh_data(Val(dim))
 
         @time begin
             # Initialise new vtu file (unstructured grid).

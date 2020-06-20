@@ -218,7 +218,7 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
         @assert nb_write == nb
     end
 
-    xDA::XMLElement
+    xDA
 end
 
 """
@@ -271,7 +271,7 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     end
     close(buf)
 
-    xDA::XMLElement
+    xDA
 end
 
 """
@@ -300,7 +300,7 @@ function add_field_data(vtk::DatasetFile, data, name::AbstractString,
     # DataArray node
     xDA = data_to_xml(vtk, xPD, data, name, loc)
 
-    vtk
+    xDA
 end
 
 vtk_point_data(args...) = add_field_data(args..., VTKPointData())
