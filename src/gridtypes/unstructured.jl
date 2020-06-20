@@ -85,7 +85,9 @@ function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
     end
     # Reshape to 3D
     _points = zeros(T, 3, Npts)
-    Base.require_one_based_indexing(points)
+    if isdefined(Base, :require_one_based_indexing)  # not the case in Julia 1.0
+        Base.require_one_based_indexing(points)
+    end
     if dim ∉ (1, 2)
         msg = string("`points` array must be of size (dim, Npts), ",
                      "where dim = 1, 2 or 3 and `Npts` the number of points.\n",

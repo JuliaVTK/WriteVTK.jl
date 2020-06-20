@@ -10,7 +10,9 @@ const vtk_filename_noext = "polydata"
 function main()
     Np = 128
     rng = MersenneTwister(42)
-    points = sortslices(rand(rng, 3, Np), dims=2)
+
+    # Workaround changes in rand output in Julia 1.5. See array.jl.
+    points = sortslices([rand(rng) for i = 1:3, j = 1:Np], dims=2)
 
     M = Np >> 2
     @assert 4M == Np
@@ -42,14 +44,14 @@ function main()
 
     @time filenames = vtk_grid(vtk_filename_noext, points, all_cells...,
                          compress=false, append=false) do vtk
-        vtk["my_point_data"] = randn(rng, 3, Np)
+        vtk["my_point_data"] = [randn(rng) for i = 1:3, j = 1:Np]
 
         # NOTE: cell data is not correctly parsed by VTK when multiple kinds of
         # cells are combined in the same dataset.
         # This seems to be a really old VTK issue:
         # - https://vtk.org/pipermail/vtkusers/2004-August/026448.html
         # - https://gitlab.kitware.com/vtk/vtk/-/issues/564
-        vtk["my_cell_data"] = randn(rng, num_cells)
+        vtk["my_cell_data"] = [randn(rng) for j = 1:num_cells]
     end
 
     println("Saved:  ", filenames...)
