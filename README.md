@@ -188,8 +188,8 @@ Example:
 
 ``` julia
 Nx, Ny, Nz = 10, 12, 42
-origin = [3.0, 4.0, -3.2]
-spacing = [0.1, 0.2, 0.3]
+origin = (3.0, 4.0, -3.2)
+spacing = (0.1, 0.2, 0.3)
 vtk = vtk_grid("my_vti_file", Nx, Ny, Nz, origin=origin, spacing=spacing)
 vtk_save(vtk)
 ```

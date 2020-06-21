@@ -19,7 +19,7 @@ function vtk_grid(dtype::VTKStructuredGrid, filename::AbstractString,
         msg = "coordinate array `xyz` has incorrect dimensions.\n" *
               "Expected dimensions: (3, Ni, Nj, Nk).\n" *
               "Actual dimensions: $(size(xyz))"
-        throw(ArgumentError(msg))
+        throw(DimensionMismatch(msg))
     end
 
     xvtk = XMLDocument()
@@ -50,13 +50,12 @@ vtk_grid(filename::AbstractString, xyz::AbstractArray{T,4};
          kwargs...) where T =
     vtk_grid(VTKStructuredGrid(), filename, xyz; kwargs...)
 
-
 # 3D variant of vtk_grid with 3D arrays x, y, z.
 function vtk_grid(filename::AbstractString, x::AbstractArray{T,3},
                   y::AbstractArray{T,3}, z::AbstractArray{T,3};
                   kwargs...) where T
     if !(size(x) == size(y) == size(z))
-        throw(ArgumentError("size of x, y and z arrays must be the same."))
+        throw(DimensionMismatch("size of x, y and z arrays must be the same."))
     end
     vtk_grid(VTKStructuredGrid(), filename, (x, y, z); kwargs...)
 end
@@ -69,7 +68,7 @@ function vtk_grid(filename::AbstractString, xy::AbstractArray{T,3};
         msg = "coordinate array `xy` has incorrect dimensions.\n" *
               "Expected dimensions: (2, Ni, Nj).\n" *
               "Actual dimensions: $(size(xy))"
-        throw(ArgumentError(msg))
+        throw(DimensionMismatch(msg))
     end
     Nk = 1
     xyz = zeros(T, 3, Ni, Nj, Nk)
@@ -84,7 +83,7 @@ end
 function vtk_grid(filename::AbstractString, x::AbstractArray{T,2},
                   y::AbstractArray{T,2}; kwargs...) where T
     if size(x) != size(y)
-        throw(ArgumentError("size of x and y arrays must be the same."))
+        throw(DimensionMismatch("size of x and y arrays must be the same."))
     end
     Ni, Nj = size(x)
     Nk = 1

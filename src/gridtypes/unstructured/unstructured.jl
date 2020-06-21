@@ -150,7 +150,7 @@ function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
         msg = string("`points` array must be of size (dim, Npts), ",
                      "where dim = 1, 2 or 3 and `Npts` the number of points.\n",
                      "Actual size of input: $(size(points))")
-        throw(ArgumentError(msg))
+        throw(DimensionMismatch(msg))
     end
     for I in CartesianIndices(points)
         _points[I] = points[I]
@@ -164,7 +164,7 @@ function vtk_grid(filename::AbstractString, x::AbstractVector{T},
                   y::AbstractVector{T}, z::AbstractVector{T},
                   cells::CellVector, args...; kwargs...) where {T}
     if !(length(x) == length(y) == length(z))
-        throw(ArgumentError("length of x, y and z arrays must be the same."))
+        throw(DimensionMismatch("length of x, y and z arrays must be the same."))
     end
     Npts = length(x)
     points = Array{T}(undef, 3, Npts)

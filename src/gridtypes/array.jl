@@ -19,7 +19,7 @@ function vtk_write_array(filename::AbstractString,
                          labels::NTuple{M, S}) where
         {T <: Real, M, N, A <: AbstractArray{T,N}, S <: AbstractString}
     if !(2 <= N <= 3)
-        throw(ArgumentError("input should be a 2D or 3D array."))
+        throw(DimensionMismatch("input should be a 2D or 3D array."))
     end
     vtkfile = vtk_grid(filename, size(arrays[1])...)
     for (array, label) in Iterators.zip(arrays, labels)
