@@ -1,6 +1,4 @@
 # TODO
-# - merge with MeshCell and unstructured grids (it's very similar...)
-# - add tests!
 # - document!
 
 module PolyData

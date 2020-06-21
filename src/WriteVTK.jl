@@ -78,50 +78,6 @@ struct CollectionFile <: VTKFile
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
-"""
-    MeshCell
-
-Single cell element in unstructured grid.
-
-It is characterised by a cell type (for instance, `VTKCellType.TRIANGLE`) and by
-a connectivity vector determining the points on the grid defining this cell.
-
----
-
-    MeshCell(cell_type, connectivity::AbstractVector)
-
-Define a single cell element of an unstructured grid.
-
-The `cell_type` argument characterises the type of cell (e.g. vertex, triangle,
-hexaedron, ...). Cell types are defined in the [`VTKCellTypes`](@ref) module,
-which is exported by `WriteVTK`.
-
-The `connectivity` argument is a vector containing the indices of the points
-passed to [`vtk_grid`](@ref) which define this cell.
-
-# Example
-
-Define a triangular cell passing by points with indices `[3, 5, 42]`.
-
-```julia
-cell = MeshCell(VTKCellTypes.VTK_TRIANGLE, [3, 5, 42])
-```
-"""
-struct MeshCell{V <: AbstractVector{<:Integer}}
-    ctype::VTKCellTypes.VTKCellType  # cell type identifier (see VTKCellTypes.jl)
-    connectivity::V      # indices of points (one-based, following the convention in Julia)
-    function MeshCell(ctype::VTKCellTypes.VTKCellType, conn)
-        if ctype.nodes ∉ (length(conn), -1)
-            error("Wrong number of nodes in connectivity vector.")
-        end
-        V = typeof(conn)
-        new{V}(ctype, conn)
-    end
-end
-
-Base.eltype(::Type{<:MeshCell}) = VTKCellTypes.VTKCellType
-cell_type(cell::MeshCell) = cell.ctype
-
 close(vtk::VTKFile) = free(vtk.xdoc)
 isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
@@ -152,11 +108,12 @@ include("gridtypes/multiblock.jl")
 include("gridtypes/ParaviewCollection.jl")
 
 # Grid-specific functions and types.
-include("gridtypes/structured.jl")
-include("gridtypes/unstructured.jl")
-include("gridtypes/rectilinear.jl")
-include("gridtypes/imagedata.jl")
-include("gridtypes/polydata.jl")
+include("gridtypes/structured/imagedata.jl")
+include("gridtypes/structured/rectilinear.jl")
+include("gridtypes/structured/structured.jl")
+include("gridtypes/unstructured/polydata.jl")
+include("gridtypes/unstructured/unstructured.jl")
+
 include("gridtypes/array.jl")
 
 # This allows using do-block syntax for generation of VTK files.
