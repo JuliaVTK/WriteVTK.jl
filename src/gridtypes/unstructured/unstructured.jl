@@ -86,11 +86,10 @@ function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
 
     # Create connectivity array.
     conn = Array{Int32}(undef, Nconn)
-    ONE = one(Int32)
     n = 1
     for c in cells, i in c.connectivity
         # We transform to zero-based indexing, required by VTK.
-        conn[n] = i - ONE
+        conn[n] = i - 1
         n += 1
     end
 
