@@ -12,6 +12,7 @@ import CodecZlib: ZlibCompressorStream
 import TranscodingStreams
 
 using LightXML
+using FillArrays: Zeros
 
 using Base64: base64encode
 

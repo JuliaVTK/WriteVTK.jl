@@ -1,7 +1,7 @@
 # Structured dataset coordinates can be specified using either a 4D array
 # (3, Ni, Nj, Nk), or a tuple (x, y, z).
 const Array4 = AbstractArray{T, 4} where T
-const Array3Tuple3 = NTuple{3, A} where A <: AbstractArray{T, 3} where T
+const Array3Tuple3 = Tuple{Vararg{<:AbstractArray{T,3}, 3}} where T
 const StructuredCoords = Union{Array4, Array3Tuple3}
 
 structured_dims(xyz::Array4) = ntuple(d -> size(xyz, d + 1), 3)
@@ -70,11 +70,11 @@ function vtk_grid(filename::AbstractString, xy::AbstractArray{T,3};
               "Actual dimensions: $(size(xy))"
         throw(DimensionMismatch(msg))
     end
-    Nk = 1
-    xyz = zeros(T, 3, Ni, Nj, Nk)
-    for j = 1:Nj, i = 1:Ni, n = 1:2
-        xyz[n, i, j, 1] = xy[n, i, j]
-    end
+    xyz = (
+        reshape(view(xy, 1, :, :), Ni, Nj, 1),
+        reshape(view(xy, 2, :, :), Ni, Nj, 1),
+        Zeros{T}(Ni, Nj, 1),
+    )
     vtk_grid(VTKStructuredGrid(), filename, xyz; kwargs...)
 end
 
@@ -86,11 +86,10 @@ function vtk_grid(filename::AbstractString, x::AbstractArray{T,2},
         throw(DimensionMismatch("size of x and y arrays must be the same."))
     end
     Ni, Nj = size(x)
-    Nk = 1
-    xyz = zeros(T, 3, Ni, Nj, Nk)
-    for j = 1:Nj, i = 1:Ni
-        xyz[1, i, j, 1] = x[i, j]
-        xyz[2, i, j, 1] = y[i, j]
-    end
+    xyz = (
+        reshape(x, :, :, 1),
+        reshape(y, :, :, 1),
+        Zeros{T}(Ni, Nj, 1),
+    )
     vtk_grid(VTKStructuredGrid(), filename, xyz; kwargs...)
 end

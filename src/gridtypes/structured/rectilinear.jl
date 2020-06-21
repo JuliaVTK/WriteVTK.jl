@@ -55,4 +55,4 @@ vtk_grid(filename::AbstractString, x::AbstractVector{T},
 # 2D variant
 vtk_grid(filename::AbstractString, x::AbstractVector{T},
          y::AbstractVector{T}; kwargs...) where T =
-    vtk_grid(VTKRectilinearGrid(), filename, x, y, zeros(T, 1); kwargs...)
+    vtk_grid(VTKRectilinearGrid(), filename, x, y, Zeros{T}(1); kwargs...)

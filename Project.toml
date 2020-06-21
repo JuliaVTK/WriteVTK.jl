@@ -6,12 +6,14 @@ version = "1.7.0"
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 LightXML = "9c8b4983-aa76-5018-a973-4c85ecc9e179"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 
 [compat]
 CodecZlib = "0.6, 0.7"
+FillArrays = "0.8.11"
 LightXML = "0.8.1, 0.9"
 TranscodingStreams = "0.9.5"
 julia = "1"

@@ -35,13 +35,13 @@ num_components(data::NumericArray, vtk, ::VTKCellData) =
 num_components(data::NumericArray, vtk, ::VTKFieldData) = 1
 num_components(::Union{Number,String}, args...) = 1
 num_components(data::ListOfStrings, args...) = 1
-num_components(data::NTuple, args...) = length(data)
+num_components(data::Tuple, args...) = length(data)
 
 # This is for the NumberOfTuples attribute of FieldData.
 num_field_tuples(data::ArrayOrValue) = length(data)
 num_field_tuples(data::ListOfStrings) = length(data)
 num_field_tuples(data::String) = 1
-num_field_tuples(data::NTuple) = num_field_tuples(first(data))
+num_field_tuples(data::Tuple) = num_field_tuples(first(data))
 
 # Guess from data dimensions whether data should be associated to points,
 # cells or none.
@@ -56,7 +56,7 @@ function guess_data_location(data, vtk)
     end
 end
 
-guess_data_location(data::NTuple, args...) =
+guess_data_location(data::Tuple, args...) =
     guess_data_location(first(data), args...)
 
 guess_data_location(data::Tuple{}, args...) = VTKPointData()
@@ -81,22 +81,27 @@ datatype_str(::Type{T}) where T =
     throw(ArgumentError("data type not supported by VTK: $T"))
 datatype_str(v) = datatype_str(typeof(v))
 datatype_str(::AbstractArray{T}) where T = datatype_str(T)
-datatype_str(::NTuple{N, T} where N) where T <: AbstractArray =
-    datatype_str(eltype(T))
 datatype_str(::ListOfStrings) = datatype_str(String)
+
+function datatype_str(t::Tuple)
+    Ts = map(eltype, t)
+    T = first(Ts)
+    @assert all(Ts .== T)  # all elements of the tuple must have the same eltype
+    datatype_str(T)
+end
 
 # Total size of data in bytes.
 sizeof_data(x) = sizeof(x)
 sizeof_data(x::String) = sizeof(x) + sizeof("\0")
 sizeof_data(x::AbstractArray) = length(x) * sizeof(eltype(x))
 sizeof_data(x::ListOfStrings) = sum(sizeof_data, x)
-sizeof_data(x::NTuple) = sum(sizeof_data, x)
+sizeof_data(x::Tuple) = sum(sizeof_data, x)
 
 write_array(io, data) = write(io, data)
 write_array(io, x::String) = write(io, x, '\0')
 write_array(io, x::ListOfStrings) = sum(s -> write_array(io, s), x)
 
-function write_array(io, data::NTuple)
+function write_array(io, data::Tuple)
     n = 0
     for i in eachindex(data...), x in data
         n += write(io, x[i])
@@ -195,9 +200,10 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
     if compress
         initpos = position(buf)
 
-        # Write temporary array that will be replaced later by the real header.
-        header = zeros(UInt32, 4)
-        write(buf, header)
+        # Write temporary data that will be replaced later with the real header.
+        let header = ntuple(d -> zero(UInt32), Val(4))
+            write(buf, header...)
+        end
 
         # Write compressed data.
         zWriter = ZlibCompressorStream(buf, level=vtk.compression_level)
@@ -207,11 +213,12 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
 
         # Go back to `initpos` and write real header.
         endpos = position(buf)
-        compbytes = endpos - initpos - sizeof(header)
-        header[:] = [1, nb, nb, compbytes]
-        seek(buf, initpos)
-        write(buf, header)
-        seek(buf, endpos)
+        compbytes = endpos - initpos - 4 * sizeof(UInt32)
+        let header = UInt32.((1, nb, nb, compbytes))
+            seek(buf, initpos)
+            write(buf, header...)
+            seek(buf, endpos)
+        end
     else
         write(buf, UInt32(nb))  # header (uncompressed version)
         nb_write = write_array(buf, data)
@@ -258,8 +265,7 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     # Write buffer with data to XML document.
     add_text(xDA, "\n")
     if compress
-        header = UInt32[1, nb, nb, position(buf)]
-        add_text(xDA, base64encode(header))
+        add_text(xDA, base64encode(UInt32.((1, nb, nb, position(buf)))...))
     else
         add_text(xDA, base64encode(UInt32(nb)))     # header (uncompressed version)
     end
