@@ -200,9 +200,10 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
     if compress
         initpos = position(buf)
 
-        # Write temporary array that will be replaced later by the real header.
-        header = zeros(UInt32, 4)
-        write(buf, header)
+        # Write temporary data that will be replaced later with the real header.
+        let header = ntuple(d -> zero(UInt32), Val(4))
+            write(buf, header...)
+        end
 
         # Write compressed data.
         zWriter = ZlibCompressorStream(buf, level=vtk.compression_level)
@@ -212,11 +213,12 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
 
         # Go back to `initpos` and write real header.
         endpos = position(buf)
-        compbytes = endpos - initpos - sizeof(header)
-        header[:] = [1, nb, nb, compbytes]
-        seek(buf, initpos)
-        write(buf, header)
-        seek(buf, endpos)
+        compbytes = endpos - initpos - 4 * sizeof(UInt32)
+        let header = UInt32.((1, nb, nb, compbytes))
+            seek(buf, initpos)
+            write(buf, header...)
+            seek(buf, endpos)
+        end
     else
         write(buf, UInt32(nb))  # header (uncompressed version)
         nb_write = write_array(buf, data)
@@ -263,8 +265,7 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     # Write buffer with data to XML document.
     add_text(xDA, "\n")
     if compress
-        header = UInt32[1, nb, nb, position(buf)]
-        add_text(xDA, base64encode(header))
+        add_text(xDA, base64encode(UInt32.((1, nb, nb, position(buf)))...))
     else
         add_text(xDA, base64encode(UInt32(nb)))     # header (uncompressed version)
     end
