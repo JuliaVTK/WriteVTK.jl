@@ -108,11 +108,32 @@ end
 
 const CellVector = AbstractVector{<:MeshCell}
 
+# Possible specifications for unstructured points.
+const UnstructuredCoords = Union{
+    AbstractMatrix,  # array with dimensions (3, Np)
+    Tuple{Vararg{AbstractVector{T},3}} where T,  # tuple of 3 vectors of length Np
+}
+
+function num_points(::UnstructuredVTKDataset, x::AbstractMatrix)
+    if size(x, 1) != 3
+        throw(DimensionMismatch("first dimension must have length 3"))
+    end
+    size(x, 2)
+end
+
+function num_points(::UnstructuredVTKDataset, x::Tuple)
+    Ns = map(length, x)
+    N = first(Ns)
+    if !all(Ns .== N)
+        throw(DimensionMismatch("tuples (x, y, z) must have the same length"))
+    end
+    N
+end
+
 function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
-                  points::AbstractArray, cells::CellVector;
+                  points::UnstructuredCoords, cells::CellVector;
                   kwargs...)
-    @assert size(points, 1) == 3
-    Npts = prod(size(points)[2:end])
+    Npts = num_points(dtype, points)
     Ncls = length(cells)
 
     xvtk = XMLDocument()
@@ -138,24 +159,30 @@ function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
                   cells::CellVector, args...; kwargs...) where T
     dim, Npts = size(points)
     gtype = grid_type(eltype(cells))
+
     if dim == 3
         return vtk_grid(gtype, filename, points, cells, args...; kwargs...)
     end
-    # Reshape to 3D
-    _points = zeros(T, 3, Npts)
-    if isdefined(Base, :require_one_based_indexing)  # not the case in Julia 1.0
-        Base.require_one_based_indexing(points)
+
+    xyz = if dim == 2
+        (
+            view(points, 1, :),
+            view(points, 2, :),
+            Zeros{T}(Npts),
+        )
+    elseif dim == 1
+        (
+            view(points, 1, :),
+            Zeros{T}(Npts),
+            Zeros{T}(Npts),
+        )
+    else
+        throw(DimensionMismatch(
+            "`points` array must be of size (dim, num_points) with dim ∈ 1:3"
+        ))
     end
-    if dim ∉ (1, 2)
-        msg = string("`points` array must be of size (dim, Npts), ",
-                     "where dim = 1, 2 or 3 and `Npts` the number of points.\n",
-                     "Actual size of input: $(size(points))")
-        throw(DimensionMismatch(msg))
-    end
-    for I in CartesianIndices(points)
-        _points[I] = points[I]
-    end
-    vtk_grid(gtype, filename, _points, cells, args...; kwargs...)
+
+    vtk_grid(gtype, filename, xyz, cells, args...; kwargs...)
 end
 
 # Variant of vtk_grid with 1-D arrays x, y, z.
@@ -166,33 +193,32 @@ function vtk_grid(filename::AbstractString, x::AbstractVector{T},
     if !(length(x) == length(y) == length(z))
         throw(DimensionMismatch("length of x, y and z arrays must be the same."))
     end
-    Npts = length(x)
-    points = Array{T}(undef, 3, Npts)
-    for n = 1:Npts
-        points[1, n] = x[n]
-        points[2, n] = y[n]
-        points[3, n] = z[n]
-    end
+    points = (x, y, z)
     gtype = grid_type(eltype(cells))
     vtk_grid(gtype, filename, points, cells, args...; kwargs...)
 end
 
 # 2D version
-vtk_grid(filename::AbstractString, x::AbstractVector{T},
-         y::AbstractVector{T}, cells::CellVector, args...; kwargs...) where {T} =
-    vtk_grid(filename, x, y, zero(x), cells, args...; kwargs...)
+function vtk_grid(filename::AbstractString, x::AbstractVector{T},
+                  y::AbstractVector{T}, cells::CellVector, args...;
+                  kwargs...) where {T}
+    N = length(x)
+    vtk_grid(filename, x, y, Zeros{T}(N), cells, args...; kwargs...)
+end
 
 # 1D version
-vtk_grid(filename::AbstractString, x::AbstractVector{T},
-         cells::CellVector, args...; kwargs...) where T =
-    vtk_grid(filename, x, zero(x), zero(x), cells, args...; kwargs...)
+function vtk_grid(filename::AbstractString, x::AbstractVector{T},
+                  cells::CellVector, args...; kwargs...) where {T}
+    N = length(x)
+    vtk_grid(filename, x, Zeros{T}(N), Zeros{T}(N), cells, args...; kwargs...)
+end
 
 # Variant with 4-D Array (for "pseudo-unstructured" datasets, i.e., those that
 # actually have a 3D structure) -- maybe this variant should be removed...
 function vtk_grid(filename::AbstractString, points::AbstractArray{T,4},
                   cells::CellVector, args...; kwargs...) where T
     dim, Ni, Nj, Nk = size(points)
-    points_r = reshape(points, (dim, Ni*Nj*Nk))
+    points_r = reshape(points, dim, Ni * Nj * Nk)
     gtype = grid_type(eltype(cells))
     vtk_grid(gtype, filename, points_r, cells, args...; kwargs...)
 end
