@@ -15,10 +15,11 @@ visualise time series of VTK files.
 ## Contents
 
 - [Installation](#installation)
-- [Rectilinear and structured meshes](#usage-rectilinear-and-structured-meshes)
-- [Image data](#usage-image-data)
-- [Unstructured meshes](#usage-unstructured-meshes)
-- [Polygonal data](#usage-polygonal-data)
+- [Quick start](#quick-start)
+- [Rectilinear and structured meshes](#rectilinear-and-structured-meshes)
+- [Image data](#image-data)
+- [Unstructured meshes](#unstructured-meshes)
+- [Polygonal data](#polygonal-data)
 - [Visualising Julia arrays](#visualising-julia-arrays)
 - [Multiblock files](#multiblock-files)
 - [Paraview PVD files](#paraview-data-pvd-file-format)
@@ -30,17 +31,53 @@ visualise time series of VTK files.
 
 From the Julia REPL:
 
-``` julia
-Pkg.add("WriteVTK")
+```julia
+]add WriteVTK
 ```
 
-Then load the module in Julia with:
+Then load the package in Julia with:
 
-``` julia
+```julia
 using WriteVTK
 ```
 
-## Usage: rectilinear and structured meshes
+## Quick start
+
+The `vtk_grid` function is the entry point for creating different kinds of VTK
+files.
+In the simplest cases, one just passes coordinate information to this function.
+WriteVTK then decides on the VTK format that is more adapted for the provided
+data.
+
+For instance, it is natural in Julia to describe a 3D uniform grid, with
+regularly spaced increments, as a list of ranges:
+
+```julia
+x = 0:0.1:1
+y = 0:0.2:1
+z = -1:0.05:1
+```
+
+This specific way of specifying coordinates is compatible with the *image data*
+VTK format (.vti files).
+The following creates such a file, with some scalar data attached to each point:
+
+```julia
+vtk_grid("my_dataset", x, y, z) do vtk
+    vtk["my_point_data"] = rand(length(x), length(y), length(z))
+end
+```
+
+This will save a `my_dataset.vti` file with the data.
+Note that the file extension should not be included in the filename, as it will
+be attached automatically according to the dataset type.
+
+By changing the coordinate specifications, the above can be naturally
+generalised to non-uniform grid spacings and to curvilinear and unstructured
+grids.
+In each case, the correct kind of VTK file will be generated.
+
+## Rectilinear and structured meshes
 
 ### Define a grid
 
@@ -59,12 +96,12 @@ Required array shapes for each grid type:
 - Rectilinear grid: `x`, `y`, `z` are 1-D arrays with different lengths in
   general (`Ni`, `Nj` and `Nk` respectively).
 - Structured grid: `x`, `y`, `z` are 3-D arrays with the same
-  shape: `[Ni, Nj, Nk]`. For the two dimensional case, `x` and `y` are 2-D arrays
-  with shape `[Ni, Nj]`
+  shape: `(Ni, Nj, Nk)`. For the two dimensional case, `x` and `y` are 2-D arrays
+  with shape `(Ni, Nj)`
 
 Alternatively, in the case of structured grids, the grid points can be defined from a
-single 4-D array `xyz`, of dimensions `[3, Ni, Nj, Nk]`. For the two dimensional case
-`xy` is a 3-D array, with dimensions `[2, Ni, Nj]`:
+single 4-D array `xyz`, of dimensions `(3, Ni, Nj, Nk)`. For the two dimensional case
+`xy` is a 3-D array, with dimensions `(2, Ni, Nj)`:
 
 ``` julia
 vtkfile = vtk_grid("my_vtk_file", xyz) # 3-D
@@ -141,12 +178,12 @@ outfiles = vtk_save(vtkfile)
 In this case, the array is of length 1, but that changes when working
 with [multiblock files](#multiblock-files).
 
-## Usage: image data
+## Image data
 
 The points and cells of an image data file are defined by the number of points
 in each direction, `(Nx, Ny, Nz)`.
-The origin of the dataset and the spacing in each direction can be optionally
-included.
+In addition, the origin of the dataset and the spacing in each direction can be
+optionally specified.
 Example:
 
 ``` julia
@@ -169,7 +206,7 @@ vtk_grid("vti_file_1", 0:0.1:10, 0:0.2:10, 1:0.3:4)
 vtk_grid("vti_file_2", LinRange(0, 4.2, 10), LinRange(1, 3.1, 42), LinRange(0.2, 12.1, 32))
 ```
 
-## Usage: unstructured meshes
+## Unstructured meshes
 
 An unstructured mesh is defined by a set of points in space and a set of cells
 that connect those points.
@@ -255,7 +292,7 @@ Finally, close and save the file:
 outfiles = vtk_save(vtkfile)
 ```
 
-## Usage: polygonal data
+## Polygonal data
 
 Polygonal datasets are a special type of unstructured grids, in which the cell
 types are restricted to vertices, lines, triangle strips and polygons.
@@ -386,7 +423,7 @@ VTK object.
 Example:
 
 ``` julia
-# Rectilinear or structured grid
+# Image data, rectilinear or structured grid
 outfiles = vtk_grid("my_vtk_file", x, y, z) do vtk
     vtk["Pressure"] = p
     vtk["Velocity"] = vel
