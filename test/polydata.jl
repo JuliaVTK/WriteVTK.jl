@@ -19,22 +19,23 @@ function main()
 
     # Connect every `n` points to form lines.
     lines = let n = 4
-        [PolyCell(PolyData.Lines(), (i + 1):(i + n)) for i = 0:(M - n)]
+        # Try using tuples for connectivity info.
+        [MeshCell(PolyData.Lines(), ntuple(d -> i + d, Val(4))) for i = 0:(M - n)]
     end
 
     # Connect every `n` points to form polygons.
     polys = let n = 5
-        [PolyCell(PolyData.Polys(), (i + 1):(i + n)) for i = M:(2M - n)]
+        [MeshCell(PolyData.Polys(), (i + 1):(i + n)) for i = M:(2M - n)]
     end
 
     # Each cell is a comination of points (vertices).
     verts = let n = 5
-        [PolyCell(PolyData.Verts(), (i + 1):(i + n)) for i = 2M:(3M - n)]
+        [MeshCell(PolyData.Verts(), (i + 1):(i + n)) for i = 2M:(3M - n)]
     end
 
     # Triangle strips
     strips = let n = 12
-        [PolyCell(PolyData.Strips(), (i + 1):(i + n)) for i = 3M:(4M - n)]
+        [MeshCell(PolyData.Strips(), (i + 1):(i + n)) for i = 3M:(4M - n)]
     end
 
     # Note: the order of verts, lines, polys and strips is not important.

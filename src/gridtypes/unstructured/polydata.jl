@@ -1,7 +1,19 @@
-# TODO
-# - document!
+"""
+    PolyData
 
+Defines cell types for polygonal datasets.
+
+The following singleton types are defined:
+
+- `PolyData.Verts` for vertices,
+- `PolyData.Lines` for lines,
+- `PolyData.Strips` for triangular strips,
+- `PolyData.Polys` for polygons.
+
+"""
 module PolyData
+
+import ..VTKCellTypes: nodes
 
 abstract type CellType end
 
@@ -9,6 +21,10 @@ struct Verts <: CellType end
 struct Lines <: CellType end
 struct Strips <: CellType end
 struct Polys <: CellType end
+
+# All of these cell types can take any number of grid points.
+# (This is for compatibility with VTKCellTypes for unstructured datasets.)
+nodes(::CellType) = -1
 
 number_attr(::Type{Verts}) = "NumberOfVerts"
 number_attr(::Type{Lines}) = "NumberOfLines"
@@ -24,35 +40,9 @@ end
 
 import .PolyData
 
-"""
-    PolyCell{cell_type <: PolyData.CellType}
+const PolyCell{T} = MeshCell{T} where {T <: PolyData.CellType}
 
-Single polygonal cell in a VTKPolyData dataset.
-
-The `cell_type` parameter corresponds to one of the cell types supported by
-VTKPolyData:
-
-- `PolyData.Verts` for vertices,
-- `PolyData.Lines` for lines,
-- `PolyData.Strips` for triangular strips,
-- `PolyData.Polys` for polygons.
-
----
-
-    PolyCell(::Type{CellType}, connectivity)
-
-Define a single polygonal cell.
-
-As in [`MeshCell`](@ref), the `connectivity` argument contains the indices of
-the points defining the cell.
-"""
-struct PolyCell{Cell <: PolyData.CellType, Indices <: AbstractVector{<:Integer}}
-    connectivity :: Indices
-    PolyCell(::Type{C}, conn) where {C} = new{C, typeof(conn)}(conn)
-    PolyCell(c, conn) = PolyCell(typeof(c), conn)
-end
-
-cell_type(::Type{<:PolyCell{C}}) where {C} = C
+cell_type(::Type{<:PolyCell{T}}) where {T} = T
 Base.eltype(::Type{T}) where {T <: PolyCell} = cell_type(T)
 
 # Add different types of PolyCell (lines, vertices, ...) recursively.
@@ -60,7 +50,7 @@ function add_poly_cells!(vtk, xml_piece, cells::AbstractArray{<:PolyCell},
                          etc...)
     ctype = eltype(eltype(cells))
     add_cells!(vtk, xml_piece, PolyData.number_attr(ctype),
-               PolyData.xml_node(ctype), cells, with_types=false)
+               PolyData.xml_node(ctype), cells, with_types=Val(false))
     add_poly_cells!(vtk, xml_piece, etc...)
 end
 

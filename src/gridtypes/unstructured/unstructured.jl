@@ -1,10 +1,14 @@
+const Connectivity{T} =
+    Union{AbstractVector{T}, NTuple{N,T} where N} where {T <: Integer}
+
 """
     MeshCell
 
-Single cell element in unstructured grid.
+Single cell element in unstructured or polygonal grid.
 
-It is characterised by a cell type (for instance, `VTKCellType.TRIANGLE`) and by
-a connectivity vector determining the points on the grid defining this cell.
+It is characterised by a cell type (for instance, `VTKCellType.TRIANGLE` or
+`PolyData.Strips`) and by a connectivity vector determining the points on the
+grid defining this cell.
 
 ---
 
@@ -13,8 +17,11 @@ a connectivity vector determining the points on the grid defining this cell.
 Define a single cell element of an unstructured grid.
 
 The `cell_type` argument characterises the type of cell (e.g. vertex, triangle,
-hexaedron, ...). Cell types are defined in the [`VTKCellTypes`](@ref) module,
-which is exported by `WriteVTK`.
+hexaedron, ...):
+
+- cell types for unstructured datasets are defined in the [`VTKCellTypes`](@ref)
+module;
+- cell types for polygonal datasets are defined in the [`PolyData`](@ref) module.
 
 The `connectivity` argument is a vector containing the indices of the points
 passed to [`vtk_grid`](@ref) which define this cell.
@@ -27,15 +34,16 @@ Define a triangular cell passing by points with indices `[3, 5, 42]`.
 cell = MeshCell(VTKCellTypes.VTK_TRIANGLE, [3, 5, 42])
 ```
 """
-struct MeshCell{V <: AbstractVector{<:Integer}}
-    ctype::VTKCellTypes.VTKCellType  # cell type identifier (see VTKCellTypes.jl)
-    connectivity::V      # indices of points (one-based, following the convention in Julia)
-    function MeshCell(ctype::VTKCellTypes.VTKCellType, conn)
-        if ctype.nodes ∉ (length(conn), -1)
+struct MeshCell{CellType, V <: Connectivity}
+    ctype::CellType  # cell type identifier (see VTKCellTypes.jl)
+    connectivity::V  # indices of points (one-based, following the convention in Julia)
+    function MeshCell(ctype, conn)
+        if nodes(ctype) ∉ (length(conn), -1)
             error("Wrong number of nodes in connectivity vector.")
         end
+        C = typeof(ctype)
         V = typeof(conn)
-        new{V}(ctype, conn)
+        new{C,V}(ctype, conn)
     end
 end
 
@@ -43,16 +51,17 @@ Base.eltype(::Type{<:MeshCell}) = VTKCellTypes.VTKCellType
 cell_type(cell::MeshCell) = cell.ctype
 
 function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
-                    with_types=true)
+                    with_types::Val=Val(true))
     Cell = eltype(cells)
     Ncls = length(cells)
+    write_types = with_types === Val(true)
 
     # Create data arrays.
     offsets = Array{Int32}(undef, Ncls)
 
     # Write `types` array? This must be true for unstructured grids,
     # and false for polydata.
-    if with_types
+    if write_types
         types = Array{UInt8}(undef, Ncls)
     end
 
@@ -64,7 +73,7 @@ function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
     for (n, c) in enumerate(cells)
         Npts_cell = length(c.connectivity)
         Nconn += Npts_cell
-        if with_types
+        if write_types
             types[n] = cell_type(c).vtk_id
         end
         if n >= 2
@@ -88,7 +97,7 @@ function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
     xnode = new_child(xml_piece, xml_name)
     data_to_xml(vtk, xnode, conn, "connectivity")
     data_to_xml(vtk, xnode, offsets, "offsets")
-    if with_types
+    if write_types
         data_to_xml(vtk, xnode, types, "types")
     end
 
