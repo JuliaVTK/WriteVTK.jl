@@ -73,7 +73,7 @@ function vtk_grid(filename::AbstractString, xy::AbstractArray{T,3};
     xyz = (
         reshape(view(xy, 1, :, :), Ni, Nj, 1),
         reshape(view(xy, 2, :, :), Ni, Nj, 1),
-        zeros(T, Ni, Nj, 1),  # TODO lazy?
+        Zeros{T}(Ni, Nj, 1),
     )
     vtk_grid(VTKStructuredGrid(), filename, xyz; kwargs...)
 end
@@ -89,7 +89,7 @@ function vtk_grid(filename::AbstractString, x::AbstractArray{T,2},
     xyz = (
         reshape(x, :, :, 1),
         reshape(y, :, :, 1),
-        zeros(T, Ni, Nj, 1),  # TODO lazy?
+        Zeros{T}(Ni, Nj, 1),
     )
     vtk_grid(VTKStructuredGrid(), filename, xyz; kwargs...)
 end
