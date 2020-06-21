@@ -1,19 +1,32 @@
-# VTK cell definitions
+"""
+    VTKCellTypes
 
-# Definitions copied from the vtkCellType.h file of the VTK source code:
-# https://raw.githubusercontent.com/Kitware/VTK/master/Common/DataModel/vtkCellType.h
+Module defining cell types for unstructured datasets.
 
-__precompile__()
-
+Definitions are adapted from the [`VTK source
+code`](https://raw.githubusercontent.com/Kitware/VTK/master/Common/DataModel/vtkCellType.h).
+"""
 module VTKCellTypes
 
-export VTKCellType
+export VTKCellType, nodes
 
 struct VTKCellType
     vtk_name::String
     vtk_id::UInt8
     nodes::Int
 end
+
+"""
+    nodes(c::VTKCellTypes)
+
+Returns the number of nodes (or grid points) required by the cell type.
+
+For instance, this returns 3 for `VTK_TRIANGLE`.
+
+For cell types that can take any number of nodes, such as `VTK_POLY_LINE`,
+this returns -1.
+"""
+nodes(c::VTKCellType) = c.nodes
 
 const INVALID_CELL_TYPE = VTKCellType("INVALID", typemax(UInt8), -1)
 

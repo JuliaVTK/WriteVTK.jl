@@ -1,17 +1,12 @@
-__precompile__()
-
 module WriteVTK
-
-# All the code is based on the VTK file specification [1], plus some
-# undocumented stuff found around the internet...
-# [1] http://www.vtk.org/VTK/img/file-formats.pdf
 
 export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
 export paraview_collection, collection_add_timestep, paraview_collection_load
 export vtk_write_array
-export VTKPointData, VTKCellData, VTKFieldData  # singleton types
+export VTKPointData, VTKCellData, VTKFieldData
+export PolyData
 
 import CodecZlib: ZlibCompressorStream
 import TranscodingStreams
@@ -46,20 +41,23 @@ struct DatasetFile <: VTKFile
     compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     buf::IOBuffer       # Buffer with appended data.
-    function DatasetFile(xdoc, path, grid_type, Npts, Ncls, compression,
-                         appended)
+    function DatasetFile(xdoc, path, grid_type, Npts, Ncls;
+                         compress=true, append=true)
         buf = IOBuffer()
-        clevel = _compression_level(compression)
+        clevel = _compression_level(compress)
         if !(0 ≤ clevel ≤ 9)
-            error("Unexpected value of `compress` argument: $compression.\n",
+            error("Unexpected value of `compress` argument: $compress.\n",
                   "It must be a `Bool` or a value between 0 and 9.")
         end
-        if !appended  # in this case we don't need a buffer
+        if !append  # in this case we don't need a buffer
             close(buf)
         end
-        new(xdoc, path, grid_type, Npts, Ncls, clevel, appended, buf)
+        new(xdoc, path, grid_type, Npts, Ncls, clevel, append, buf)
     end
 end
+
+DatasetFile(dtype, xdoc::XMLDocument, fname::AbstractString, args...; kwargs...) =
+    DatasetFile(xdoc, add_extension(fname, dtype), xml_name(dtype), args...; kwargs...)
 
 function show(io::IO, vtk::DatasetFile)
     open_str = isopen(vtk) ? "open" : "closed"
@@ -70,7 +68,6 @@ struct MultiblockFile <: VTKFile
     xdoc::XMLDocument
     path::String
     blocks::Vector{VTKFile}
-    # Constructor.
     MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
@@ -78,29 +75,15 @@ struct CollectionFile <: VTKFile
     xdoc::XMLDocument
     path::String
     timeSteps::Vector{String}
-    # Constructor.
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
-
-struct MeshCell{V <: AbstractVector{<:Integer}}
-    ctype::VTKCellTypes.VTKCellType  # cell type identifier (see VTKCellTypes.jl)
-    connectivity::V      # indices of points (one-based, following the convention in Julia)
-    function MeshCell{V}(ctype::VTKCellTypes.VTKCellType, conn::V) where V
-        if ctype.nodes ∉ (length(conn), -1)
-            error("Wrong number of nodes in connectivity vector.")
-        end
-        new(ctype, conn)
-    end
-end
-
-MeshCell(ctype, conn::V) where V = MeshCell{V}(ctype, conn)
 
 close(vtk::VTKFile) = free(vtk.xdoc)
 isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
-# Add a default extension to the filename,
-# unless the user have already given the correct one
-function add_extension(filename, default_extension) :: String
+# Add a default extension to the filename, unless the user have already given
+# the correct one.
+function add_extension(filename, default_extension::AbstractString) :: String
     path, ext = splitext(filename)
     if ext == default_extension
         return filename
@@ -112,9 +95,12 @@ function add_extension(filename, default_extension) :: String
     filename * default_extension
 end
 
-# Common functions.
+add_extension(filename, dtype) = add_extension(filename, file_extension(dtype))
+
+# Common functions and types.
 include("write_data.jl")
 include("save_files.jl")
+include("gridtypes/types.jl")
 include("gridtypes/common.jl")
 
 # Multiblock-specific functions and types.
@@ -122,10 +108,12 @@ include("gridtypes/multiblock.jl")
 include("gridtypes/ParaviewCollection.jl")
 
 # Grid-specific functions and types.
-include("gridtypes/structured.jl")
-include("gridtypes/unstructured.jl")
-include("gridtypes/rectilinear.jl")
-include("gridtypes/imagedata.jl")
+include("gridtypes/structured/imagedata.jl")
+include("gridtypes/structured/rectilinear.jl")
+include("gridtypes/structured/structured.jl")
+include("gridtypes/unstructured/unstructured.jl")
+include("gridtypes/unstructured/polydata.jl")
+
 include("gridtypes/array.jl")
 
 # This allows using do-block syntax for generation of VTK files.
