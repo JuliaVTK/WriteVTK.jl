@@ -50,6 +50,9 @@ end
 Base.eltype(::Type{<:MeshCell}) = VTKCellTypes.VTKCellType
 cell_type(cell::MeshCell) = cell.ctype
 
+# By default, MeshCell are attached to unstructured grids.
+grid_type(::Type{<:MeshCell}) = VTKUnstructuredGrid()
+
 function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
                     with_types::Val=Val(true))
     Cell = eltype(cells)
@@ -104,8 +107,10 @@ function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
     vtk
 end
 
+const CellVector = AbstractVector{<:MeshCell}
+
 function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
-                  points::AbstractArray, cells::Vector{<:MeshCell};
+                  points::AbstractArray, cells::CellVector;
                   kwargs...)
     @assert size(points, 1) == 3
     Npts = prod(size(points)[2:end])
@@ -131,10 +136,11 @@ end
 # Variant of vtk_grid with 2-D array "points".
 #   size(points) = (dim, num_points), with dim ∈ {1, 2, 3}
 function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
-                  cells::Vector{<:MeshCell}; kwargs...) where T
+                  cells::CellVector, args...; kwargs...) where T
     dim, Npts = size(points)
+    gtype = grid_type(eltype(cells))
     if dim == 3
-        return vtk_grid(VTKUnstructuredGrid(), filename, points, cells; kwargs...)
+        return vtk_grid(gtype, filename, points, cells, args...; kwargs...)
     end
     # Reshape to 3D
     _points = zeros(T, 3, Npts)
@@ -150,14 +156,14 @@ function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
     for I in CartesianIndices(points)
         _points[I] = points[I]
     end
-    vtk_grid(VTKUnstructuredGrid(), filename, _points, cells; kwargs...)
+    vtk_grid(gtype, filename, _points, cells, args...; kwargs...)
 end
 
 # Variant of vtk_grid with 1-D arrays x, y, z.
 # Size of each array: (num_points)
 function vtk_grid(filename::AbstractString, x::AbstractVector{T},
                   y::AbstractVector{T}, z::AbstractVector{T},
-                  cells::Vector{<:MeshCell}; kwargs...) where T
+                  cells::CellVector, args...; kwargs...) where {T}
     if !(length(x) == length(y) == length(z))
         throw(ArgumentError("length of x, y and z arrays must be the same."))
     end
@@ -168,25 +174,26 @@ function vtk_grid(filename::AbstractString, x::AbstractVector{T},
         points[2, n] = y[n]
         points[3, n] = z[n]
     end
-    vtk_grid(VTKUnstructuredGrid(), filename, points, cells; kwargs...)
+    gtype = grid_type(eltype(cells))
+    vtk_grid(gtype, filename, points, cells, args...; kwargs...)
 end
 
 # 2D version
 vtk_grid(filename::AbstractString, x::AbstractVector{T},
-         y::AbstractVector{T}, cells::Vector{<:MeshCell};
-         kwargs...) where T =
-    vtk_grid(filename, x, y, zero(x), cells; kwargs...)
+         y::AbstractVector{T}, cells::CellVector, args...; kwargs...) where {T} =
+    vtk_grid(filename, x, y, zero(x), cells, args...; kwargs...)
 
 # 1D version
 vtk_grid(filename::AbstractString, x::AbstractVector{T},
-         cells::Vector{<:MeshCell}; kwargs...) where T =
-    vtk_grid(filename, x, zero(x), zero(x), cells; kwargs...)
+         cells::CellVector, args...; kwargs...) where T =
+    vtk_grid(filename, x, zero(x), zero(x), cells, args...; kwargs...)
 
 # Variant with 4-D Array (for "pseudo-unstructured" datasets, i.e., those that
 # actually have a 3D structure) -- maybe this variant should be removed...
 function vtk_grid(filename::AbstractString, points::AbstractArray{T,4},
-                  cells::Vector{<:MeshCell}; kwargs...) where T
+                  cells::CellVector, args...; kwargs...) where T
     dim, Ni, Nj, Nk = size(points)
     points_r = reshape(points, (dim, Ni*Nj*Nk))
-    vtk_grid(VTKUnstructuredGrid(), filename, points_r, cells; kwargs...)
+    gtype = grid_type(eltype(cells))
+    vtk_grid(gtype, filename, points_r, cells, args...; kwargs...)
 end

@@ -7,12 +7,12 @@ using Test
 
 const vtk_filename_noext = "polydata"
 
-function main()
-    Np = 128
+# Write file with D-dimensional grid.
+function write_vtp(Np, D)
     rng = MersenneTwister(42)
 
     # Workaround changes in rand output in Julia 1.5. See array.jl.
-    points = sortslices([rand(rng) for i = 1:3, j = 1:Np], dims=2)
+    points = sortslices([rand(rng) for i = 1:D, j = 1:Np], dims=2)
 
     M = Np >> 2
     @assert 4M == Np
@@ -43,10 +43,10 @@ function main()
     all_cells = (verts, lines, polys, strips)
     num_cells = sum(length, all_cells)
 
-    @time filenames = vtk_grid(vtk_filename_noext, points, all_cells...,
-                         compress=false, append=false) do vtk
+    fname = vtk_filename_noext * "_$(D)D"
+    @time filenames = vtk_grid(fname, points, all_cells...,
+                               compress=false, append=false) do vtk
         vtk["my_point_data"] = [randn(rng) for i = 1:3, j = 1:Np]
-
         # NOTE: cell data is not correctly parsed by VTK when multiple kinds of
         # cells are combined in the same dataset.
         # This seems to be a really old VTK issue:
@@ -54,9 +54,12 @@ function main()
         # - https://gitlab.kitware.com/vtk/vtk/-/issues/564
         vtk["my_cell_data"] = [randn(rng) for j = 1:num_cells]
     end
+end
 
-    println("Saved:  ", filenames...)
-
+function main()
+    Np = 128
+    filenames = vcat(write_vtp.(Np, 2:3)...)
+    println("Saved:  ", join(filenames, "  "))
     filenames
 end
 

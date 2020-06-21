@@ -42,8 +42,9 @@ import .PolyData
 
 const PolyCell{T} = MeshCell{T} where {T <: PolyData.CellType}
 
-cell_type(::Type{<:PolyCell{T}}) where {T} = T
 Base.eltype(::Type{T}) where {T <: PolyCell} = cell_type(T)
+cell_type(::Type{<:PolyCell{T}}) where {T} = T
+grid_type(::Type{<:PolyCell}) = VTKPolyData()
 
 # Add different types of PolyCell (lines, vertices, ...) recursively.
 function add_poly_cells!(vtk, xml_piece, cells::AbstractArray{<:PolyCell},
@@ -83,17 +84,4 @@ function vtk_grid(dtype::VTKPolyData, filename::AbstractString,
     add_poly_cells!(vtk, xPiece, cells...)
 
     vtk
-end
-
-# TODO
-# - allow different `points` specifications
-# - merge some code with unstructured.jl
-function vtk_grid(filename::AbstractString, points::AbstractArray{T,2} where T,
-                  cells::Vararg{AbstractArray{<:PolyCell}}; kwargs...)
-    dim, Npts = size(points)
-    if dim != 3
-        throw(ArgumentError(
-            "for now, dimension of `points` for PolyData file must be (3, num_points)"))
-    end
-    vtk_grid(VTKPolyData(), filename, points, cells...; kwargs...)
 end

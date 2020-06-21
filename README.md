@@ -10,7 +10,7 @@ The supported VTK file formats include rectilinear (.vtr) and structured grids
 (.vts), image data (.vti), unstructured grids (.vtu) and polygonal data (.vtp).
 Multiblock files (.vtm), which can point to multiple VTK files, can also be
 exported; as well as ParaView collection files (.pvd), which can be used to
-attach time information to the datasets.
+visualise time series of VTK files.
 
 ## Contents
 
@@ -275,7 +275,7 @@ cells to `vtk_grid`.
 The difference is that one can pass multiple vectors (one for each cell type),
 and that each vector may only contain a single cell type.
 
-### Example
+Example:
 
 ```julia
 # Create lists of lines and polygons connecting different points in space
