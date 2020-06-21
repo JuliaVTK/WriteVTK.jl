@@ -3,24 +3,23 @@
 [![Build Status](https://travis-ci.com/jipolanco/WriteVTK.jl.svg?branch=master)](https://travis-ci.com/jipolanco/WriteVTK.jl)
 [![DOI](https://zenodo.org/badge/32700186.svg)](https://zenodo.org/badge/latestdoi/32700186)
 
-This module allows to write VTK XML files, that can be visualised for example
-with [ParaView](http://www.paraview.org/).
+This package allows to write VTK XML files for visualisation of multidimensional
+datasets using tools such as [ParaView](http://www.paraview.org/).
 
-The data is written compressed by default, using the
-[CodecZlib](https://github.com/bicycle1885/CodecZlib.jl) package.
-
-Rectilinear (.vtr), structured (.vts), image data (.vti) and unstructured
-(.vtu) grids are supported.
+The supported VTK file formats include rectilinear (.vtr) and structured grids
+(.vts), image data (.vti), unstructured grids (.vtu) and polygonal data (.vtp).
 Multiblock files (.vtm), which can point to multiple VTK files, can also be
-exported.
+exported; as well as ParaView collection files (.pvd), which can be used to
+attach time information to the datasets.
 
 ## Contents
 
 - [Installation](#installation)
 - [Rectilinear and structured meshes](#usage-rectilinear-and-structured-meshes)
 - [Image data](#usage-image-data)
-- [Julia array](#usage-julia-array)
 - [Unstructured meshes](#usage-unstructured-meshes)
+- [Polygonal data](#usage-polygonal-data)
+- [Visualising Julia arrays](#visualising-julia-arrays)
 - [Multiblock files](#multiblock-files)
 - [Paraview PVD files](#paraview-data-pvd-file-format)
 - [Do-block syntax](#do-block-syntax)
@@ -170,15 +169,6 @@ vtk_grid("vti_file_1", 0:0.1:10, 0:0.2:10, 1:0.3:4)
 vtk_grid("vti_file_2", LinRange(0, 4.2, 10), LinRange(1, 3.1, 42), LinRange(0.2, 12.1, 32))
 ```
 
-## Usage: Julia arrays
-
-A convenience function is provided to quickly save Julia arrays as image data:
-
-```julia
-A = rand(100, 100, 100)
-vtk_write_array("my_vti_file", A, "my_property_name")
-```
-
 ## Usage: unstructured meshes
 
 An unstructured mesh is defined by a set of points in space and a set of cells
@@ -215,7 +205,7 @@ First, initialise the file:
 vtkfile = vtk_grid("my_vtk_file", points, cells)
 ```
 
-- `points` is an array with the point locations, of dimensions `[dim, num_points]` where
+- `points` is an array with the point locations, of dimensions `(dim, num_points)` where
   `dim` is the dimension (1, 2 or 3) and `num_points` the number of points.
 
 - `cells` is a MeshCell array that contains all the cells of the mesh. For example:
@@ -263,6 +253,58 @@ Finally, close and save the file:
 
 ``` julia
 outfiles = vtk_save(vtkfile)
+```
+
+## Usage: polygonal data
+
+Polygonal datasets are a special type of unstructured grids, in which the cell
+types are restricted to vertices, lines, triangle strips and polygons.
+In WriteVTK, these shapes are respectively identified by the singleton types
+`PolyData.Verts`, `PolyData.Lines`, `PolyData.Strips` and `PolyData.Polys`.
+
+The specification of points is the same as for unstructured grids.
+Cells are specified by passing one of the above types to `MeshCell`.
+For instance, the following specifies a line passing by 4 points of the grid:
+
+```julia
+line = MeshCell(PolyData.Lines(), [3, 4, 7, 2])
+```
+
+Similarly to unstructured grids, a VTK file is created by passing vectors of
+cells to `vtk_grid`.
+The difference is that one can pass multiple vectors (one for each cell type),
+and that each vector may only contain a single cell type.
+
+### Example
+
+```julia
+# Create lists of lines and polygons connecting different points in space
+points = rand(3, 100)  # (x, y, z) locations
+lines = [MeshCell(PolyData.Lines(), (i, i + 1, i + 4)) for i in (3, 5, 42)]
+polys = [MeshCell(PolyData.Polys(), i:(i + 6)) for i = 1:3:20]
+vtk = vtk_grid(points, lines, polys)
+```
+
+Note that the order of `lines` and `polys` is not important.
+More generally, one can pass any combination of the four polygonal primitives
+mentioned above.
+
+Once the grid is created, point and cell data can be added to the file just like
+for unstructured grids.
+
+⚠️ **Known issue**: when the polygonal dataset contains multiple kinds of cells
+(e.g. both lines and polygons), cell data is not correctly parsed by the VTK
+libraries, and as a result it cannot be visualised in ParaView.
+The problem doesn't happen with point data.
+This seems to be a [very old](https://vtk.org/pipermail/vtkusers/2004-August/026448.html) [VTK issue](https://gitlab.kitware.com/vtk/vtk/-/issues/564).
+
+## Visualising Julia arrays
+
+A convenience function is provided to quickly save Julia arrays as image data:
+
+```julia
+A = rand(100, 100, 100)
+vtk_write_array("my_vti_file", A, "my_property_name")
 ```
 
 ## Multiblock files
