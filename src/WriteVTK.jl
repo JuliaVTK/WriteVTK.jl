@@ -66,12 +66,19 @@ function show(io::IO, vtk::DatasetFile)
     print(io, "VTK file '$(vtk.path)' ($(vtk.grid_type) file, $open_str)")
 end
 
+struct VTKBlock
+    xelm::XMLElement
+    blocks::Vector{Union{VTKFile,VTKBlock}}
+    # Constructor.
+    VTKBlock(xelm) = new(xelm, Union{VTKFile,VTKBlock}[])
+end
+
 struct MultiblockFile <: VTKFile
     xdoc::XMLDocument
     path::String
-    blocks::Vector{VTKFile}
+    blocks::Vector{Union{VTKFile,VTKBlock}}
     # Constructor.
-    MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
+    MultiblockFile(xdoc, path) = new(xdoc, path, Union{VTKFile,VTKBlock}[])
 end
 
 struct CollectionFile <: VTKFile

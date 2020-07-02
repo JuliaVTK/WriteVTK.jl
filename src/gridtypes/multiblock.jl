@@ -56,29 +56,104 @@ function vtk_save(vtm::MultiblockFile)
     return outfiles
 end
 
-function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile)
+function vtk_save(vtm::VTKBlock)
+    # Saves VTKBlocks.
+    outfiles = String[]
+    for vtk in vtm.blocks
+        append!(outfiles, vtk_save(vtk))
+    end
+    return outfiles
+end
+
+function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile, name="")
     # Add VTK file as a new block to a multiblock file.
 
     # Find vtkMultiBlockDataSet node
     xroot = root(vtm.xdoc)
     xMBDS = find_element(xroot, "vtkMultiBlockDataSet")
 
-    # Block node
-    xBlock = new_child(xMBDS, "Block")
-    nblock = length(vtm.blocks)
-    set_attribute(xBlock, "index", "$nblock")
-
     # DataSet node
     fname = splitdir(vtk.path)[2]
 
-    xDataSet = new_child(xBlock, "DataSet")
-    set_attribute(xDataSet, "index", "0")
+    xDataSet = new_child(xMBDS, "DataSet")
+    nblock = length(vtm.blocks)
+    set_attribute(xDataSet, "index", "$nblock")
     set_attribute(xDataSet, "file",  fname)
+    if name != ""
+        set_attribute(xDataSet, "name",  name)
+    end
 
     # Add the block file to vtm.
     push!(vtm.blocks, vtk)
 
     nothing
+end
+
+function multiblock_add_block(vtm::MultiblockFile, name="")
+    # Add VTK block to a multiblock file.
+
+    # Find vtkMultiBlockDataSet node
+    xroot = root(vtm.xdoc)
+    xMBDS = find_element(xroot, "vtkMultiBlockDataSet")
+
+    # Add the block metadata to the XML.
+    xBlock = new_child(xMBDS, "Block")
+    nblock = length(vtm.blocks)
+    set_attribute(xBlock, "index", "$nblock")
+    if name != ""
+        set_attribute(xBlock, "name",  name)
+    end
+
+    # Create the new block.
+    block = VTKBlock(xBlock)
+
+    # Add the block to vtm.
+    push!(vtm.blocks, block)
+
+    # Return the new block so the user can add VTKFiles or VTKBlocks under it,
+    # if desired.
+    return block
+end
+
+function multiblock_add_block(vtm::VTKBlock, vtk::VTKFile, name="")
+    # Add VTKFile to a VTKBlock.
+
+    # DataSet node
+    fname = splitdir(vtk.path)[2]
+
+    xDataSet = new_child(vtm.xelm, "DataSet")
+    nblock = length(vtm.blocks)
+    set_attribute(xDataSet, "index", "$nblock")
+    set_attribute(xDataSet, "file",  fname)
+    if name != ""
+        set_attribute(xDataSet, "name",  name)
+    end
+
+    # Add the block to vtm.
+    push!(vtm.blocks, vtk)
+
+    nothing
+end
+
+function multiblock_add_block(vtm::VTKBlock, name="")
+    # Add VTK block to a VTK Block.
+
+    xBlock = new_child(vtm.xelm, "Block")
+    nblock = length(vtm.blocks)
+    set_attribute(xBlock, "index", "$nblock")
+    if name != ""
+        set_attribute(xBlock, "name",  name)
+    end
+
+    # Create the new block.
+    block = VTKBlock(xBlock)
+
+    # Add the block to vtm.
+    push!(vtm.blocks, block)
+
+    # Return the new block so the user can add VTKFiles or VTKBlocks under it,
+    # if desired.
+    return block
 end
 
 Base.push!(vtm::MultiblockFile, vtk::VTKFile) = multiblock_add_block(vtm, vtk)
