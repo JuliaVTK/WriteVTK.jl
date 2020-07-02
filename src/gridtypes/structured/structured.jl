@@ -1,15 +1,14 @@
 # Structured dataset coordinates can be specified using either a 4D array
 # (3, Ni, Nj, Nk), or a tuple (x, y, z).
 const Array4 = AbstractArray{T, 4} where T
-const Array3Tuple3 = NTuple{3, A} where A <: AbstractArray{T, 3} where T
+const Array3Tuple3 = Tuple{Vararg{<:AbstractArray{T,3}, 3}} where T
 const StructuredCoords = Union{Array4, Array3Tuple3}
 
-structured_dims(xyz::Array4) = size(xyz)[2:4]
+structured_dims(xyz::Array4) = ntuple(d -> size(xyz, d + 1), 3)
 structured_dims(xyz::Array3Tuple3) = size(first(xyz))
 
-function structured_grid(filename::AbstractString,
-                         xyz::StructuredCoords;
-                         compress=true, append::Bool=true, extent=nothing)
+function vtk_grid(dtype::VTKStructuredGrid, filename::AbstractString,
+                  xyz::StructuredCoords; extent=nothing, kwargs...)
     Ni, Nj, Nk = structured_dims(xyz)
     Npts = Ni * Nj * Nk
     Ncomp = num_components(xyz, Npts)
@@ -20,12 +19,11 @@ function structured_grid(filename::AbstractString,
         msg = "coordinate array `xyz` has incorrect dimensions.\n" *
               "Expected dimensions: (3, Ni, Nj, Nk).\n" *
               "Actual dimensions: $(size(xyz))"
-        throw(ArgumentError(msg))
+        throw(DimensionMismatch(msg))
     end
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(xvtk, add_extension(filename, ".vts"), "StructuredGrid",
-                      Npts, Ncls, compress, append)
+    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)
@@ -50,17 +48,16 @@ end
 # 3D variant of vtk_grid with 4D array xyz.
 vtk_grid(filename::AbstractString, xyz::AbstractArray{T,4};
          kwargs...) where T =
-    structured_grid(filename, xyz; kwargs...)
-
+    vtk_grid(VTKStructuredGrid(), filename, xyz; kwargs...)
 
 # 3D variant of vtk_grid with 3D arrays x, y, z.
 function vtk_grid(filename::AbstractString, x::AbstractArray{T,3},
                   y::AbstractArray{T,3}, z::AbstractArray{T,3};
                   kwargs...) where T
     if !(size(x) == size(y) == size(z))
-        throw(ArgumentError("size of x, y and z arrays must be the same."))
+        throw(DimensionMismatch("size of x, y and z arrays must be the same."))
     end
-    structured_grid(filename, (x, y, z); kwargs...)
+    vtk_grid(VTKStructuredGrid(), filename, (x, y, z); kwargs...)
 end
 
 # 2D variant of vtk_grid with 3D array xy
@@ -71,14 +68,14 @@ function vtk_grid(filename::AbstractString, xy::AbstractArray{T,3};
         msg = "coordinate array `xy` has incorrect dimensions.\n" *
               "Expected dimensions: (2, Ni, Nj).\n" *
               "Actual dimensions: $(size(xy))"
-        throw(ArgumentError(msg))
+        throw(DimensionMismatch(msg))
     end
-    Nk = 1
-    xyz = zeros(T, 3, Ni, Nj, Nk)
-    for j = 1:Nj, i = 1:Ni, n = 1:2
-        xyz[n, i, j, 1] = xy[n, i, j]
-    end
-    structured_grid(filename, xyz; kwargs...)
+    xyz = (
+        reshape(view(xy, 1, :, :), Ni, Nj, 1),
+        reshape(view(xy, 2, :, :), Ni, Nj, 1),
+        Zeros{T}(Ni, Nj, 1),
+    )
+    vtk_grid(VTKStructuredGrid(), filename, xyz; kwargs...)
 end
 
 
@@ -86,14 +83,13 @@ end
 function vtk_grid(filename::AbstractString, x::AbstractArray{T,2},
                   y::AbstractArray{T,2}; kwargs...) where T
     if size(x) != size(y)
-        throw(ArgumentError("size of x and y arrays must be the same."))
+        throw(DimensionMismatch("size of x and y arrays must be the same."))
     end
     Ni, Nj = size(x)
-    Nk = 1
-    xyz = zeros(T, 3, Ni, Nj, Nk)
-    for j = 1:Nj, i = 1:Ni
-        xyz[1, i, j, 1] = x[i, j]
-        xyz[2, i, j, 1] = y[i, j]
-    end
-    structured_grid(filename, xyz; kwargs...)
+    xyz = (
+        reshape(x, :, :, 1),
+        reshape(y, :, :, 1),
+        Zeros{T}(Ni, Nj, 1),
+    )
+    vtk_grid(VTKStructuredGrid(), filename, xyz; kwargs...)
 end

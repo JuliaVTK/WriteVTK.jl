@@ -61,7 +61,6 @@ Base.setindex!(pvd::CollectionFile, datfile::VTKFile, time::Real) =
     collection_add_timestep(pvd, datfile, time)
 
 function vtk_save(pvd::CollectionFile)
-    # Saves paraview collection file (.pvd).
     outfiles = [pvd.path; pvd.timeSteps]::Vector{String}
     if isopen(pvd)
         save_file(pvd.xdoc, pvd.path)

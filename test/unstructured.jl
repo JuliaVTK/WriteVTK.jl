@@ -153,23 +153,25 @@ end
 function main()
     outfiles = String[]
     for dim in 1:3
-        pts, cells, pdata, cdata = mesh_data(Val{dim}())
+        pts, cells, pdata, cdata = mesh_data(Val(dim))
 
         @time begin
             # Initialise new vtu file (unstructured grid).
-            vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", pts, cells,
-                           compress=3)
+            fname = "$(vtk_filename_noext)_$(dim)D"
+            outfile = vtk_grid(fname, pts, cells, compress=3) do vtk
+                # Add some point and cell data.
+                vtk["my_point_data"] = pdata
+                vtk["my_cell_data"] = cdata
+            end
+            append!(outfiles, outfile)
 
-            # This is also accepted in 3D:
-            # vtk = vtk_grid(vtk_filename_noext, pts[1, :], pts[2, :], pts[3, :],
-            #                cells)
-
-            # Add some point and cell data.
-            vtk["my_point_data"] = pdata
-            vtk["my_cell_data"] = cdata
-
-            # Save and close vtk file.
-            append!(outfiles, vtk_save(vtk))
+            # This should give the exact same file.
+            xyz = ntuple(d -> view(pts, d, :), Val(dim))
+            outfile = vtk_grid(fname * "_bis", xyz..., cells, compress=3) do vtk
+                vtk["my_point_data"] = pdata
+                vtk["my_cell_data"] = cdata
+            end
+            append!(outfiles, outfile)
         end
     end
 

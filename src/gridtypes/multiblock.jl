@@ -1,6 +1,6 @@
+# Initialise VTK multiblock file (extension .vtm).
+# filename: filename with or without the extension (.vtm).
 function vtk_multiblock(filename::AbstractString)
-    # Initialise VTK multiblock file (extension .vtm).
-    # filename: filename with or without the extension (.vtm).
     xvtm = XMLDocument()
     xroot = create_root(xvtm, "VTKFile")
     set_attribute(xroot, "type", "vtkMultiBlockDataSet")
@@ -43,8 +43,6 @@ Save and close multiblock file (.vtm).
 The VTK files included in the multiblock file are also saved.
 """
 function vtk_save(vtm::MultiblockFile)
-    # Saves VTK multiblock file (.vtm).
-    # Also saves the contained block files (vtm.blocks) recursively.
     outfiles = [vtm.path]::Vector{String}
     for vtk in vtm.blocks
         append!(outfiles, vtk_save(vtk))

@@ -2,14 +2,12 @@ language: julia
 os:
   - linux
   - osx
-  - windows
 julia:
   - 1.0
-  - 1.2
+  - 1.4
   - nightly
 notifications:
   email: false
 matrix:
   allow_failures:
     - julia: nightly
-    - os: windows

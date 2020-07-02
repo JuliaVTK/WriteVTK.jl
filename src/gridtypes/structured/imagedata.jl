@@ -1,18 +1,17 @@
 const TupleOrVec = Union{NTuple{N, T} where {N, T <: Real},
                          AbstractVector{T} where T <: Real}
 
-function vtk_grid(filename::AbstractString,
+function vtk_grid(dtype::VTKImageData, filename::AbstractString,
                   Nx::Integer, Ny::Integer, Nz::Integer=1;
                   origin::TupleOrVec=(0.0, 0.0, 0.0),
                   spacing::TupleOrVec=(1.0, 1.0, 1.0),
-                  compress=true, append::Bool=true, extent=nothing)
+                  extent=nothing, kwargs...)
     Npts = Nx*Ny*Nz
     Ncls = num_cells_structured(Nx, Ny, Nz)
     ext = extent_attribute(Nx, Ny, Nz, extent)
 
     xvtk = XMLDocument()
-    vtk = DatasetFile(xvtk, add_extension(filename, ".vti"), "ImageData",
-                      Npts, Ncls, compress, append)
+    vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
 
     # VTKFile node
     xroot = vtk_xml_write_header(vtk)
@@ -51,11 +50,14 @@ function vtk_grid(filename::AbstractString,
     xPiece = new_child(xGrid, "Piece")
     set_attribute(xPiece, "Extent", ext)
 
-    return vtk::DatasetFile
+    vtk
 end
 
+vtk_grid(filename::AbstractString, xyz::Vararg{Integer}; kwargs...) =
+    vtk_grid(VTKImageData(), filename, xyz...; kwargs...)
+
 """
-    vtk_grid(filename, x::AbstractRange{T}, y::AbstractRange{T}, z::AbstractRange{T};
+    vtk_grid(filename, x::AbstractRange{T}, y::AbstractRange{T}, [z::AbstractRange{T}];
              kwargs...)
 
 Create image data (`.vti`) file.
@@ -65,7 +67,12 @@ Along each direction, the grid is specified in terms of an AbstractRange object.
 # Examples
 
 ```jldoctest
+# 3D dataset
 julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3, 4:1.:5)
+VTK file 'abc.vti' (ImageData file, open)
+
+# 2D dataset
+julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3)
 VTK file 'abc.vti' (ImageData file, open)
 
 julia> vtk = vtk_grid("def",
@@ -77,12 +84,11 @@ VTK file 'def.vti' (ImageData file, open)
 ```
 
 """
-function vtk_grid(filename::AbstractString,
-                  x::AbstractRange{T}, y::AbstractRange{T}, z::AbstractRange{T};
-                  kwargs...) where T
-    xyz = (x, y, z)
-    Nxyz = map(length, xyz)
-    origin = map(first, xyz)
-    spacing = map(step, xyz)
-    vtk_grid(filename, Nxyz; origin=origin, spacing=spacing, kwargs...)
+function vtk_grid(filename::AbstractString, xyz::Vararg{AbstractRange{T}};
+                  kwargs...) where {T}
+    Nxyz = length.(xyz)
+    origin = first.(xyz)
+    spacing = step.(xyz)
+    vtk_grid(VTKImageData(), filename, Nxyz...;
+             origin=origin, spacing=spacing, kwargs...)
 end

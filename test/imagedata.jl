@@ -45,6 +45,16 @@ function main()
         vtk["q_values"] = q
         vtk["myVector"] = vec
         vtk["myCellData"] = cdata
+
+        # Field data
+        vtk["time"] = 4.2
+        vtk["field_tuple"] =
+            ([2.0, 3.0, 4.0], [1.0, 2.0, 3.0])  # 2 components, 3 "tuples"
+        vtk["field_matrix", VTKFieldData()] =
+            (1:4) * (2:5)'  # 1 component, 16 "tuples"
+        vtk["a_string"] = "blabla"
+        vtk["some_strings"] = ["blabla", "ab©dé", "ñeee"]
+        vtk["string_tuple"] = ("blabla", "ab©dé", "ñeee")
     end
 
     # Test 2D dataset
@@ -59,20 +69,27 @@ function main()
     append!(outfiles, outfiles_2D)
 
     # Test specifying coordinates using LinRange
-    let xyz = (LinRange(0., 5., Ni), LinRange(1., 3., Nj), LinRange(2., 6., Nk))
-        @time outfiles_LR = vtk_grid(vtk_filename_noext * "_LinRange", xyz,
-                                     compress=true) do vtk
-            vtk["myVector"] = vec
-            vtk["myCellData"] = cdata
+    for D in (2, 3)  # test 2D and 3D datasets
+        suffix = D == 2 ? "_2D" : ""
+        let xyz = (LinRange(0., 5., Ni),
+                   LinRange(1., 3., Nj),
+                   LinRange(2., 6., Nk))
+            coords = xyz[1:D]
+            @time saved = vtk_grid(vtk_filename_noext * "_LinRange" * suffix,
+                                   coords, compress=true) do vtk
+                vtk["myVector"] = D == 3 ? vec : view(vec, 1:2, :, :, 1)
+                vtk["myCellData"] = D == 3 ? cdata : view(cdata, :, :, 1)
+            end
+            append!(outfiles, saved)
         end
-        append!(outfiles, outfiles_LR)
-    end
 
-    # Similar using StepRangeLen
-    let xyz = (0:0.08:5, 1.2:0.05:2., 1.2:0.1:2.)
-        @time outfiles_SR = vtk_grid(vtk_filename_noext * "_StepRangeLen", xyz) do vtk
+        # Similar using StepRangeLen
+        let xyz = (0:0.08:5, 1.2:0.05:2., 1.2:0.1:2.)
+            coords = xyz[1:D]
+            @time saved = vtk_grid(
+                identity, vtk_filename_noext * "_StepRangeLen" * suffix, coords)
+            append!(outfiles, saved)
         end
-        append!(outfiles, outfiles_SR)
     end
 
     println("Saved:   ", join(outfiles, "  "))

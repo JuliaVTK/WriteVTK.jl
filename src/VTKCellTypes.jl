@@ -1,19 +1,32 @@
-# VTK cell definitions
+"""
+    VTKCellTypes
 
-# Definitions copied from the vtkCellType.h file of the VTK source code:
-# https://raw.githubusercontent.com/Kitware/VTK/master/Common/DataModel/vtkCellType.h
+Module defining cell types for unstructured datasets.
 
-__precompile__()
-
+Definitions are adapted from the [`VTK source
+code`](https://raw.githubusercontent.com/Kitware/VTK/master/Common/DataModel/vtkCellType.h).
+"""
 module VTKCellTypes
 
-export VTKCellType
+export VTKCellType, nodes
 
 struct VTKCellType
     vtk_name::String
     vtk_id::UInt8
     nodes::Int
 end
+
+"""
+    nodes(c::VTKCellTypes)
+
+Returns the number of nodes (or grid points) required by the cell type.
+
+For instance, this returns 3 for `VTK_TRIANGLE`.
+
+For cell types that can take any number of nodes, such as `VTK_POLY_LINE`,
+this returns -1.
+"""
+nodes(c::VTKCellType) = c.nodes
 
 const INVALID_CELL_TYPE = VTKCellType("INVALID", typemax(UInt8), -1)
 
@@ -110,5 +123,14 @@ end
 @add VTK_LAGRANGE_HEXAHEDRON 72
 @add VTK_LAGRANGE_WEDGE 73
 @add VTK_LAGRANGE_PYRAMID 74
+
+# Arbitrary order Bezier elements (formulated separated from generic higher order cells)
+@add VTK_BEZIER_CURVE 75
+@add VTK_BEZIER_TRIANGLE 76
+@add VTK_BEZIER_QUADRILATERAL 77
+@add VTK_BEZIER_TETRAHEDRON 78
+@add VTK_BEZIER_HEXAHEDRON 79
+@add VTK_BEZIER_WEDGE 80
+@add VTK_BEZIER_PYRAMID 81
 
 end # module

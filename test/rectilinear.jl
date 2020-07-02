@@ -74,7 +74,8 @@ function main()
             vtk["q_values"] = q
 
             # Test passing the second optional argument.
-            @test_throws ArgumentError vtk["myVector", VTKCellData()] = vec
+            @test_throws DimensionMismatch WriteVTK.num_components(
+                vec, vtk, VTKCellData())
             vtk["myVector", VTKPointData()] = vec
 
             vtk["myCellData"] = cdata
