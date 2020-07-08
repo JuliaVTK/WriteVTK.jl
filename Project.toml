@@ -23,6 +23,7 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 
 [targets]
-test = ["Printf", "Test", "SHA", "StaticArrays"]
+test = ["Printf", "Test", "SHA", "StaticArrays", "OffsetArrays"]
