@@ -170,8 +170,8 @@ When compression is enabled:
 
   * the data array is written in compressed form (obviously);
 
-  * the header, written before the actual numerical data, is an array of UInt32
-    values:
+  * the header, written before the actual numerical data, is an array of
+  HeaderType (UInt32 / UInt64) values:
         `[num_blocks, blocksize, last_blocksize, compressed_blocksizes]`
     All the sizes are in bytes. The header itself is not compressed, only the
     data is.
@@ -180,7 +180,7 @@ When compression is enabled:
         http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats
     (This is not really documented in the VTK specification...)
 
-Otherwise, if compression is disabled, the header is just a single UInt32 value
+Otherwise, if compression is disabled, the header is just a single HeaderType value
 containing the size of the data array in bytes.
 
 """
@@ -201,7 +201,7 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
         initpos = position(buf)
 
         # Write temporary data that will be replaced later with the real header.
-        let header = ntuple(d -> zero(UInt32), Val(4))
+        let header = ntuple(d -> zero(HeaderType), Val(4))
             write(buf, header...)
         end
 
@@ -213,14 +213,14 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
 
         # Go back to `initpos` and write real header.
         endpos = position(buf)
-        compbytes = endpos - initpos - 4 * sizeof(UInt32)
-        let header = UInt32.((1, nb, nb, compbytes))
+        compbytes = endpos - initpos - 4 * sizeof(HeaderType)
+        let header = HeaderType.((1, nb, nb, compbytes))
             seek(buf, initpos)
             write(buf, header...)
             seek(buf, endpos)
         end
     else
-        write(buf, UInt32(nb))  # header (uncompressed version)
+        write(buf, HeaderType(nb))  # header (uncompressed version)
         nb_write = write_array(buf, data)
         @assert nb_write == nb
     end
@@ -265,9 +265,9 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     # Write buffer with data to XML document.
     add_text(xDA, "\n")
     if compress
-        add_text(xDA, base64encode(UInt32.((1, nb, nb, position(buf)))...))
+        add_text(xDA, base64encode(HeaderType.((1, nb, nb, position(buf)))...))
     else
-        add_text(xDA, base64encode(UInt32(nb)))     # header (uncompressed version)
+        add_text(xDA, base64encode(HeaderType(nb)))     # header (uncompressed version)
     end
     add_text(xDA, base64encode(take!(buf)))
     add_text(xDA, "\n")
