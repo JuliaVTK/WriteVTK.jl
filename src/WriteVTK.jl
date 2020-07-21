@@ -1,5 +1,9 @@
 module WriteVTK
 
+# Documentation on VTK XML formats:
+# - https://vtk.org/Wiki/VTK_XML_Formats
+# - http://vtk.org/VTK/img/file-formats.pdf
+
 export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock
@@ -26,6 +30,7 @@ export VTKCellTypes, VTKCellType
 ## Constants ##
 const DEFAULT_COMPRESSION_LEVEL = 6
 const IS_LITTLE_ENDIAN = ENDIAN_BOM == 0x04030201
+const HeaderType = UInt64  # should be UInt32 or UInt64
 
 ## Types ##
 abstract type VTKFile end

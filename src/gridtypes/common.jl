@@ -7,9 +7,9 @@ function vtk_xml_write_header(vtk::DatasetFile)
     else
         set_attribute(xroot, "byte_order", "BigEndian")
     end
+    set_attribute(xroot, "header_type", string(HeaderType))
     if vtk.compression_level > 0
         set_attribute(xroot, "compressor", "vtkZLibDataCompressor")
-        set_attribute(xroot, "header_type", "UInt32")
     end
     xroot::XMLElement
 end
