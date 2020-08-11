@@ -319,7 +319,7 @@ Example:
 points = rand(3, 100)  # (x, y, z) locations
 lines = [MeshCell(PolyData.Lines(), (i, i + 1, i + 4)) for i in (3, 5, 42)]
 polys = [MeshCell(PolyData.Polys(), i:(i + 6)) for i = 1:3:20]
-vtk = vtk_grid(points, lines, polys)
+vtk = vtk_grid("my_vtp_file", points, lines, polys)
 ```
 
 Note that the order of `lines` and `polys` is not important.
