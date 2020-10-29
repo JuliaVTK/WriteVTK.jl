@@ -46,19 +46,24 @@ struct DatasetFile <: VTKFile
     Ncls::Int           # Number of cells.
     compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
+    ascii::Bool         # if true, inline data is written in ASCII format (only used if `appended` is false)
     buf::IOBuffer       # Buffer with appended data.
     function DatasetFile(xdoc, path, grid_type, Npts, Ncls;
-                         compress=true, append=true)
-        buf = IOBuffer()
+                         compress=true, append=true, ascii=false)
         clevel = _compression_level(compress)
         if !(0 ≤ clevel ≤ 9)
-            error("Unexpected value of `compress` argument: $compress.\n",
-                  "It must be a `Bool` or a value between 0 and 9.")
+            throw(ArgumentError("unexpected value of `compress` argument: $compress.\n" *
+                                "It must be a `Bool` or a value between 0 and 9."))
         end
+        ascii = !append && ascii
+        if ascii
+            clevel = 0  # no compression when writing ASCII
+        end
+        buf = IOBuffer()
         if !append  # in this case we don't need a buffer
             close(buf)
         end
-        new(xdoc, path, grid_type, Npts, Ncls, clevel, append, buf)
+        new(xdoc, path, grid_type, Npts, Ncls, clevel, append, ascii, buf)
     end
 end
 

@@ -109,6 +109,19 @@ function write_array(io, data::Tuple)
     n
 end
 
+function add_data_ascii(xml, x::Union{Number,String})
+    add_text(xml, " ")
+    add_text(xml, string(x))
+end
+
+add_data_ascii(xml, x::AbstractArray) = map(v -> add_data_ascii(xml, v), x)
+
+function add_data_ascii(xml, data::Tuple)
+    for i in eachindex(data...), x in data
+        add_data_ascii(xml, x[i])
+    end
+end
+
 function set_num_components(xDA, vtk, data, loc)
     Nc = num_components(data, vtk, loc)
     set_attribute(xDA, "NumberOfComponents", Nc)
@@ -154,6 +167,8 @@ function data_to_xml(vtk, xParent, data, name,
     end
     if vtk.appended
         data_to_xml_appended(vtk, xDA, data)
+    elseif vtk.ascii
+        data_to_xml_ascii(vtk, xDA, data)
     else
         data_to_xml_inline(vtk, xDA, data)
     end
@@ -234,7 +249,7 @@ end
 Add inline, base64-encoded data to VTK XML file.
 """
 function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
-    @assert !vtk.appended
+    @assert !vtk.appended && !vtk.ascii
     compress = vtk.compression_level > 0
 
     # DataArray node
@@ -277,6 +292,20 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     end
     close(buf)
 
+    xDA
+end
+
+"""
+    data_to_xml_ascii(vtk::DatasetFile, xDA::XMLElement, data)
+
+Add inline data to VTK XML file in ASCII format.
+"""
+function data_to_xml_ascii(vtk::DatasetFile, xDA::XMLElement, data)
+    @assert !vtk.appended && vtk.ascii
+    set_attribute(xDA, "format", "ascii")
+    add_text(xDA, "\n")
+    add_data_ascii(xDA, data)
+    add_text(xDA, "\n")
     xDA
 end
 
