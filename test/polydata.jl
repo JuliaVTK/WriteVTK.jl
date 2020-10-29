@@ -44,9 +44,11 @@ function write_vtp(Np, D)
     num_cells = sum(length, all_cells)
 
     fname = vtk_filename_noext * "_$(D)D"
+    print("PolyData $(D)D...")
     @time filenames = vtk_grid(fname, points, all_cells...,
-                               compress=false, append=false) do vtk
+                               compress=false, append=false, ascii=true) do vtk
         vtk["my_point_data"] = [randn(rng) for i = 1:3, j = 1:Np]
+        vtk["vector_as_tuple"] = ntuple(_ -> randn(rng, Np), D)
         # NOTE: cell data is not correctly parsed by VTK when multiple kinds of
         # cells are combined in the same dataset.
         # This seems to be a really old VTK issue:
