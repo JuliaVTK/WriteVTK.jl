@@ -89,7 +89,18 @@ struct CollectionFile <: VTKFile
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
+"""
+    close(vtk::VTKFile)
+
+Write and close VTK file.
+"""
 close(vtk::VTKFile) = free(vtk.xdoc)
+
+"""
+    isopen(vtk::VTKFile)
+
+Check if VTK file is still being written.
+"""
 isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
 # Add a default extension to the filename, unless the user have already given
