@@ -1,6 +1,7 @@
 # WriteVTK
 
-[![Build Status](https://travis-ci.com/jipolanco/WriteVTK.jl.svg?branch=master)](https://travis-ci.com/jipolanco/WriteVTK.jl)
+[![Build Status](https://github.com/jipolanco/WriteVTK.jl/workflows/CI/badge.svg)](https://github.com/jipolanco/WriteVTK.jl/actions)
+[![Coverage](https://codecov.io/gh/jipolanco/WriteVTK.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jipolanco/WriteVTK.jl)
 [![DOI](https://zenodo.org/badge/32700186.svg)](https://zenodo.org/badge/latestdoi/32700186)
 
 This package allows to write VTK XML files for visualisation of multidimensional
