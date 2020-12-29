@@ -67,12 +67,10 @@ Along each direction, the grid is specified in terms of an AbstractRange object.
 # Examples
 
 ```jldoctest
-# 3D dataset
-julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3, 4:1.:5)
+julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3, 4:1.:5)  # 3D dataset
 VTK file 'abc.vti' (ImageData file, open)
 
-# 2D dataset
-julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3)
+julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3)  # 2D dataset
 VTK file 'abc.vti' (ImageData file, open)
 
 julia> vtk = vtk_grid("def",

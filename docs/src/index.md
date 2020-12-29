@@ -9,6 +9,5 @@ end
 ```
 
 ```@autodocs
-Modules = [WriteVTK]
-Order = [:function, :type]
+Modules = [WriteVTK, VTKCellTypes, PolyData]
 ```

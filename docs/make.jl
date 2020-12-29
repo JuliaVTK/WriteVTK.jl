@@ -1,15 +1,25 @@
-using Documenter
 using WriteVTK
+using Documenter
 
-makedocs(
-    sitename = "WriteVTK",
-    format = Documenter.HTML(),
-    modules = [WriteVTK]
+DocMeta.setdocmeta!(WriteVTK, :DocTestSetup, :(using WriteVTK);
+                    recursive=true)
+
+makedocs(;
+    modules=[WriteVTK],
+    authors="Juan Ignacio Polanco <jipolanc@gmail.com> and contributors",
+    repo="https://github.com/jipolanco/WriteVTK.jl/blob/{commit}{path}#L{line}",
+    sitename="WriteVTK.jl",
+    format=Documenter.HTML(;
+        prettyurls=get(ENV, "CI", "false") == "true",
+        canonical="https://jipolanco.github.io/WriteVTK.jl",
+        assets=String[],
+    ),
+    pages=[
+        "Home" => "index.md",
+    ],
 )
 
-# Documenter can also automatically deploy documentation to gh-pages.
-# See "Hosting Documentation" and deploydocs() in the Documenter manual
-# for more information.
-#=deploydocs(
-    repo = "<repository url>"
-)=#
+deploydocs(;
+    repo="github.com/jipolanco/WriteVTK.jl.git",
+    forcepush=true,
+)
