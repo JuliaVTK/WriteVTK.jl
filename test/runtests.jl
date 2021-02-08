@@ -4,18 +4,20 @@ using WriteVTK
 using Test: @test
 using SHA: sha1
 
-const tests = ["multiblock.jl",
-               "rectilinear.jl",
-               "imagedata.jl",
-               "structured.jl",
-               "unstructured.jl",
-               "polydata.jl",
-               "bezier.jl",
-               "pvdCollection.jl",
-               "array.jl"]
+const tests = [
+    "multiblock.jl",
+    "rectilinear.jl",
+    "imagedata.jl",
+    "structured.jl",
+    "unstructured.jl",
+    "polydata.jl",
+    "bezier.jl",
+    "pvdCollection.jl",
+    "array.jl",
+]
 
 # Only toggle to generate new checksums, if new tests are added.
-const OVERWRITE_CHECKSUMS = "--generate" in ARGS
+const OVERWRITE_CHECKSUMS = false
 const checksums_file = joinpath(dirname(@__FILE__), "checksums.sha1")
 const checksum_list = read(checksums_file, String)
 

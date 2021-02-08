@@ -30,8 +30,9 @@ passed to [`vtk_grid`](@ref) which define this cell.
 
 Define a triangular cell passing by points with indices `[3, 5, 42]`.
 
-```julia
-cell = MeshCell(VTKCellTypes.VTK_TRIANGLE, [3, 5, 42])
+```jldoctest
+julia> cell = MeshCell(VTKCellTypes.VTK_TRIANGLE, [3, 5, 42])
+MeshCell{VTKCellType,Array{Int64,1}}(VTKCellType("VTK_TRIANGLE", 0x05, 3), [3, 5, 42])
 ```
 """
 struct MeshCell{CellType, V <: Connectivity}

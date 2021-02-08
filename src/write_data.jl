@@ -109,6 +109,19 @@ function write_array(io, data::Tuple)
     n
 end
 
+function add_data_ascii(xml, x::Union{Number,String})
+    add_text(xml, " ")
+    add_text(xml, string(x))
+end
+
+add_data_ascii(xml, x::AbstractArray) = map(v -> add_data_ascii(xml, v), x)
+
+function add_data_ascii(xml, data::Tuple)
+    for i in eachindex(data...), x in data
+        add_data_ascii(xml, x[i])
+    end
+end
+
 function set_num_components(xDA, vtk, data, loc)
     Nc = num_components(data, vtk, loc)
     set_attribute(xDA, "NumberOfComponents", Nc)
@@ -154,6 +167,8 @@ function data_to_xml(vtk, xParent, data, name,
     end
     if vtk.appended
         data_to_xml_appended(vtk, xDA, data)
+    elseif vtk.ascii
+        data_to_xml_ascii(vtk, xDA, data)
     else
         data_to_xml_inline(vtk, xDA, data)
     end
@@ -170,8 +185,8 @@ When compression is enabled:
 
   * the data array is written in compressed form (obviously);
 
-  * the header, written before the actual numerical data, is an array of UInt32
-    values:
+  * the header, written before the actual numerical data, is an array of
+  HeaderType (UInt32 / UInt64) values:
         `[num_blocks, blocksize, last_blocksize, compressed_blocksizes]`
     All the sizes are in bytes. The header itself is not compressed, only the
     data is.
@@ -180,7 +195,7 @@ When compression is enabled:
         http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats
     (This is not really documented in the VTK specification...)
 
-Otherwise, if compression is disabled, the header is just a single UInt32 value
+Otherwise, if compression is disabled, the header is just a single HeaderType value
 containing the size of the data array in bytes.
 
 """
@@ -201,7 +216,7 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
         initpos = position(buf)
 
         # Write temporary data that will be replaced later with the real header.
-        let header = ntuple(d -> zero(UInt32), Val(4))
+        let header = ntuple(d -> zero(HeaderType), Val(4))
             write(buf, header...)
         end
 
@@ -213,14 +228,14 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
 
         # Go back to `initpos` and write real header.
         endpos = position(buf)
-        compbytes = endpos - initpos - 4 * sizeof(UInt32)
-        let header = UInt32.((1, nb, nb, compbytes))
+        compbytes = endpos - initpos - 4 * sizeof(HeaderType)
+        let header = HeaderType.((1, nb, nb, compbytes))
             seek(buf, initpos)
             write(buf, header...)
             seek(buf, endpos)
         end
     else
-        write(buf, UInt32(nb))  # header (uncompressed version)
+        write(buf, HeaderType(nb))  # header (uncompressed version)
         nb_write = write_array(buf, data)
         @assert nb_write == nb
     end
@@ -234,7 +249,7 @@ end
 Add inline, base64-encoded data to VTK XML file.
 """
 function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
-    @assert !vtk.appended
+    @assert !vtk.appended && !vtk.ascii
     compress = vtk.compression_level > 0
 
     # DataArray node
@@ -265,9 +280,9 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     # Write buffer with data to XML document.
     add_text(xDA, "\n")
     if compress
-        add_text(xDA, base64encode(UInt32.((1, nb, nb, position(buf)))...))
+        add_text(xDA, base64encode(HeaderType.((1, nb, nb, position(buf)))...))
     else
-        add_text(xDA, base64encode(UInt32(nb)))     # header (uncompressed version)
+        add_text(xDA, base64encode(HeaderType(nb)))     # header (uncompressed version)
     end
     add_text(xDA, base64encode(take!(buf)))
     add_text(xDA, "\n")
@@ -277,6 +292,20 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     end
     close(buf)
 
+    xDA
+end
+
+"""
+    data_to_xml_ascii(vtk::DatasetFile, xDA::XMLElement, data)
+
+Add inline data to VTK XML file in ASCII format.
+"""
+function data_to_xml_ascii(vtk::DatasetFile, xDA::XMLElement, data)
+    @assert !vtk.appended && vtk.ascii
+    set_attribute(xDA, "format", "ascii")
+    add_text(xDA, "\n")
+    add_data_ascii(xDA, data)
+    add_text(xDA, "\n")
     xDA
 end
 

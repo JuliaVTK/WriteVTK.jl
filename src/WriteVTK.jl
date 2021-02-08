@@ -1,5 +1,9 @@
 module WriteVTK
 
+# Documentation on VTK XML formats:
+# - https://vtk.org/Wiki/VTK_XML_Formats
+# - http://vtk.org/VTK/img/file-formats.pdf
+
 export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock, multiblock_add_block
@@ -26,6 +30,7 @@ export VTKCellTypes, VTKCellType
 ## Constants ##
 const DEFAULT_COMPRESSION_LEVEL = 6
 const IS_LITTLE_ENDIAN = ENDIAN_BOM == 0x04030201
+const HeaderType = UInt64  # should be UInt32 or UInt64
 
 ## Types ##
 abstract type VTKFile end
@@ -41,19 +46,24 @@ struct DatasetFile <: VTKFile
     Ncls::Int           # Number of cells.
     compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
+    ascii::Bool         # if true, inline data is written in ASCII format (only used if `appended` is false)
     buf::IOBuffer       # Buffer with appended data.
     function DatasetFile(xdoc, path, grid_type, Npts, Ncls;
-                         compress=true, append=true)
-        buf = IOBuffer()
+                         compress=true, append=true, ascii=false)
         clevel = _compression_level(compress)
         if !(0 ≤ clevel ≤ 9)
-            error("Unexpected value of `compress` argument: $compress.\n",
-                  "It must be a `Bool` or a value between 0 and 9.")
+            throw(ArgumentError("unexpected value of `compress` argument: $compress.\n" *
+                                "It must be a `Bool` or a value between 0 and 9."))
         end
+        ascii = !append && ascii
+        if ascii
+            clevel = 0  # no compression when writing ASCII
+        end
+        buf = IOBuffer()
         if !append  # in this case we don't need a buffer
             close(buf)
         end
-        new(xdoc, path, grid_type, Npts, Ncls, clevel, append, buf)
+        new(xdoc, path, grid_type, Npts, Ncls, clevel, append, ascii, buf)
     end
 end
 
@@ -86,7 +96,18 @@ struct CollectionFile <: VTKFile
     CollectionFile(xdoc, path) = new(xdoc, path, VTKFile[])
 end
 
+"""
+    close(vtk::VTKFile)
+
+Write and close VTK file.
+"""
 close(vtk::VTKFile) = free(vtk.xdoc)
+
+"""
+    isopen(vtk::VTKFile)
+
+Check if VTK file is still being written.
+"""
 isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
 # Add a default extension to the filename, unless the user have already given

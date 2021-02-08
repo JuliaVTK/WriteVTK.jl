@@ -1,6 +1,7 @@
 # WriteVTK
 
-[![Build Status](https://travis-ci.com/jipolanco/WriteVTK.jl.svg?branch=master)](https://travis-ci.com/jipolanco/WriteVTK.jl)
+[![Build Status](https://github.com/jipolanco/WriteVTK.jl/workflows/CI/badge.svg)](https://github.com/jipolanco/WriteVTK.jl/actions)
+[![Coverage](https://codecov.io/gh/jipolanco/WriteVTK.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jipolanco/WriteVTK.jl)
 [![DOI](https://zenodo.org/badge/32700186.svg)](https://zenodo.org/badge/latestdoi/32700186)
 
 This package allows to write VTK XML files for visualisation of multidimensional
@@ -319,7 +320,7 @@ Example:
 points = rand(3, 100)  # (x, y, z) locations
 lines = [MeshCell(PolyData.Lines(), (i, i + 1, i + 4)) for i in (3, 5, 42)]
 polys = [MeshCell(PolyData.Polys(), i:(i + 6)) for i = 1:3:20]
-vtk = vtk_grid(points, lines, polys)
+vtk = vtk_grid("my_vtp_file", points, lines, polys)
 ```
 
 Note that the order of `lines` and `polys` is not important.
@@ -443,28 +444,33 @@ end
 
 By default, numerical data is written to the XML files as compressed raw binary
 data.
-This can be changed using the optional `compress` and `append` parameters of
-the `vtk_grid` functions.
+This can be changed using the optional keyword arguments of `vtk_grid`.
 
 For instance, to disable both compressing and appending raw data in the case of
 unstructured meshes:
 
 ``` julia
-vtk = vtk_grid("my_vtk_file", points, cells; compress=false, append=false)
+vtk = vtk_grid("my_vtk_file", points, cells; compress = false, append = false, ascii = false)
 ```
 
 - If `append` is `true` (default), data is written appended at the end of the
   XML file as raw binary data.
   Note that this violates the XML specification, although it is allowed by VTK.
 
-  Otherwise, if `append` is `false`, data is written "inline", and base-64
-  encoded instead of raw.
-  This is usually slower than writing raw binary data, and also results in
-  larger files, but is valid according to the XML specification.
+  Otherwise, if `append` is `false`, data is written inline. By default,
+  inline data is written base-64 encoded, but may also be written in ASCII
+  format (see below).
+  Writing inline data is usually slower than writing raw binary data, and also
+  results in larger files, but is valid according to the XML specification.
+
+- If `ascii` is `true`, then appended data is written in ASCII format instead
+  of base64-encoded. This is not the default. This option is ignored if
+  `append` is `true`.
 
 - If `compress` is `true` (default), data is first compressed using zlib.
   Its value may also be a compression level between 1 (fast compression)
-  and 9 (best compression).
+  and 9 (best compression). This option is ignored when writing inline data in
+  ASCII format.
 
 ## Examples
 
