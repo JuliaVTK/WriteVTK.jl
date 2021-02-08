@@ -407,7 +407,7 @@ outfiles = vtk_save(vtmfile)
 
 WriteVTK will write out a multiblock VTK file that looks like something like this (in addition to all the VTK files contained in the multiblock file):
 
-```
+```xml
 <?xml version="1.0" encoding="utf-8"?>
 <VTKFile type="vtkMultiBlockDataSet" version="1.0" byte_order="LittleEndian">
   <vtkMultiBlockDataSet>
