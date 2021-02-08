@@ -373,15 +373,57 @@ vtkfile = vtk_grid(vtmfile, x2, y2, z2)
 vtkfile["Pressure"] = p2
 ```
 
+Additional blocks can also be added to the multiblock file with
+`multiblock_add_block`, which can contain any of the VTK files that WriteVTK
+supports:
+
+```julia
+# Create a block named my_multiblock and add it to vtmfile.
+block = multiblock_add_block(vtmfile, "my_multiblock")
+
+# Add a VTK file to `block`.
+vtkfile = vtk_grid(block, "another_file", x3, y3, z3)
+```
+
+Blocks can be nested arbitrarily:
+
+```julia
+# Add more blocks.
+another_block = multiblock_add_block(block, "my_multiblock-block")
+yet_another_block = multiblock_add_block(another_block, "my_multiblock-block-block")
+```
+
+And more VTK files may be added to the sub-blocks:
+
+```julia
+vtkfile = vtk_grid(yet_another_block, "my_deeply_nested_file", x4, y4, z4)
+```
+
 Finally, only the multiblock file needs to be saved explicitly:
 
 ``` julia
 outfiles = vtk_save(vtmfile)
 ```
 
-Assuming that the two blocks are structured grids, this generates the files
-`my_vtm_file.vtm`, `my_vtm_file_1.vts` and `my_vtm_file_2.vts`, where the
-`vtm` file points to the two `vts` files.
+WriteVTK will write out a multiblock VTK file that looks like something like this (in addition to all the VTK files contained in the multiblock file):
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<VTKFile type="vtkMultiBlockDataSet" version="1.0" byte_order="LittleEndian">
+  <vtkMultiBlockDataSet>
+    <DataSet index="0" file="my_vtm_file_1.vti"/>
+    <DataSet index="1" file="my_vtm_file_2.vti"/>
+    <Block index="2" name="my_multiblock">
+      <DataSet index="0" file="another_file.vti" name="another_file"/>
+      <Block index="1" name="my_multiblock-block">
+        <Block index="0" name="my_multiblock-block-block">
+          <DataSet index="0" file="my_deeply_nested_file.vti" name="my_deeply_nested_file"/>
+        </Block>
+      </Block>
+    </Block>
+  </vtkMultiBlockDataSet>
+</VTKFile>
+```
 
 ## Paraview Data (PVD) file format
 

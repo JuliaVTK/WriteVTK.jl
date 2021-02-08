@@ -6,7 +6,7 @@ module WriteVTK
 
 export MeshCell
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
-export vtk_multiblock
+export vtk_multiblock, multiblock_add_block
 export paraview_collection, collection_add_timestep, paraview_collection_load
 export vtk_write_array
 export VTKPointData, VTKCellData, VTKFieldData
@@ -75,11 +75,18 @@ function show(io::IO, vtk::DatasetFile)
     print(io, "VTK file '$(vtk.path)' ($(vtk.grid_type) file, $open_str)")
 end
 
+struct VTKBlock
+    xelm::XMLElement
+    blocks::Vector{Union{VTKFile,VTKBlock}}
+    # Constructor.
+    VTKBlock(xelm) = new(xelm, Union{VTKFile,VTKBlock}[])
+end
+
 struct MultiblockFile <: VTKFile
     xdoc::XMLDocument
     path::String
-    blocks::Vector{VTKFile}
-    MultiblockFile(xdoc, path) = new(xdoc, path, VTKFile[])
+    blocks::Vector{Union{VTKFile,VTKBlock}}
+    MultiblockFile(xdoc, path) = new(xdoc, path, Union{VTKFile,VTKBlock}[])
 end
 
 struct CollectionFile <: VTKFile
