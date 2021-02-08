@@ -1,7 +1,7 @@
 name = "WriteVTK"
 uuid = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 authors = ["Juan Ignacio Polanco <jipolanc@gmail.com>"]
-version = "1.8.1"
+version = "1.9.0"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -19,11 +19,11 @@ TranscodingStreams = "0.9.5"
 julia = "1"
 
 [extras]
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 
 [targets]
 test = ["Printf", "Test", "SHA", "StaticArrays", "OffsetArrays"]
