@@ -108,9 +108,9 @@ function fourth_block_data()
     pts_vol = Array{FloatType}(undef, 3, imax, jmax, kmax)
     pdata_vol = Array{FloatType}(undef, imax, jmax, kmax)
 
-    x = pts_vol[1, :, :, :] .= reshape(range(0.0, 1.0, length=imax), imax, 1, 1)
-    y = pts_vol[2, :, :, :] .= reshape(range(-1.0, 0.0, length=jmax), 1, jmax, 1)
-    z = pts_vol[3, :, :, :] .= reshape(range(3.0, 4.0, length=kmax), 1, 1, kmax)
+    x = pts_vol[1, :, :, :] .= reshape(range(0.0, stop=1.0, length=imax), imax, 1, 1)
+    y = pts_vol[2, :, :, :] .= reshape(range(-1.0, stop=0.0, length=jmax), 1, jmax, 1)
+    z = pts_vol[3, :, :, :] .= reshape(range(3.0, stop=4.0, length=kmax), 1, 1, kmax)
 
     @. pdata_vol = sin(2*pi*x)*sin(4*pi*y)*sin(6*pi*z)
 
