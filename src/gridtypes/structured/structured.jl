@@ -1,7 +1,7 @@
 # Structured dataset coordinates can be specified using either a 4D array
 # (3, Ni, Nj, Nk), or a tuple (x, y, z).
 const Array4 = AbstractArray{T, 4} where T
-const Array3Tuple3 = Tuple{Vararg{<:AbstractArray{T,3}, 3}} where T
+const Array3Tuple3 = Tuple{Vararg{AbstractArray{T,3}, 3}} where T
 const StructuredCoords = Union{Array4, Array3Tuple3}
 
 structured_dims(xyz::Array4) = ntuple(d -> size(xyz, d + 1), 3)
