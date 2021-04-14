@@ -87,8 +87,8 @@ function vtk_grid(filename::AbstractString, x::AbstractArray{T,2},
     end
     Ni, Nj = size(x)
     xyz = (
-        reshape(x, :, :, 1),
-        reshape(y, :, :, 1),
+        reshape(x, Ni, Nj, 1),
+        reshape(y, Ni, Nj, 1),
         Zeros{T}(Ni, Nj, 1),
     )
     vtk_grid(VTKStructuredGrid(), filename, xyz; kwargs...)
