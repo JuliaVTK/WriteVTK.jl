@@ -95,6 +95,8 @@ end
 @add VTK_CONVEX_POINT_SET 41
 
 # Polyhedron cell (consisting of polygonal faces)
+# NOTE: in WriteVTK.jl, use the VTKPolyhedron type instead of a MeshCell to
+# describe this kind of cells.
 @add VTK_POLYHEDRON 42
 
 # Higher order cells in parametric form

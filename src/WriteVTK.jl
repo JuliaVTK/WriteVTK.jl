@@ -4,7 +4,7 @@ module WriteVTK
 # - https://vtk.org/Wiki/VTK_XML_Formats
 # - http://vtk.org/VTK/img/file-formats.pdf
 
-export MeshCell
+export MeshCell, VTKPolyhedron
 export vtk_grid, vtk_save, vtk_point_data, vtk_cell_data
 export vtk_multiblock, multiblock_add_block
 export paraview_collection, collection_add_timestep, paraview_collection_load
@@ -140,7 +140,9 @@ include("gridtypes/ParaviewCollection.jl")
 include("gridtypes/structured/imagedata.jl")
 include("gridtypes/structured/rectilinear.jl")
 include("gridtypes/structured/structured.jl")
+
 include("gridtypes/unstructured/unstructured.jl")
+include("gridtypes/unstructured/polyhedron.jl")
 include("gridtypes/unstructured/polydata.jl")
 
 include("gridtypes/array.jl")
