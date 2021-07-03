@@ -8,7 +8,6 @@ Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 LightXML = "9c8b4983-aa76-5018-a973-4c85ecc9e179"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 
 [compat]
@@ -22,8 +21,9 @@ julia = "1"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Printf", "Test", "SHA", "StaticArrays", "OffsetArrays"]
+test = ["Printf", "Test", "Random", "SHA", "StaticArrays", "OffsetArrays"]
