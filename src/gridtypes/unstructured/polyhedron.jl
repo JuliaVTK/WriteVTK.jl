@@ -21,14 +21,14 @@ This can represent a cube if the 8 points are properly positioned.
 
 ```jldoctest
 julia> cell = VTKPolyhedron(
-    1:8,
-    (1, 4, 3, 2),
-    (1, 5, 8, 4),
-    (5, 6, 7, 8),
-    (6, 2, 3, 7),
-    (1, 2, 6, 5),
-    (3, 4, 8, 7),
-)
+           1:8,
+           (1, 4, 3, 2),
+           (1, 5, 8, 4),
+           (5, 6, 7, 8),
+           (6, 2, 3, 7),
+           (1, 2, 6, 5),
+           (3, 4, 8, 7),
+       )
 VTKPolyhedron{UnitRange{Int64}, NTuple{6, NTuple{4, Int64}}}(1:8, ((1, 4, 3, 2), (1, 5, 8, 4), (5, 6, 7, 8), (6, 2, 3, 7), (1, 2, 6, 5), (3, 4, 8, 7)))
 ```
 """
