@@ -5,6 +5,7 @@ using Test: @test
 using SHA: sha1
 
 const tests = [
+    "polyhedron_cube.jl",
     "multiblock.jl",
     "rectilinear.jl",
     "imagedata.jl",
@@ -41,7 +42,7 @@ for test in tests
             write(csio, sha_str)
         else
             # Returns `nothing` if string is not found.
-            @test findfirst(sha_str, checksum_list) != nothing
+            @test findfirst(sha_str, checksum_list) !== nothing
         end
     end
     println()

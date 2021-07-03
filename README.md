@@ -293,6 +293,46 @@ Finally, close and save the file:
 outfiles = vtk_save(vtkfile)
 ```
 
+## Polyhedron cells
+
+WriteVTK also supports the creation of unstructured VTK files containing [polyhedron cells](https://vtk.org/Wiki/VTK/Polyhedron_Support).
+The specificity of polyhedron cells is that they require the specification not only of a connectivity vector, but also of a list of faces constituting the polyhedron.
+To specify a polyhedron cell, instead of using the `MeshCell` type, one should create an instance of `VTKPolyhedron`.
+
+The following simple example creates a cube as a polyhedron cell (see also `test/polyhedron_cube.jl`):
+
+```julia
+# Vertices of the cube
+points = permutedims(Float32[
+    -1 -1 -1;
+     1 -1 -1;
+     1  1 -1;
+    -1  1 -1;
+    -1 -1  1;
+     1 -1  1;
+     1  1  1;
+    -1  1  1;
+])
+
+# Create a single polyhedron cell describing the cube
+cells = [
+    VTKPolyhedron(
+        1:8,           # connectivity vector
+        (1, 4, 3, 2),  # face 1
+        (1, 5, 8, 4),  # face 2
+        (5, 6, 7, 8),  # etc...
+        (6, 2, 3, 7),
+        (1, 2, 6, 5),
+        (3, 4, 8, 7),
+    ),
+]
+
+# Finally, create a simple VTK file
+vtk_grid("polyhedron_cube", points, cells; compress = false) do vtk
+    # one can add point and cell data here...
+end
+```
+
 ## Polygonal data
 
 Polygonal datasets are a special type of unstructured grids, in which the cell

@@ -1,8 +1,20 @@
+"""
+    AbstractMeshCell
+
+Abstract type specifying a VTK cell.
+"""
+abstract type AbstractMeshCell end
+
+Base.eltype(::Type{<:AbstractMeshCell}) = VTKCellTypes.VTKCellType
+
+# By default, cells are attached to unstructured grids.
+grid_type(::Type{<:AbstractMeshCell}) = VTKUnstructuredGrid()
+
 const Connectivity{T} =
     Union{AbstractVector{T}, NTuple{N,T} where N} where {T <: Integer}
 
 """
-    MeshCell
+    MeshCell <: AbstractMeshCell
 
 Single cell element in unstructured or polygonal grid.
 
@@ -12,7 +24,7 @@ grid defining this cell.
 
 ---
 
-    MeshCell(cell_type, connectivity::AbstractVector)
+    MeshCell(cell_type, connectivity)
 
 Define a single cell element of an unstructured grid.
 
@@ -23,19 +35,19 @@ hexaedron, ...):
 module;
 - cell types for polygonal datasets are defined in the [`PolyData`](@ref) module.
 
-The `connectivity` argument is a vector containing the indices of the points
-passed to [`vtk_grid`](@ref) which define this cell.
+The `connectivity` argument is a vector or tuple containing the indices of the
+points passed to [`vtk_grid`](@ref) which define this cell.
 
 # Example
 
 Define a triangular cell passing by points with indices `[3, 5, 42]`.
 
 ```jldoctest
-julia> cell = MeshCell(VTKCellTypes.VTK_TRIANGLE, [3, 5, 42])
-MeshCell{VTKCellType, Vector{Int64}}(VTKCellType("VTK_TRIANGLE", 0x05, 3), [3, 5, 42])
+julia> cell = MeshCell(VTKCellTypes.VTK_TRIANGLE, (3, 5, 42))
+MeshCell{VTKCellType, Tuple{Int64, Int64, Int64}}(VTKCellType("VTK_TRIANGLE", 0x05, 3), (3, 5, 42))
 ```
 """
-struct MeshCell{CellType, V <: Connectivity}
+struct MeshCell{CellType, V <: Connectivity} <: AbstractMeshCell
     ctype::CellType  # cell type identifier (see VTKCellTypes.jl)
     connectivity::V  # indices of points (one-based, following the convention in Julia)
     function MeshCell(ctype, conn)
@@ -48,11 +60,7 @@ struct MeshCell{CellType, V <: Connectivity}
     end
 end
 
-Base.eltype(::Type{<:MeshCell}) = VTKCellTypes.VTKCellType
 cell_type(cell::MeshCell) = cell.ctype
-
-# By default, MeshCell are attached to unstructured grids.
-grid_type(::Type{<:MeshCell}) = VTKUnstructuredGrid()
 
 function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
                     with_types::Val=Val(true))
@@ -100,14 +108,42 @@ function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
     xnode = new_child(xml_piece, xml_name)
     data_to_xml(vtk, xnode, conn, "connectivity")
     data_to_xml(vtk, xnode, offsets, "offsets")
+
     if write_types
         data_to_xml(vtk, xnode, types, "types")
     end
 
+    maybe_write_faces(vtk, xnode, cells)
+
     vtk
 end
 
-const CellVector = AbstractVector{<:MeshCell}
+# Write cell face information if needed.
+# This will be the case if there are polyhedron cells (VTK_POLYHEDRON).
+function maybe_write_faces(vtk, xnode, cells)
+    offset = 0
+    data_faces = Int32[]
+    data_offsets = Int32[]
+
+    for cell in cells
+        ndata = process_faces!(data_faces, cell, offset)
+        ndata === nothing && continue
+        offset += ndata
+        push!(data_offsets, offset)
+    end
+
+    if offset > 0
+        data_to_xml(vtk, xnode, data_faces, "faces")
+        data_to_xml(vtk, xnode, data_offsets, "faceoffsets")
+    end
+
+    nothing
+end
+
+# Regular MeshCells don't have faces.
+process_faces!(data, ::MeshCell, etc...) = nothing
+
+const CellVector = AbstractVector{<:AbstractMeshCell}
 
 # Possible specifications for unstructured points.
 const UnstructuredCoords = Union{
