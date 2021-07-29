@@ -1,0 +1,14 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Polanco
+    given-names: Juan Ignacio
+    affiliation: Univ Lyon, CNRS, École Centrale de Lyon, LMFA
+    orcid: https://orcid.org/0000-0001-7705-753X
+    website: https://jipolanco.gitlab.io
+title: 'WriteVTK.jl: a Julia package for writing VTK XML files'
+version: 1.10.1
+doi: 10.5281/zenodo.3722891
+date-released: 2021-07-04
+repository-code: https://github.com/jipolanco/WriteVTK.jl
+license: MIT
