@@ -1,7 +1,7 @@
 # Create unstructured grid VTK file.
 
 using WriteVTK
-using StaticArrays
+using StaticArrays: SVector, MVector
 
 using Test
 

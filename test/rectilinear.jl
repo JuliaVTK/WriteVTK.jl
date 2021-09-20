@@ -1,8 +1,7 @@
-#!/usr/bin/env julia
-
 # Create rectilinear grid VTK file.
 
 using WriteVTK
+using StaticArrays: SVector
 
 using Test
 
@@ -27,10 +26,11 @@ function main()
         [y[j] = sqrt(j/Nj) for j = 1:Nj]
         [z[k] = k/Nk for k = 1:Nk]
 
-        # Create some scalar and vectorial data.
+        # Create some scalar and vector data.
         p = zeros(FloatType, Ni, Nj, Nk)
         q = zeros(FloatType, Ni, Nj, Nk)
         vec = zeros(FloatType, 3, Ni, Nj, Nk)
+        vs = zeros(SVector{3, FloatType}, Ni, Nj, Nk)  # this is an alternative way of specifying a vector dataset
 
         for k = 1:Nk, j = 1:Nj, i = 1:Ni
             p[i, j, k] = i*i + k
@@ -38,6 +38,7 @@ function main()
             vec[1, i, j, k] = i
             vec[2, i, j, k] = j
             vec[3, i, j, k] = k
+            vs[i, j, k] = (i, j, k)
         end
 
         # Create some scalar data at grid cells.
@@ -65,8 +66,7 @@ function main()
             if dim == 2
                 vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", x, y; extent=ext)
             elseif dim == 3
-                vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", x, y, z;
-                               extent=ext)
+                vtk = vtk_grid(vtk_filename_noext*"_$(dim)D", x, y, z; extent=ext)
             end
 
             # Add data.
@@ -77,6 +77,7 @@ function main()
             @test_throws DimensionMismatch WriteVTK.num_components(
                 vec, vtk, VTKCellData())
             vtk["myVector", VTKPointData()] = vec
+            vtk["mySVector", VTKPointData()] = vs
 
             vtk["myCellData"] = cdata
 
