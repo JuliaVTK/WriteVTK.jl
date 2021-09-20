@@ -1,7 +1,7 @@
 # Create rectilinear grid VTK file.
 
 using WriteVTK
-using StaticArrays: SVector
+using StaticArrays: SVector, SMatrix
 
 using Test
 
@@ -32,13 +32,27 @@ function main()
         vec = zeros(FloatType, 3, Ni, Nj, Nk)
         vs = zeros(SVector{3, FloatType}, Ni, Nj, Nk)  # this is an alternative way of specifying a vector dataset
 
+        # 3×3 tensors
+        tensor = zeros(FloatType, 3, 3, Ni, Nj, Nk)
+        ts = zeros(SMatrix{3, 3, FloatType, 9}, Ni, Nj, Nk)
+
         for k = 1:Nk, j = 1:Nj, i = 1:Ni
             p[i, j, k] = i*i + k
             q[i, j, k] = k*sqrt(j)
+
             vec[1, i, j, k] = i
             vec[2, i, j, k] = j
             vec[3, i, j, k] = k
             vs[i, j, k] = (i, j, k)
+
+            A = similar(eltype(ts))
+            c = i - 2j + 3k
+            for I ∈ CartesianIndices(A)
+                v = (10 + I[1] - I[2]) * c
+                A[I] = v
+                tensor[I, i, j, k] = v
+            end
+            ts[i, j, k] = A
         end
 
         # Create some scalar data at grid cells.
@@ -78,6 +92,9 @@ function main()
                 vec, vtk, VTKCellData())
             vtk["myVector", VTKPointData()] = vec
             vtk["mySVector", VTKPointData()] = vs
+
+            vtk["tensor"] = tensor
+            vtk["tensor.SMatrix"] = ts
 
             vtk["myCellData"] = cdata
 
