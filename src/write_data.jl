@@ -35,15 +35,16 @@ _type_length(::Type{A}) where {A <: AbstractArray} = length(A)  # here, `A` may 
 # However, if this is an array of StaticArrays (`T <: SArray`), then the length
 # is the number of elements in each SArray.
 _eltype_length(::AbstractArray{T}) where {T} = _type_length(T)
+_eltype_length(::Any) = 1
 
 num_components(data::ArrayOrValue, num_points_or_cells) =
-    num_components(length(data), num_points_or_cells)
+    num_components(length(data), num_points_or_cells) * _eltype_length(data)
 
 num_components(data::AbstractArray, vtk, ::VTKPointData) =
-    num_components(data, vtk.Npts) * _eltype_length(data)
+    num_components(data, vtk.Npts)
 
 num_components(data::AbstractArray, vtk, ::VTKCellData) =
-    num_components(data, vtk.Ncls) * _eltype_length(data)
+    num_components(data, vtk.Ncls)
 
 num_components(data::AbstractArray, vtk, ::VTKFieldData) =
     _eltype_length(data)
