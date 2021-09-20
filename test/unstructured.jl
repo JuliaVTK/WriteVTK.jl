@@ -1,8 +1,7 @@
-#!/usr/bin/env julia
-
 # Create unstructured grid VTK file.
 
 using WriteVTK
+using StaticArrays: SVector, MVector
 
 using Test
 
@@ -41,7 +40,7 @@ function mesh_data(::Val{3})
 
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
-        inds = Array{Int32}(undef, 8)
+        inds = MVector{8, Int32}(undef)
         inds[1] = indices[i-1, j-1, k-1]
         inds[2] = indices[i  , j-1, k-1]
         inds[3] = indices[i  , j  , k-1]
@@ -52,7 +51,7 @@ function mesh_data(::Val{3})
         inds[8] = indices[i-1, j  , k  ]
 
         # Define cell.
-        c = MeshCell(celltype, inds)
+        c = MeshCell(celltype, SVector(inds))
 
         push!(cells, c)
         push!(cdata, i*j*k)
@@ -167,11 +166,25 @@ function main()
 
             # This should give the exact same file.
             xyz = ntuple(d -> view(pts, d, :), Val(dim))
-            outfile = vtk_grid(fname * "_bis", xyz..., cells, compress=3) do vtk
+            outfile = vtk_grid(fname * "_tuple", xyz..., cells, compress=3) do vtk
                 vtk["my_point_data"] = pdata
                 vtk["my_cell_data"] = cdata
             end
             append!(outfiles, outfile)
+
+            # Similar using arrays of SVector's
+            let
+                T = eltype(pts)
+                xs = similar(xyz[1], SVector{3, T})
+                for n ∈ eachindex(xs)
+                    xs[n] = ntuple(i -> i ≤ dim ? xyz[i][n] : zero(T), 3)
+                end
+                outfile = vtk_grid(fname * "_SVector", xs, cells, compress=3) do vtk
+                    vtk["my_point_data"] = pdata
+                    vtk["my_cell_data"] = cdata
+                end
+                append!(outfiles, outfile)
+            end
         end
     end
 

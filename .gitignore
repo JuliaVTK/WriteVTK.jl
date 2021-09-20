@@ -1,4 +1,4 @@
-/Manifest.toml
+Manifest.toml
 
 *.jl.cov
 *.jl.mem
@@ -11,6 +11,3 @@
 *.vti
 *.vtm
 *.pvd
-
-# Exuberant Ctags
-tags

@@ -148,6 +148,7 @@ const CellVector = AbstractVector{<:AbstractMeshCell}
 # Possible specifications for unstructured points.
 const UnstructuredCoords = Union{
     AbstractMatrix,  # array with dimensions (3, Np)
+    AbstractVector,  # e.g. vector of SVector{3}, with length Np
     Tuple{Vararg{AbstractVector{T},3}} where T,  # tuple of 3 vectors of length Np
 }
 
@@ -156,6 +157,13 @@ function num_points(::UnstructuredVTKDataset, x::AbstractMatrix)
         throw(DimensionMismatch("first dimension must have length 3"))
     end
     size(x, 2)
+end
+
+function num_points(::UnstructuredVTKDataset, x::AbstractVector)
+    if _eltype_length(x) != 3
+        throw(DimensionMismatch("element type of `x` must have length 3"))
+    end
+    length(x)
 end
 
 function num_points(::UnstructuredVTKDataset, x::Tuple)
@@ -245,9 +253,16 @@ end
 
 # 1D version
 function vtk_grid(filename::AbstractString, x::AbstractVector{T},
-                  cells::CellVector, args...; kwargs...) where {T}
+                  cells::CellVector, args...; kwargs...) where {T <: Number}
     N = length(x)
     vtk_grid(filename, x, Zeros{T}(N), Zeros{T}(N), cells, args...; kwargs...)
+end
+
+# This is typically the case when T = SVector{3}
+function vtk_grid(filename::AbstractString, xs::AbstractVector,
+                  cells::CellVector, args...; kwargs...)
+    gtype = grid_type(eltype(cells))
+    vtk_grid(gtype, filename, xs, cells, args...; kwargs...)
 end
 
 # Variant with 4-D Array (for "pseudo-unstructured" datasets, i.e., those that
