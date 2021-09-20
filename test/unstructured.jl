@@ -174,9 +174,10 @@ function main()
 
             # Similar using arrays of SVector's
             let
-                xs = similar(xyz[1], SVector{3, eltype(pts)})
+                T = eltype(pts)
+                xs = similar(xyz[1], SVector{3, T})
                 for n ∈ eachindex(xs)
-                    xs[n] = ntuple(i -> i ≤ dim ? xyz[i][n] : 0, 3)
+                    xs[n] = ntuple(i -> i ≤ dim ? xyz[i][n] : zero(T), 3)
                 end
                 outfile = vtk_grid(fname * "_SVector", xs, cells, compress=3) do vtk
                     vtk["my_point_data"] = pdata
