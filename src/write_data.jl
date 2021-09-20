@@ -16,25 +16,40 @@ node_type(::VTKCellData) = "CellData"
 node_type(::VTKFieldData) = "FieldData"
 
 const ArrayOrValue = Union{AbstractArray, Number, String}
-const NumericArray = AbstractArray{T} where {T <: Number}
 const ListOfStrings = Union{Tuple{Vararg{String}}, AbstractArray{String}}
 
 # Determine number of components of input data.
-function num_components(data::ArrayOrValue, num_points_or_cells)
-    Nc = div(length(data), num_points_or_cells)
-    if Nc * num_points_or_cells != length(data)
+function num_components(Ndata::Integer, num_points_or_cells)
+    Nc = div(Ndata, num_points_or_cells)
+    if Nc * num_points_or_cells != Ndata
         throw(DimensionMismatch("incorrect dimensions of input array."))
     end
     Nc
 end
 
-num_components(data::NumericArray, vtk, ::VTKPointData) =
-    num_components(data, vtk.Npts)
-num_components(data::NumericArray, vtk, ::VTKCellData) =
-    num_components(data, vtk.Ncls)
-num_components(data::NumericArray, vtk, ::VTKFieldData) = 1
+_type_length(::Type{<:Union{Number, String}}) = 1
+_type_length(::Type{A}) where {A <: AbstractArray} = length(A)  # here, `A` may be a StaticArray subtype
+
+# Returns the "length" of a single element of the array.
+# This is 1 in the common case where `T <: Number`.
+# However, if this is an array of StaticArrays (`T <: SArray`), then the length
+# is the number of elements in each SArray.
+_eltype_length(::AbstractArray{T}) where {T} = _type_length(T)
+
+num_components(data::ArrayOrValue, num_points_or_cells) =
+    num_components(length(data), num_points_or_cells)
+
+num_components(data::AbstractArray, vtk, ::VTKPointData) =
+    num_components(data, vtk.Npts) * _eltype_length(data)
+
+num_components(data::AbstractArray, vtk, ::VTKCellData) =
+    num_components(data, vtk.Ncls) * _eltype_length(data)
+
+num_components(data::AbstractArray, vtk, ::VTKFieldData) =
+    _eltype_length(data)
+
 num_components(::Union{Number,String}, args...) = 1
-num_components(data::ListOfStrings, args...) = 1
+num_components(data::Tuple{Vararg{String}}, args...) = 1
 num_components(data::Tuple, args...) = length(data)
 
 # This is for the NumberOfTuples attribute of FieldData.
@@ -80,7 +95,8 @@ end
 datatype_str(::Type{T}) where T =
     throw(ArgumentError("data type not supported by VTK: $T"))
 datatype_str(v) = datatype_str(typeof(v))
-datatype_str(::AbstractArray{T}) where T = datatype_str(T)
+datatype_str(::Type{A}) where {A <: AbstractArray} = datatype_str(eltype(A))
+datatype_str(u::AbstractArray) = datatype_str(eltype(u))
 datatype_str(::ListOfStrings) = datatype_str(String)
 
 function datatype_str(t::Tuple)
