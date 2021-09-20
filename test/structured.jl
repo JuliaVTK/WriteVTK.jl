@@ -1,8 +1,8 @@
-#!/usr/bin/env julia
-
 # Create structured grid VTK file.
 
 using WriteVTK
+using StaticArrays: SVector
+
 const FloatType = Float32
 const vtk_filename_noext = "structured"
 
@@ -36,6 +36,7 @@ function main()
             # Create some scalar and vectorial data.
             q = zeros(FloatType, Ni, Nj, Nk)
             vec = zeros(FloatType, 3, Ni, Nj, Nk)
+            vs = zeros(SVector{3, FloatType}, Ni, Nj, Nk)  # equivalent to `vec`
 
             # Just to test support for subarrays:
             p = zeros(FloatType, 2Ni, 2Nj, 2Nk)
@@ -47,6 +48,7 @@ function main()
                 vec[1, i, j, k] = i
                 vec[2, i, j, k] = j
                 vec[3, i, j, k] = k
+                vs[i, j, k] = (i, j, k)
             end
 
             # Create some scalar data at grid cells.
@@ -85,8 +87,6 @@ function main()
                 if dim == 3
                     vtk = single_array ? vtk_grid(fname, xyz; extent=ext) :
                                          vtk_grid(fname, x, y, z; extent=ext)
-                    # Equivalent (and more efficient!):
-                    # vtk = vtk_grid(fname, xyz; extent=ext)
                 else
                     vtk = single_array ? vtk_grid(fname, xyz; extent=ext) :
                                          vtk_grid(fname, x, y; extent=ext)
@@ -103,6 +103,9 @@ function main()
                                     vec[2, :, :, :],
                                     vec[3, :, :, :])
                 vtk["myVector.tuple"] = vec_tuple
+
+                # Test writing vector data as array of SVector's.
+                vtk["myVector.SVector"] = vs
 
                 # Save and close vtk file.
                 append!(outfiles, vtk_save(vtk))
