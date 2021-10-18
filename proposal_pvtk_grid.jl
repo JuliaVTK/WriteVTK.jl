@@ -307,7 +307,7 @@ pvtk["Normals",VTKCellData()] = (Float64,3)
 vtk_save(pvtk)
 
 
-# Scenario 1
+# Scenario 2
 # Parallel Dataset XML tree created by mirroring sequential dataset
 
 # Suppose that the mesh is made of 5 points:
