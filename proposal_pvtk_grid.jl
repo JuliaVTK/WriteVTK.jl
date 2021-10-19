@@ -1,18 +1,36 @@
 using WriteVTK
 using LightXML
 
+struct PVTKLayout
+  part::Int
+  nparts::Int
+  ismain::Bool
+end
+# By default, we assume that part 1 is the main part
+PVTKLayout(part,nparts) = PVTKLayout(part,nparts,part==1)
+
+
 struct ParallelDatasetFile <: WriteVTK.VTKFile
+  layout::PVTKLayout
   xdoc::XMLDocument
-  seq_vtk_data_set::WriteVTK.AbstractVTKDataset
+  dataset::WriteVTK.DatasetFile
   path::AbstractString
-  num_pieces::Integer
-  ParallelDatasetFile(xdoc,seq_data_set::WriteVTK.AbstractVTKDataset,path::AbstractString,num_pieces::Integer)=new(xdoc,seq_data_set,path,num_pieces)
+  function ParallelDatasetFile(layout::PVTKLayout,
+                               xdoc::XMLDocument,
+                               dataset::WriteVTK.DatasetFile,
+                               path::AbstractString)
+    new(layout,xdoc,dataset,path)
+  end
 end
 
 function WriteVTK.vtk_save(vtk::ParallelDatasetFile)
   if isopen(vtk)
-      save_file(vtk.xdoc, vtk.path)
-      close(vtk)
+    _pvtk_grid_body(vtk)
+    if vtk.layout.ismain
+       save_file(vtk.xdoc, vtk.path)
+    end
+    vtk_save(vtk.dataset)
+    close(vtk)
   end
   return [vtk.path] :: Vector{String}
 end
@@ -82,7 +100,8 @@ function add_ppoint_data!(pdataset::ParallelDatasetFile,
                           type::Type{<:WriteVTK.VTKDataType}=Float64,
                           Nc::Integer=1)
   xroot=root(pdataset.xdoc)
-  grid_xml_node=find_element(xroot,parallel_xml_name(pdataset.seq_vtk_data_set))
+  dtype = xml_name_to_VTK_Dataset(pdataset.dataset.grid_type)
+  grid_xml_node=find_element(xroot,parallel_xml_name(dtype))
   @assert grid_xml_node != nothing
   grid_xml_node_ppoint=find_element(grid_xml_node,"PPointData")
   if (grid_xml_node_ppoint==nothing)
@@ -96,7 +115,8 @@ function add_pcell_data!(pdataset::ParallelDatasetFile,
                          type::Type{<:WriteVTK.VTKDataType}=Float64,
                          Nc=nothing)
   xroot=root(pdataset.xdoc)
-  grid_xml_node=find_element(xroot,parallel_xml_name(pdataset.seq_vtk_data_set))
+  dtype = xml_name_to_VTK_Dataset(pdataset.dataset.grid_type)
+  grid_xml_node=find_element(xroot,parallel_xml_name(dtype))
   @assert grid_xml_node != nothing
   grid_xml_node_pcell=find_element(grid_xml_node,"PCellData")
   if (grid_xml_node_pcell==nothing)
@@ -105,69 +125,15 @@ function add_pcell_data!(pdataset::ParallelDatasetFile,
   new_pdata_array(grid_xml_node_pcell,type,name,Nc)
 end
 
-function Base.setindex!(vtk::ParallelDatasetFile,
-                        type::Type{<:WriteVTK.VTKDataType},
+function Base.setindex!(pvtk::ParallelDatasetFile,
+                        data,
                         name::AbstractString,
                         loc::WriteVTK.AbstractFieldData)
-
-  Nc=nothing
-  if isa(loc,VTKPointData)
-    Nc=1
-  end
-  parallel_add_field_data!(vtk,name,loc,type=type,Nc=Nc)
+  pvtk.dataset[name,loc]=data
 end
 
-function Base.setindex!(vtk::ParallelDatasetFile,
-               Nc::Integer,
-               name::AbstractString,
-               loc::WriteVTK.AbstractFieldData)
-  parallel_add_field_data!(vtk,name,loc,Nc=Nc)
-end
-
-function Base.setindex!(vtk::ParallelDatasetFile,
-               type_Nc::Tuple{DataType,Integer},
-               name::AbstractString,
-               loc::WriteVTK.AbstractFieldData)
-  parallel_add_field_data!(vtk,name,loc,type=type_Nc[1],Nc=type_Nc[2])
-end
-
-function parallel_add_field_data!(
-   vtk::ParallelDatasetFile,
-   name::AbstractString,
-   loc::WriteVTK.AbstractFieldData;
-   type::Type{<:WriteVTK.VTKDataType}=Float64,
-   Nc=nothing)
-
-   @assert isa(loc,VTKPointData) || isa(loc,VTKCellData)
-
-   if isa(loc,VTKPointData)
-     @assert isa(Nc,Integer)
-     add_ppoint_data!(vtk,name,type=type,Nc=Nc)
-   else
-     add_pcell_data!(vtk,name,type=type,Nc=Nc)
-   end
-end
-
-function pvtk_grid(
-  dtype::WriteVTK.VTKUnstructuredGrid,
-  filename::AbstractString,
-  num_pieces::Integer;
-  points_type::Type{<:WriteVTK.VTKDataType}=Float64,
-  ghost_level=0)
-
-  pvtu  = XMLDocument()
-  xroot = parallel_xml_write_header(pvtu,dtype)
-  pextension = parallel_file_extension(dtype)
-  pfilename = WriteVTK.add_extension(filename,pextension)
-
-  # Generate parallel grid node
-  grid_xml_node=new_child(xroot,parallel_xml_name(dtype))
-  set_attribute(grid_xml_node, "GhostLevel", ghost_level)
-  prefix=get_path(pfilename)
-  extension=WriteVTK.file_extension(dtype)
-  add_pieces!(grid_xml_node,prefix,extension,num_pieces)
-  add_ppoints!(grid_xml_node,type=points_type)
-  ParallelDatasetFile(pvtu,dtype,pfilename,num_pieces)
+function Base.setindex!(vtk::ParallelDatasetFile, data, name::AbstractString)
+  pvtk.dataset[name]=data
 end
 
 function get_dataset_extension(dataset::WriteVTK.DatasetFile)
@@ -233,13 +199,22 @@ const string_to_VTKDataType = Dict("Int8"=>Int8,
                                    "Float64"=>Float64,
                                    "String"=>String)
 
+function pvtk_grid(layout::PVTKLayout,args...;ghost_level=0,kwargs...)
+  filename=args[1]
+  path, ext = splitext(filename)
+  bname=basename(path)
+  path = mkpath(path)
+  filename=joinpath(path,bname*string(layout.part)*ext)
+  vtk=vtk_grid((filename,args[2:end]...)...;kwargs...)
+  _pvtk_grid_header(layout,vtk,path;ghost_level=ghost_level)
+end
+
 """
-  Creates a Parallel VTK data set by mirroring the XML tree
-  corresponding to an already set up Sequential VTK data set
 """
-function pvtk_grid(dataset::WriteVTK.DatasetFile,
-                   filename::AbstractString,
-                   num_pieces::Integer;
+function _pvtk_grid_header(
+                   layout::PVTKLayout,
+                   dataset::WriteVTK.DatasetFile,
+                   filename::AbstractString;
                    ghost_level=0)
 
     pvtx  = XMLDocument()
@@ -250,19 +225,24 @@ function pvtk_grid(dataset::WriteVTK.DatasetFile,
     grid_xml_node=new_child(xroot,"P"*dataset.grid_type)
     set_attribute(grid_xml_node, "GhostLevel", string(ghost_level))
 
-    prefix=get_path(filename)
+    prefix=joinpath(filename,basename(filename))
     extension=WriteVTK.file_extension(dtype)
-    add_pieces!(grid_xml_node,prefix,extension,num_pieces)
+    add_pieces!(grid_xml_node,prefix,extension,layout.nparts)
 
     pextension = parallel_file_extension(dtype)
     pfilename = WriteVTK.add_extension(filename,pextension)
-    pdataset=ParallelDatasetFile(pvtx,dtype,pfilename,num_pieces)
+    pdataset=ParallelDatasetFile(layout,pvtx,dataset,pfilename)
 
     # Generate PPoints
     points=get_dataset_xml_grid_element(dataset,"Points")
     type=get_child_attribute(points,1,"type")
     add_ppoints!(grid_xml_node,type=string_to_VTKDataType[type])
 
+    pdataset
+  end
+
+function _pvtk_grid_body(pdataset::ParallelDatasetFile)
+    dataset=pdataset.dataset
     # Generate PPointData
     pointdata=get_dataset_xml_grid_element(dataset,"PointData")
     if pointdata != nothing
@@ -297,26 +277,14 @@ function pvtk_grid(dataset::WriteVTK.DatasetFile,
     pdataset
   end
 
-# Scenario 1
-# Parallel Dataset XML tree created from scratch
-pvtk=pvtk_grid(WriteVTK.VTKUnstructuredGrid(),"simulation",10)
-pvtk["Velocity",VTKPointData()] = (Float32,3)
-pvtk["Pressure",VTKPointData()] = (Float64,1)
-pvtk["Processor",VTKCellData()] = Int64
-pvtk["Normals",VTKCellData()] = (Float64,3)
-vtk_save(pvtk)
-
-
-# Scenario 1
-# Parallel Dataset XML tree created by mirroring sequential dataset
-
 # Suppose that the mesh is made of 5 points:
 cells = [MeshCell(VTKCellTypes.VTK_TRIANGLE, [1, 4, 2]),
          MeshCell(VTKCellTypes.VTK_QUAD, [2, 4, 3, 5])]
 x=rand(5)
 y=rand(5)
-vtkfile = vtk_grid("my_vtk_file", x, y, cells) # 2D
-vtkfile["Pressure"] = x
-vtkfile["Processor"] = rand(2)
-pvtk=pvtk_grid(vtkfile,"simulation_seq_data_set",5)
+
+layout=PVTKLayout(1,1)
+pvtk = pvtk_grid(layout,"simulation", x, y, cells) # 2D
+pvtk["Pressure"] = x
+pvtk["Processor"] = rand(2)
 vtk_save(pvtk)
