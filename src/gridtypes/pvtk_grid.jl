@@ -1,29 +1,47 @@
-struct PVTKLayout
-  part::Int
-  nparts::Int
-  ismain::Bool
-end
-# By default, we assume that part 1 is the main part
-PVTKLayout(part,nparts) = PVTKLayout(part,nparts,part==1)
-
 
 struct ParallelDatasetFile <: VTKFile
-  layout::PVTKLayout
-  xdoc::XMLDocument
-  dataset::DatasetFile
-  path::AbstractString
-  function ParallelDatasetFile(layout::PVTKLayout,
-                               xdoc::XMLDocument,
-                               dataset::DatasetFile,
-                               path::AbstractString)
-    new(layout,xdoc,dataset,path)
-  end
+    pvtkargs::Dict
+    xdoc::XMLDocument
+    dataset::DatasetFile
+    path::AbstractString
+    function ParallelDatasetFile(
+        pvtkargs::Dict,
+        xdoc::XMLDocument,
+        dataset::DatasetFile,
+        path::AbstractString)
+        new(pvtkargs,xdoc,dataset,path)
+    end
+end
+
+function _default_pvtkargs(pvtkargs)
+    mandatory = [:part,:nparts]
+    optional = [:ismain,:ghost_level]
+    allkeys = vcat(mandatory,optional)
+
+    d = Dict{Symbol,Any}(pvtkargs)
+    for k in keys(d)
+        if !(k in allkeys)
+            throw(ArgumentError("$k is not a valid key in pvtkargs."))
+        end
+    end
+    for k in mandatory
+        if !(haskey(d,k))
+            throw(ArgumentError("$k is a mandatory key in pvtkargs."))
+        end
+    end
+    if ! haskey(d,:ismain)
+      d[:ismain] = (d[:part] == 1)
+    end
+    if ! haskey(d,:ghost_level)
+        d[:ghost_level] = 0
+    end
+    d
 end
 
 function vtk_save(vtk::ParallelDatasetFile)
   if isopen(vtk)
     _pvtk_grid_body(vtk)
-    if vtk.layout.ismain
+    if vtk.pvtkargs[:ismain]
        save_file(vtk.xdoc, vtk.path)
     end
     vtk_save(vtk.dataset)
@@ -196,23 +214,46 @@ const string_to_VTKDataType = Dict("Int8"=>Int8,
                                    "Float64"=>Float64,
                                    "String"=>String)
 
-function pvtk_grid(layout::PVTKLayout,args...;ghost_level=0,kwargs...)
-  filename=args[1]
-  path, ext = splitext(filename)
-  bname=basename(path)
-  path = mkpath(path)
-  filename=joinpath(path,bname*string(layout.part)*ext)
-  vtk=vtk_grid((filename,args[2:end]...)...;kwargs...)
-  _pvtk_grid_header(layout,vtk,path;ghost_level=ghost_level)
+"""
+    pvtk_grid(args...;pvtkargs,kwargs...)
+
+Return a handler representing a parallel vtk file, which can be
+eventually written to file with `vtk_save`.
+
+Positional and keyword arguments in `args` and `kwargs`
+are passed to `vtk_grid` verbatim (except file names that are augmented with the 
+corresponding part id).
+
+The extra keyword argument `pvtkargs` contains
+extra options (as a `Dict{Symbol,Any}` or a `Vector{Pair{Symbol,Any}}`)
+that only apply for parallel vtk file formats.
+
+Mandatory keys in `pvtkargs` are:
+
+- `:part` current (1-based) part id
+- `:nparts` total number of parts
+
+Default key/value pairs in `pvtkargs` are
+- `:ismain=>part==1` True if the current part id `part` is the main (the only one that will write the .pvtk file).
+- `:ghost_level=>0` Ghost level.
+"""
+function pvtk_grid(filename::AbstractString,args...;pvtkargs,kwargs...)
+    _pvtkargs = _default_pvtkargs(pvtkargs)
+    path, ext = splitext(filename)
+    bname=basename(path)
+    path = mkpath(path)
+    part = _pvtkargs[:part]
+    nparts = _pvtkargs[:nparts]
+    p = lpad(part,ceil(Int,log10(nparts)),'0')
+    fn=joinpath(path,bname*"_$p"*ext)
+    vtk=vtk_grid(fn,args...;kwargs...)
+    _pvtk_grid_header(_pvtkargs,vtk,path)
 end
 
-"""
-"""
 function _pvtk_grid_header(
-                   layout::PVTKLayout,
-                   dataset::DatasetFile,
-                   filename::AbstractString;
-                   ghost_level=0)
+    pvtkargs::Dict,
+    dataset::DatasetFile,
+    filename::AbstractString)
 
     pvtx  = XMLDocument()
     dtype = xml_name_to_VTK_Dataset(dataset.grid_type)
@@ -220,15 +261,15 @@ function _pvtk_grid_header(
 
     # Generate parallel grid node
     grid_xml_node=new_child(xroot,"P"*dataset.grid_type)
-    set_attribute(grid_xml_node, "GhostLevel", string(ghost_level))
+    set_attribute(grid_xml_node, "GhostLevel", string(pvtkargs[:ghost_level]))
 
     prefix=joinpath(filename,basename(filename))
     extension=file_extension(dtype)
-    add_pieces!(grid_xml_node,prefix,extension,layout.nparts)
+    add_pieces!(grid_xml_node,prefix,extension,pvtkargs[:nparts])
 
     pextension = parallel_file_extension(dtype)
     pfilename = add_extension(filename,pextension)
-    pdataset=ParallelDatasetFile(layout,pvtx,dataset,pfilename)
+    pdataset=ParallelDatasetFile(pvtkargs,pvtx,dataset,pfilename)
 
     # Generate PPoints
     points=get_dataset_xml_grid_element(dataset,"Points")

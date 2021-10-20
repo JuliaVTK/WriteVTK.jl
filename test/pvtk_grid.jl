@@ -7,10 +7,13 @@ function main()
   x=rand(5)
   y=rand(5)
 
-  layout=WriteVTK.PVTKLayout(1,1)
-  @time pvtk = pvtk_grid(layout,"simulation", x, y, cells) # 2D
+  @time pvtk = pvtk_grid(
+    "simulation", x, y, cells;
+    pvtkargs=[:part=>1,:nparts=>1]) # 2D
   pvtk["Pressure"] = x
   pvtk["Processor"] = rand(2)
-  @time vtk_save(pvtk)
+  @time outfiles = vtk_save(pvtk)
+  println("Saved:  ", join(outfiles, "  "))
+  outfiles
 end
 main()

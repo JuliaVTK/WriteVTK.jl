@@ -149,7 +149,7 @@ include("gridtypes/unstructured/polydata.jl")
 include("gridtypes/array.jl")
 
 # Parallel DataSet Formats
-include("pvtk_grid.jl")
+include("gridtypes/pvtk_grid.jl")
 
 # This allows using do-block syntax for generation of VTK files.
 for func in (:vtk_grid, :vtk_multiblock, :paraview_collection,
