@@ -11,6 +11,7 @@ export paraview_collection, collection_add_timestep, paraview_collection_load
 export vtk_write_array
 export VTKPointData, VTKCellData, VTKFieldData
 export PolyData
+export pvtk_grid
 
 import CodecZlib: ZlibCompressorStream
 import TranscodingStreams
@@ -146,6 +147,9 @@ include("gridtypes/unstructured/polyhedron.jl")
 include("gridtypes/unstructured/polydata.jl")
 
 include("gridtypes/array.jl")
+
+# Parallel DataSet Formats
+include("pvtk_grid.jl")
 
 # This allows using do-block syntax for generation of VTK files.
 for func in (:vtk_grid, :vtk_multiblock, :paraview_collection,
