@@ -99,7 +99,8 @@ function add_pieces!(grid_xml_node,
                      num_pieces::Int)
   for i=1:num_pieces
     piece=new_child(grid_xml_node,"Piece")
-    set_attribute(piece,"Source",prefix*string(i)*extension)
+    p = lpad(i,ceil(Int,log10(num_pieces)),'0')
+    set_attribute(piece,"Source",prefix*"_$p"*extension)
   end
   grid_xml_node
 end
