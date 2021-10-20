@@ -24,6 +24,7 @@ visualise time series of VTK files.
 - [Visualising Julia arrays](#visualising-julia-arrays)
 - [Multiblock files](#multiblock-files)
 - [Paraview PVD files](#paraview-data-pvd-file-format)
+- [Parallel file formats](#parallel-file-formats)
 - [Do-block syntax](#do-block-syntax)
 - [Additional options](#additional-options)
 - [Examples](#examples)
@@ -497,27 +498,29 @@ When all the files are added to the `pvd` file, it can be saved using:
 vtk_save(pvd)
 ```
 
-## Parallel file formarts
+## Parallel file formats
 
-The parallel file formats do not actually store any data in the file. Instead, the data is broken into
-pieces, each of which is stored in a serial file, and an extra header file is written that contains pointers
-to the corresponding serial files. The header file extension is the sequantal extension pre-appended with a `p`.
+The parallel file formats do not actually store any data in the file.
+Instead, the data is broken into pieces, each of which is stored in a serial file,
+and an extra header file contains pointers to the corresponding serial files.
+The header file extension is the serial extension pre-appended with a `p`.
 E.g., for serial `vtu` files, the corresponding header extension is `pvtu`.
 
 ### Generating a parallel data file
 
-The parallel header file and the corresponding sequential files are generated using function `pvtk_grid`. Its signature is
+The parallel header file and the corresponding serial files are generated
+using function `pvtk_grid`. Its signature is
 
 ```julia
 pvtk_grid(args...;pvtkargs,kwargs...)
 ```
 which returns a handler representing a parallel vtk file that can be
-eventually written with `vtk_save`. In a MPI job. This will cause each rank
-to write a serial file and just a signle rank (e.g., rank 0) will write the header file.
+eventually written to disk with `vtk_save`. In a MPI job. This will cause each rank
+to write a serial file and just a single rank (e.g., rank 0) will write the header file.
 
 Positional and keyword arguments in `args` and `kwargs`
 are passed to `vtk_grid` verbatim in order to generate the serial files
-(with the exception of file names that are augmented with the 
+(with the exception of file names that are augmented with the
 corresponding part id).
 
 The extra keyword argument `pvtkargs` contains options
@@ -526,14 +529,14 @@ that only apply for parallel vtk file formats.
 
 Mandatory keys in `pvtkargs` are:
 
-- `:part` current (1-based) part id
-- `:nparts` total number of parts
+- `:part` current (1-based) part id (typically MPI rank + 1)
+- `:nparts` total number of parts (typically the MPI communicator size)
 
 Default key/value pairs in `pvtkargs` are
-- `:ismain=>part==1` True if the current part id `part` is the main (the only one that will write the .pvtk file).
+- `:ismain=>part==1` True if the current part id `part` is the main (the only one that will write the header file).
 - `:ghost_level=>0` Ghost level.
 
-⚠️ **Remark:** Only tested for unstructired grid format (`vtu`).
+⚠️ **Remark:** Only tested for unstructured grid format (`vtu`).
 
 ### Example
  
