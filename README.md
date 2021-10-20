@@ -497,6 +497,61 @@ When all the files are added to the `pvd` file, it can be saved using:
 vtk_save(pvd)
 ```
 
+## Parallel file formarts
+
+The parallel file formats do not actually store any data in the file. Instead, the data is broken into
+pieces, each of which is stored in a serial file, and an extra header file is written that contains pointers
+to the corresponding serial files. The header file extension is the sequantal extension pre-appended with a `p`.
+E.g., for serial `vtu` files, the corresponding header extension is `pvtu`.
+
+### Generating a parallel data file
+
+The parallel header file and the corresponding sequential files are generated using function `pvtk_grid`. Its signature is
+
+```julia
+pvtk_grid(args...;pvtkargs,kwargs...)
+```
+which returns a handler representing a parallel vtk file that can be
+eventually written with `vtk_save`. In a MPI job. This will cause each rank
+to write a serial file and just a signle rank (e.g., rank 0) will write the header file.
+
+Positional and keyword arguments in `args` and `kwargs`
+are passed to `vtk_grid` verbatim in order to generate the serial files
+(with the exception of file names that are augmented with the 
+corresponding part id).
+
+The extra keyword argument `pvtkargs` contains options
+(as a `Dict{Symbol,Any}` or a `Vector{Pair{Symbol,Any}}`)
+that only apply for parallel vtk file formats.
+
+Mandatory keys in `pvtkargs` are:
+
+- `:part` current (1-based) part id
+- `:nparts` total number of parts
+
+Default key/value pairs in `pvtkargs` are
+- `:ismain=>part==1` True if the current part id `part` is the main (the only one that will write the .pvtk file).
+- `:ghost_level=>0` Ghost level.
+
+⚠️ **Remark:** Only tested for unstructired grid format (`vtu`).
+
+### Example
+ 
+ This generates the header file and a single serial file
+ ```julia
+  cells = [
+    MeshCell(VTKCellTypes.VTK_TRIANGLE, [1, 4, 2]),
+    MeshCell(VTKCellTypes.VTK_QUAD, [2, 4, 3, 5])
+  ]
+  x=rand(5)
+  y=rand(5)
+
+  pvtk = pvtk_grid("simulation",x,y,cells;pvtkargs=[:part=>1,:nparts=>1])
+  pvtk["Pressure"] = x
+  pvtk["Processor"] = rand(2)
+  outfiles = vtk_save(pvtk)
+ ```
+
 ## Do-block syntax
 
 [Do-block syntax](https://docs.julialang.org/en/latest/manual/functions/#Do-Block-Syntax-for-Function-Arguments-1)
