@@ -515,7 +515,7 @@ using function `pvtk_grid`. Its signature is
 pvtk_grid(args...;pvtkargs,kwargs...)
 ```
 which returns a handler representing a parallel vtk file that can be
-eventually written to disk with `vtk_save`. In a MPI job. This will cause each rank
+eventually written to disk with `vtk_save`. In a MPI job, This will cause each rank
 to write a serial file and just a single rank (e.g., rank 0) will write the header file.
 
 Positional and keyword arguments in `args` and `kwargs`
@@ -533,8 +533,8 @@ Mandatory keys in `pvtkargs` are:
 - `:nparts` total number of parts (typically the MPI communicator size)
 
 Default key/value pairs in `pvtkargs` are
-- `:ismain=>part==1` True if the current part id `part` is the main (the only one that will write the header file).
-- `:ghost_level=>0` Ghost level.
+- `:ismain=>part==1` True if the current part id `part` is the main (the only one that will write the header file)
+- `:ghost_level=>0` Ghost level
 
 ⚠️ **Remark:** Only tested for unstructured grid format (`vtu`).
 
