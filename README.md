@@ -502,9 +502,9 @@ vtk_save(pvd)
 
 The parallel file formats do not actually store any data in the file.
 Instead, the data is broken into pieces, each of which is stored in a serial file,
-and an extra header file contains pointers to the corresponding serial files.
+and an extra header file is created containing pointers to the corresponding serial files.
 The header file extension is the serial extension pre-appended with a `p`.
-E.g., for serial `vtu` files, the corresponding header extension is `pvtu`.
+E.g., for serial `vtu` files, the corresponding header file extension is `pvtu`.
 
 ### Generating a parallel data file
 
@@ -515,7 +515,7 @@ using function `pvtk_grid`. Its signature is
 pvtk_grid(args...;pvtkargs,kwargs...)
 ```
 which returns a handler representing a parallel vtk file that can be
-eventually written to disk with `vtk_save`. In a MPI job, This will cause each rank
+appended with cell and point data and eventually written to disk with `vtk_save` as usuall. In a MPI job, `vtk_save` will cause each rank
 to write a serial file and just a single rank (e.g., rank 0) will write the header file.
 
 Positional and keyword arguments in `args` and `kwargs`
@@ -525,7 +525,7 @@ corresponding part id).
 
 The extra keyword argument `pvtkargs` contains options
 (as a `Dict{Symbol,Any}` or a `Vector{Pair{Symbol,Any}}`)
-that only apply for parallel vtk file formats.
+that only apply in the parallel vtk file format.
 
 Mandatory keys in `pvtkargs` are:
 
