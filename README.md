@@ -512,7 +512,12 @@ The parallel header file and the corresponding serial files are generated
 using function `pvtk_grid`. Its signature is
 
 ```julia
-pvtk_grid(args...;pvtkargs,kwargs...)
+pvtk_grid(args...;
+          part,
+          nparts,
+          ismain = (part == 1),
+          ghost_level = 0,
+          kwargs...)
 ```
 which returns a handler representing a parallel vtk file that can be
 appended with cell and point data and eventually written to disk with `vtk_save` as usuall. In a MPI job, `vtk_save` will cause each rank
@@ -523,18 +528,16 @@ are passed to `vtk_grid` verbatim in order to generate the serial files
 (with the exception of file names that are augmented with the
 corresponding part id).
 
-The extra keyword argument `pvtkargs` contains options
-(as a `Dict{Symbol,Any}` or a `Vector{Pair{Symbol,Any}}`)
-that only apply in the parallel vtk file format.
+The extra keyword argument only apply in the parallel vtk file format.
 
-Mandatory keys in `pvtkargs` are:
+Mandatory ones are:
 
-- `:part` current (1-based) part id (typically MPI rank + 1)
-- `:nparts` total number of parts (typically the MPI communicator size)
+- `part` current (1-based) part id (typically MPI rank + 1)
+- `nparts` total number of parts (typically the MPI communicator size)
 
-Default key/value pairs in `pvtkargs` are
-- `:ismain=>part==1` True if the current part id `part` is the main (the only one that will write the header file)
-- `:ghost_level=>0` Ghost level
+Optional ones are
+- `ismain` True if the current part id `part` is the main (the only one that will write the header file)
+- `ghost_level` Ghost level
 
 ⚠️ **Remark:** Only tested for unstructured grid format (`vtu`).
 
@@ -549,7 +552,7 @@ Default key/value pairs in `pvtkargs` are
   x=rand(5)
   y=rand(5)
 
-  pvtk = pvtk_grid("simulation",x,y,cells;pvtkargs=[:part=>1,:nparts=>1])
+  pvtk = pvtk_grid("simulation",x,y,cells;part=1,nparts=1)
   pvtk["Pressure"] = x
   pvtk["Processor"] = rand(2)
   outfiles = vtk_save(pvtk)

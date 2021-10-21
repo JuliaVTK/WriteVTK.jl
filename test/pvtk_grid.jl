@@ -9,9 +9,7 @@ function main()
   y=[.32,.55,.87,.12,.85]
   vtufile = "simulation/simulation_1.vtu"
   rm(vtufile,force=true)
-  @time pvtk = pvtk_grid(
-    "simulation", x, y, cells;
-    pvtkargs=[:part=>1,:nparts=>1]) # 2D
+  @time pvtk = pvtk_grid("simulation", x, y, cells; part=1,nparts=1) # 2D
   pvtk["Pressure"] = x
   pvtk["Processor"] = rand(2)
   @time outfiles = vtk_save(pvtk)

@@ -1,222 +1,28 @@
+# Helper types
 
-struct ParallelDatasetFile <: VTKFile
-    pvtkargs::Dict
-    xdoc::XMLDocument
-    dataset::DatasetFile
-    path::AbstractString
-    function ParallelDatasetFile(
-        pvtkargs::Dict,
-        xdoc::XMLDocument,
-        dataset::DatasetFile,
-        path::AbstractString)
-        new(pvtkargs,xdoc,dataset,path)
-    end
+struct PVTKArgs
+  part::Int
+  nparts::Int
+  ismain::Bool
+  ghost_level::Int
 end
 
-function _default_pvtkargs(pvtkargs)
-    mandatory = [:part,:nparts]
-    optional = [:ismain,:ghost_level]
-    allkeys = vcat(mandatory,optional)
-
-    d = Dict{Symbol,Any}(pvtkargs)
-    for k in keys(d)
-        if !(k in allkeys)
-            throw(ArgumentError("$k is not a valid key in pvtkargs."))
-        end
-    end
-    for k in mandatory
-        if !(haskey(d,k))
-            throw(ArgumentError("$k is a mandatory key in pvtkargs."))
-        end
-    end
-    if ! haskey(d,:ismain)
-      d[:ismain] = (d[:part] == 1)
-    end
-    if ! haskey(d,:ghost_level)
-        d[:ghost_level] = 0
-    end
-    d
+struct PVTKFile <: VTKFile
+  pvtkargs::PVTKArgs
+  xdoc::XMLDocument
+  vtk::DatasetFile
+  path::String
 end
 
-function vtk_save(vtk::ParallelDatasetFile)
-  if isopen(vtk)
-    _pvtk_grid_body(vtk)
-    if vtk.pvtkargs[:ismain]
-       save_file(vtk.xdoc, vtk.path)
-    end
-    vtk_save(vtk.dataset)
-    close(vtk)
-  end
-  return [vtk.path] :: Vector{String}
-end
-
-function new_pdata_array(xParent,
-                         type::Type{<:VTKDataType},
-                         name::AbstractString,
-                         Nc=nothing)
-  xDA = new_child(xParent, "PDataArray")
-  set_attribute(xDA, "type", datatype_str(type))
-  set_attribute(xDA, "Name", name)
-  if Nc != nothing
-    set_attribute(xDA, "NumberOfComponents", Nc)
-  end
-end
-
-function get_extension(filename::AbstractString)
-  path, ext = splitext(filename)
-  ext
-end
-
-function get_path(filename::AbstractString)
-  path, ext = splitext(filename)
-  path
-end
-
-function parallel_file_extension(g::AbstractVTKDataset)
-  ext=file_extension(g)
-  replace(ext,"."=>".p")
-end
-
-function parallel_xml_name(g::AbstractVTKDataset)
-  "P"*xml_name(g)
-end
-
-function parallel_xml_write_header(pvtx::XMLDocument,dtype::AbstractVTKDataset)
-  xroot = create_root(pvtx, "VTKFile")
-  set_attribute(xroot, "type", parallel_xml_name(dtype))
-  set_attribute(xroot, "version", "1.0")
-  if IS_LITTLE_ENDIAN
-    set_attribute(xroot, "byte_order", "LittleEndian")
-  else
-    set_attribute(xroot, "byte_order", "BigEndian")
-  end
-  xroot
-end
-
-function add_pieces!(grid_xml_node,
-                     prefix::AbstractString,
-                     extension::AbstractString,
-                     num_pieces::Int)
-  for i=1:num_pieces
-    piece=new_child(grid_xml_node,"Piece")
-    fn = _serial_filename(i,num_pieces,prefix,extension)
-    set_attribute(piece,"Source",fn)
-  end
-  grid_xml_node
-end
-
-function add_ppoints!(grid_xml_node;
-                      type::Type{<:VTKDataType}=Float64)
-  ppoints=new_child(grid_xml_node,"PPoints")
-  new_pdata_array(ppoints,type,"Points",3)
-end
-
-function add_ppoint_data!(pdataset::ParallelDatasetFile,
-                          name::AbstractString;
-                          type::Type{<:VTKDataType}=Float64,
-                          Nc::Integer=1)
-  xroot=root(pdataset.xdoc)
-  dtype = xml_name_to_VTK_Dataset(pdataset.dataset.grid_type)
-  grid_xml_node=find_element(xroot,parallel_xml_name(dtype))
-  @assert grid_xml_node != nothing
-  grid_xml_node_ppoint=find_element(grid_xml_node,"PPointData")
-  if (grid_xml_node_ppoint==nothing)
-    grid_xml_node_ppoint=new_child(grid_xml_node,"PPointData")
-  end
-  new_pdata_array(grid_xml_node_ppoint,type,name,Nc)
-end
-
-function add_pcell_data!(pdataset::ParallelDatasetFile,
-                         name::AbstractString;
-                         type::Type{<:VTKDataType}=Float64,
-                         Nc=nothing)
-  xroot=root(pdataset.xdoc)
-  dtype = xml_name_to_VTK_Dataset(pdataset.dataset.grid_type)
-  grid_xml_node=find_element(xroot,parallel_xml_name(dtype))
-  @assert grid_xml_node != nothing
-  grid_xml_node_pcell=find_element(grid_xml_node,"PCellData")
-  if (grid_xml_node_pcell==nothing)
-    grid_xml_node_pcell=new_child(grid_xml_node,"PCellData")
-  end
-  new_pdata_array(grid_xml_node_pcell,type,name,Nc)
-end
-
-function Base.setindex!(pvtk::ParallelDatasetFile,
-                        data,
-                        name::AbstractString,
-                        loc::AbstractFieldData)
-  pvtk.dataset[name,loc]=data
-end
-
-function Base.setindex!(vtk::ParallelDatasetFile, data, name::AbstractString)
-  vtk.dataset[name]=data
-end
-
-function get_dataset_extension(dataset::DatasetFile)
-  path, ext = splitext(dataset.path)
-  @assert ext != ""
-  ext
-end
-
-function get_dataset_path(dataset::DatasetFile)
-  path, ext = splitext(dataset.path)
-  @assert ext != ""
-  path
-end
-
-function xml_name_to_VTK_Dataset(xml_name::AbstractString)
-    if (xml_name=="ImageData")
-      VTKImageData()
-    elseif (xml_name=="RectilinearGrid")
-      VTKRectilinearGrid()
-    elseif (xml_name=="PolyData")
-      VTKPolyData()
-    elseif (xml_name=="StructuredGrid")
-      VTKStructuredGrid()
-    elseif (xml_name=="UnstructuredGrid")
-      VTKUnstructuredGrid()
-    else
-      @assert false
-    end
-end
-
-function num_children(element)
-  length(collect(child_elements(element)))
-end
-
-function get_child_attribute(element,child,attr)
-  children=collect(child_elements(element))
-  attribute(children[child],attr)
-end
-
-function get_dataset_xml_type(dataset::DatasetFile)
-  r=root(dataset.xdoc)
-  attribute(r,"type")
-end
-
-function get_dataset_xml_grid_element(dataset::DatasetFile,
-                                      element::AbstractString)
-   r=root(dataset.xdoc)
-   uns=find_element(r,get_dataset_xml_type(dataset))
-   piece=find_element(uns,"Piece")
-   find_element(piece,element)
-end
-
-
-const string_to_VTKDataType = Dict("Int8"=>Int8,
-                                   "UInt8"=>UInt8,
-                                   "Int16"=>Int16,
-                                   "UInt16"=>UInt16,
-                                   "Int32"=>Int32,
-                                   "UInt32"=>UInt32,
-                                   "Int64"=>Int64,
-                                   "UInt64"=>UInt64,
-                                   "Float32"=>Float32,
-                                   "Float64"=>Float64,
-                                   "String"=>String)
+# Main functions
 
 """
-    pvtk_grid(args...;pvtkargs,kwargs...)
+    pvtk_grid(args...;
+              part,
+              nparts,
+              ismain = (part == 1),
+              ghost_level = 0,
+              kwargs...)
 
 Return a handler representing a parallel vtk file, which can be
 eventually written to file with `vtk_save`.
@@ -225,98 +31,163 @@ Positional and keyword arguments in `args` and `kwargs`
 are passed to `vtk_grid` verbatim (except file names that are augmented with the 
 corresponding part id).
 
-The extra keyword argument `pvtkargs` contains
-extra options (as a `Dict{Symbol,Any}` or a `Vector{Pair{Symbol,Any}}`)
-that only apply for parallel vtk file formats.
+The extra keyword arguments only apply for parallel vtk file formats.  Mandatory ones are:
 
-Mandatory keys in `pvtkargs` are:
+- `part` current (1-based) part id
+- `nparts` total number of parts
 
-- `:part` current (1-based) part id
-- `:nparts` total number of parts
-
-Default key/value pairs in `pvtkargs` are
-- `:ismain=>part==1` True if the current part id `part` is the main (the only one that will write the .pvtk file).
-- `:ghost_level=>0` Ghost level.
+Optional ones are
+- `ismain` True if the current part id `part` is the main (the only one that will write the .pvtk file).
+- `ghost_level` Ghost level.
 """
-function pvtk_grid(filename::AbstractString,args...;pvtkargs,kwargs...)
-    _pvtkargs = _default_pvtkargs(pvtkargs)
-    part = _pvtkargs[:part]
-    nparts = _pvtkargs[:nparts]
-    bname = basename(filename)
-    path = mkpath(filename)
-    prefix = joinpath(path,bname)
-    extension = ""
-    fn = _serial_filename(part,nparts,prefix,extension)
-    vtk = vtk_grid(fn,args...;kwargs...)
-    _pvtk_grid_header(_pvtkargs,vtk,path)
+function pvtk_grid(filename::AbstractString,
+                   args...;
+                   part,
+                   nparts,
+                   ismain = (part == 1),
+                   ghost_level = 0,
+                   kwargs...)
+
+  bname = basename(filename)
+  mkpath(filename)
+  prefix = joinpath(filename,bname)
+  fn = _serial_filename(part,nparts,prefix,"")
+  pvtkargs = PVTKArgs(part,nparts,ismain,ghost_level)
+  xdoc  = XMLDocument()
+  vtk = vtk_grid(fn,args...;kwargs...)
+  _,ext = splitext(vtk.path)
+  path = filename*".p"*ext[2:end]
+  pvtk = PVTKFile(pvtkargs,xdoc,vtk,path)
+  _init_pvtk!(pvtk)
+  pvtk
 end
+
+# Add point and cell data as usual
+
+function Base.setindex!(pvtk::PVTKFile,
+                        data,
+                        name::AbstractString,
+                        loc::AbstractFieldData)
+  pvtk.vtk[name,loc]=data
+end
+
+function Base.setindex!(pvtk::PVTKFile, data, name::AbstractString)
+  pvtk.vtk[name]=data
+end
+
+# Save as usual
+
+function vtk_save(pvtk::PVTKFile)
+  if isopen(pvtk)
+    if pvtk.pvtkargs.ismain
+      _update_pvtk!(pvtk)
+      save_file(pvtk.xdoc, pvtk.path)
+    end
+    vtk_save(pvtk.vtk)
+    close(pvtk)
+  end
+  return [pvtk.path]
+end
+
+# Helper functions
 
 function _serial_filename(part,nparts,prefix,extension)
   p = lpad(part,ceil(Int,log10(nparts)),'0')
   fn = prefix*"_$p"*extension
 end
 
-function _pvtk_grid_header(
-    pvtkargs::Dict,
-    dataset::DatasetFile,
-    filename::AbstractString)
+function _init_pvtk!(pvtk::PVTKFile)
 
-    pvtx  = XMLDocument()
-    dtype = xml_name_to_VTK_Dataset(dataset.grid_type)
-    xroot = parallel_xml_write_header(pvtx,dtype)
+  # Recover some data
+  vtk = pvtk.vtk
+  pvtkargs = pvtk.pvtkargs
+  pgrid_type = "P"*vtk.grid_type
+  npieces = pvtkargs.nparts
+  pref,_ = splitext(pvtk.path)
+  _,ext = splitext(vtk.path)
+  prefix = joinpath(pref,basename(pref))
 
-    # Generate parallel grid node
-    grid_xml_node=new_child(xroot,"P"*dataset.grid_type)
-    set_attribute(grid_xml_node, "GhostLevel", string(pvtkargs[:ghost_level]))
-
-    prefix=joinpath(filename,basename(filename))
-    extension=file_extension(dtype)
-    add_pieces!(grid_xml_node,prefix,extension,pvtkargs[:nparts])
-
-    pextension = parallel_file_extension(dtype)
-    pfilename = add_extension(filename,pextension)
-    pdataset=ParallelDatasetFile(pvtkargs,pvtx,dataset,pfilename)
-
-    # Generate PPoints
-    points=get_dataset_xml_grid_element(dataset,"Points")
-    type=get_child_attribute(points,1,"type")
-    add_ppoints!(grid_xml_node,type=string_to_VTKDataType[type])
-
-    pdataset
+  # VTKFile (root) node
+  pvtk_root = create_root(pvtk.xdoc, "VTKFile")
+  set_attribute(pvtk_root, "type", pgrid_type)
+  set_attribute(pvtk_root, "version", "1.0")
+  if IS_LITTLE_ENDIAN
+    set_attribute(pvtk_root, "byte_order", "LittleEndian")
+  else
+    set_attribute(pvtk_root, "byte_order", "BigEndian")
   end
 
-function _pvtk_grid_body(pdataset::ParallelDatasetFile)
-    dataset=pdataset.dataset
-    # Generate PPointData
-    pointdata=get_dataset_xml_grid_element(dataset,"PointData")
-    if pointdata != nothing
-      if (num_children(pointdata)>0)
-        for child=1:num_children(pointdata)
-          name=get_child_attribute(pointdata,child,"Name")
-          type=get_child_attribute(pointdata,child,"type")
-          Nc=get_child_attribute(pointdata,child,"NumberOfComponents")
-          add_ppoint_data!(pdataset,
-                           name;
-                           type=string_to_VTKDataType[type],
-                           Nc=parse(Int64,Nc))
-        end
-      end
-    end
+  # Grid node
+  pvtk_grid = new_child(pvtk_root,pgrid_type)
+  set_attribute(pvtk_grid, "GhostLevel", string(pvtkargs.ghost_level))
 
-    # Generate PCellData
-    celldata=get_dataset_xml_grid_element(dataset,"CellData")
-    if celldata!=nothing
-      if (num_children(celldata)>0)
-        for child=1:num_children(celldata)
-          name=get_child_attribute(celldata,child,"Name")
-          type=get_child_attribute(celldata,child,"type")
-          Nc=get_child_attribute(celldata,child,"NumberOfComponents")
-          add_pcell_data!(pdataset,
-                          name;
-                          type=string_to_VTKDataType[type],
-                          Nc=(Nc==nothing ? nothing : parse(Int64,Nc)))
-        end
-      end
-    end
-    pdataset
+  # Pieces (i.e. Pointers to serial files)
+  for piece in 1:npieces
+    pvtk_piece = new_child(pvtk_grid,"Piece")
+    fn = _serial_filename(piece,npieces,prefix,ext)
+    set_attribute(pvtk_piece,"Source",fn)
   end
+
+  # Recover point type and number of components
+  vtk_root = root(vtk.xdoc)
+  vtk_grid = find_element(vtk_root,vtk.grid_type)
+  vtk_piece = find_element(vtk_grid,"Piece")
+  vtk_points = find_element(vtk_piece,"Points")
+  vtk_data_array = find_element(vtk_points,"DataArray")
+  point_type = attribute(vtk_data_array,"type")
+  Nc = attribute(vtk_data_array,"NumberOfComponents")
+
+  ## PPoints node
+  pvtk_ppoints = new_child(pvtk_grid,"PPoints")
+  pvtk_pdata_array = new_child(pvtk_ppoints,"PDataArray")
+  set_attribute(pvtk_pdata_array,"type",point_type)
+  set_attribute(pvtk_pdata_array,"Name","Points")
+  set_attribute(pvtk_pdata_array,"NumberOfComponents",Nc)
+
+  pvtk
+end
+
+function _update_pvtk!(pvtk::PVTKFile)
+
+  vtk = pvtk.vtk
+  vtk_root = root(vtk.xdoc)
+  vtk_grid = find_element(vtk_root,vtk.grid_type)
+  vtk_piece = find_element(vtk_grid,"Piece")
+
+  pgrid_type = "P"*vtk.grid_type
+  pvtk_root = root(pvtk.xdoc)
+  pvtk_grid = find_element(pvtk_root,pgrid_type)
+
+  # Generate PPointData
+  vtk_point_data = find_element(vtk_piece,"PointData")
+  if vtk_point_data !== nothing
+    pvtk_ppoint_data = new_child(pvtk_grid,"PPointData")
+    for vtk_data_array in child_elements(vtk_point_data)
+      t = attribute(vtk_data_array,"type")
+      name = attribute(vtk_data_array,"Name")
+      Nc = attribute(vtk_data_array,"NumberOfComponents")
+      pvtk_pdata_array = new_child(pvtk_ppoint_data,"PDataArray")
+      set_attribute(pvtk_pdata_array,"type",t)
+      set_attribute(pvtk_pdata_array,"Name",name)
+      set_attribute(pvtk_pdata_array,"NumberOfComponents",Nc)
+    end
+  end
+
+  # Generate PCellData
+  vtk_cell_data = find_element(vtk_piece,"CellData")
+  if vtk_cell_data !== nothing
+    pvtk_pcell_data = new_child(pvtk_grid,"PCellData")
+    for vtk_data_array in child_elements(vtk_cell_data)
+      t = attribute(vtk_data_array,"type")
+      name = attribute(vtk_data_array,"Name")
+      Nc = attribute(vtk_data_array,"NumberOfComponents")
+      pvtk_pdata_array = new_child(pvtk_pcell_data,"PDataArray")
+      set_attribute(pvtk_pdata_array,"type",t)
+      set_attribute(pvtk_pdata_array,"Name",name)
+      set_attribute(pvtk_pdata_array,"NumberOfComponents",Nc)
+    end
+  end
+
+  pvtk
+end
+
