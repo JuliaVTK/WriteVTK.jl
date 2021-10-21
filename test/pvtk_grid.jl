@@ -11,7 +11,9 @@ function main()
   rm(vtufile,force=true)
   @time pvtk = pvtk_grid("simulation", x, y, cells; part=1,nparts=1) # 2D
   pvtk["Pressure"] = x
-  pvtk["Processor"] = rand(2)
+  pvtk["Processor"] = [1,2]
+  pvtk["Temperature",VTKPointData()] = y
+  pvtk["Id",VTKCellData()] = [2,1]
   @time outfiles = vtk_save(pvtk)
   @test isfile(vtufile)
   println("Saved:  ", join(outfiles, "  "))

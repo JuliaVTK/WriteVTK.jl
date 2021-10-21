@@ -535,7 +535,7 @@ Mandatory ones are:
 - `part` current (1-based) part id (typically MPI rank + 1)
 - `nparts` total number of parts (typically the MPI communicator size)
 
-Optional ones are
+Optional ones are:
 - `ismain` True if the current part id `part` is the main (the only one that will write the header file)
 - `ghost_level` Ghost level
 
