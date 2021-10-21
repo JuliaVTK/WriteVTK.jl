@@ -1,4 +1,5 @@
 using WriteVTK
+using Test
 
 function main()
    # Suppose that the mesh is made of 5 points:
@@ -6,13 +7,15 @@ function main()
            MeshCell(VTKCellTypes.VTK_QUAD, [2, 4, 3, 5])]
   x=rand(5)
   y=rand(5)
-
+  vtufile = "simulation/simulation_1.vtu"
+  rm(vtufile,force=true)
   @time pvtk = pvtk_grid(
     "simulation", x, y, cells;
     pvtkargs=[:part=>1,:nparts=>1]) # 2D
   pvtk["Pressure"] = x
   pvtk["Processor"] = rand(2)
   @time outfiles = vtk_save(pvtk)
+  @test isfile(vtufile)
   println("Saved:  ", join(outfiles, "  "))
   outfiles
 end
