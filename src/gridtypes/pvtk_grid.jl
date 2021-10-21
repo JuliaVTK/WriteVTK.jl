@@ -99,8 +99,8 @@ function add_pieces!(grid_xml_node,
                      num_pieces::Int)
   for i=1:num_pieces
     piece=new_child(grid_xml_node,"Piece")
-    p = lpad(i,ceil(Int,log10(num_pieces)),'0')
-    set_attribute(piece,"Source",prefix*"_$p"*extension)
+    fn = _serial_filename(i,num_pieces,prefix,extension)
+    set_attribute(piece,"Source",fn)
   end
   grid_xml_node
 end
@@ -240,15 +240,20 @@ Default key/value pairs in `pvtkargs` are
 """
 function pvtk_grid(filename::AbstractString,args...;pvtkargs,kwargs...)
     _pvtkargs = _default_pvtkargs(pvtkargs)
-    path, ext = splitext(filename)
-    bname=basename(path)
-    path = mkpath(path)
     part = _pvtkargs[:part]
     nparts = _pvtkargs[:nparts]
-    p = lpad(part,ceil(Int,log10(nparts)),'0')
-    fn=joinpath(path,bname*"_$p"*ext)
-    vtk=vtk_grid(fn,args...;kwargs...)
+    bname = basename(filename)
+    path = mkpath(filename)
+    prefix = joinpath(path,bname)
+    extension = ""
+    fn = _serial_filename(part,nparts,prefix,extension)
+    vtk = vtk_grid(fn,args...;kwargs...)
     _pvtk_grid_header(_pvtkargs,vtk,path)
+end
+
+function _serial_filename(part,nparts,prefix,extension)
+  p = lpad(part,ceil(Int,log10(nparts)),'0')
+  fn = prefix*"_$p"*extension
 end
 
 function _pvtk_grid_header(
