@@ -531,7 +531,7 @@ are passed to `vtk_grid` verbatim in order to generate the serial files
 (with the exception of file names that are augmented with the
 corresponding part id).
 
-The extra keyword arguments only apply to the parallel VTK file format.
+The extra keyword arguments only apply to parallel VTK file formats.
 
 Mandatory ones are:
 
