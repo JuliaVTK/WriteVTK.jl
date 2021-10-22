@@ -560,8 +560,8 @@ Optional ones are:
 
 ## Do-block syntax
 
-[Do-block syntax](https://docs.julialang.org/en/latest/manual/functions/#Do-Block-Syntax-for-Function-Arguments-1)
-is supported by `vtk_grid`, `vtk_multiblock` and `paraview_collection`.
+[Do-block syntax](https://docs.julialang.org/en/v1/manual/functions/#Do-Block-Syntax-for-Function-Arguments)
+is supported by `vtk_grid`, `pvtk_grid`, `vtk_multiblock` and `paraview_collection`.
 At the end of the do-block, `vtk_save` is called implicitly on the generated
 VTK object.
 Example:

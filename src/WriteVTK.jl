@@ -152,7 +152,7 @@ include("gridtypes/array.jl")
 include("gridtypes/pvtk_grid.jl")
 
 # This allows using do-block syntax for generation of VTK files.
-for func in (:vtk_grid, :vtk_multiblock, :paraview_collection,
+for func in (:vtk_grid, :pvtk_grid, :vtk_multiblock, :paraview_collection,
              :paraview_collection_load)
     @eval begin
         """
