@@ -15,7 +15,7 @@ const tests = [
     "bezier.jl",
     "pvdCollection.jl",
     "array.jl",
-    "pvtk_grid.jl"
+    "pvtk_grid.jl",
 ]
 
 # Only toggle to generate new checksums, if new tests are added.
