@@ -78,15 +78,17 @@ end
 # Save as usual
 
 function vtk_save(pvtk::PVTKFile)
+  outfiles = String[]
   if isopen(pvtk)
     if pvtk.pvtkargs.ismain
       _update_pvtk!(pvtk)
       save_file(pvtk.xdoc, pvtk.path)
+      push!(outfiles, pvtk.path)
     end
-    vtk_save(pvtk.vtk)
+    append!(outfiles, vtk_save(pvtk.vtk))
     close(pvtk)
   end
-  return [pvtk.path]
+  return outfiles
 end
 
 # Helper functions
