@@ -249,11 +249,11 @@ vtkfile = vtk_grid("my_vtk_file", points, cells)
 
 - `cells` is a MeshCell array that contains all the cells of the mesh. For example:
 
-  ``` julia
-  # Suppose that the mesh is made of 5 points:
-  cells = [MeshCell(VTKCellTypes.VTK_TRIANGLE, [1, 4, 2]),
-           MeshCell(VTKCellTypes.VTK_QUAD,     [2, 4, 3, 5])]
-  ```
+    ```julia
+    # Suppose that the mesh is made of 5 points:
+    cells = [MeshCell(VTKCellTypes.VTK_TRIANGLE, [1, 4, 2]),
+             MeshCell(VTKCellTypes.VTK_QUAD,     [2, 4, 3, 5])]
+    ```
 
 Alternatively, the grid points can be defined from 1-D arrays `x`, `y`,
 `z` with equal lengths `num_points`:
@@ -504,23 +504,26 @@ The parallel file formats do not actually store any data in the file.
 Instead, the data is broken into pieces, each of which is stored in a serial file,
 and an extra header file is created containing pointers to the corresponding serial files.
 The header file extension is the serial extension pre-appended with a `p`.
-E.g., for serial `vtu` files, the corresponding header file extension is `pvtu`.
+For instance, for serial `vtu` files, the corresponding header file extension is `pvtu`.
 
 ### Generating a parallel data file
 
 The parallel header file and the corresponding serial files are generated
-using function `pvtk_grid`. Its signature is
+using the `pvtk_grid` function. Its signature is
 
 ```julia
-pvtk_grid(args...;
-          part,
-          nparts,
-          ismain = (part == 1),
-          ghost_level = 0,
-          kwargs...)
+pvtk_grid(
+    args...;
+    part,
+    nparts,
+    ismain = (part == 1),
+    ghost_level = 0,
+    kwargs...,
+)
 ```
-which returns a handler representing a parallel vtk file that can be
-appended with cell and point data and eventually written to disk with `vtk_save` as usuall. In a MPI job, `vtk_save` will cause each rank
+which returns a handler representing a parallel VTK file that can be
+appended with cell and point data and eventually written to disk with
+`vtk_save` as usual. In an MPI job, `vtk_save` will cause each rank
 to write a serial file and just a single rank (e.g., rank 0) will write the header file.
 
 Positional and keyword arguments in `args` and `kwargs`
@@ -528,35 +531,36 @@ are passed to `vtk_grid` verbatim in order to generate the serial files
 (with the exception of file names that are augmented with the
 corresponding part id).
 
-The extra keyword argument only apply in the parallel vtk file format.
+The extra keyword arguments only apply to the parallel VTK file format.
 
 Mandatory ones are:
 
-- `part` current (1-based) part id (typically MPI rank + 1)
-- `nparts` total number of parts (typically the MPI communicator size)
+- `part` current (1-based) part id (typically MPI rank + 1),
+- `nparts` total number of parts (typically the MPI communicator size).
 
 Optional ones are:
-- `ismain` True if the current part id `part` is the main (the only one that will write the header file)
-- `ghost_level` Ghost level
+
+- `ismain` true if the current part id `part` is the main (the only one that will write the header file),
+- `ghost_level` ghost level.
 
 ⚠️ **Remark:** Only tested for unstructured grid format (`vtu`).
 
 ### Example
- 
- This generates the header file and a single serial file
- ```julia
-  cells = [
-    MeshCell(VTKCellTypes.VTK_TRIANGLE, [1, 4, 2]),
-    MeshCell(VTKCellTypes.VTK_QUAD, [2, 4, 3, 5])
-  ]
-  x=rand(5)
-  y=rand(5)
 
-  pvtk = pvtk_grid("simulation",x,y,cells;part=1,nparts=1)
-  pvtk["Pressure"] = x
-  pvtk["Processor"] = rand(2)
-  outfiles = vtk_save(pvtk)
- ```
+This generates the header file and a single serial file
+```julia
+cells = [
+  MeshCell(VTKCellTypes.VTK_TRIANGLE, [1, 4, 2]),
+  MeshCell(VTKCellTypes.VTK_QUAD, [2, 4, 3, 5]),
+]
+x = rand(5)
+y = rand(5)
+
+pvtk = pvtk_grid("simulation", x, y, cells; part = 1, nparts = 1)
+pvtk["Pressure"] = x
+pvtk["Processor"] = rand(2)
+outfiles = vtk_save(pvtk)
+```
 
 ## Do-block syntax
 
