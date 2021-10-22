@@ -11,3 +11,4 @@ Manifest.toml
 *.vti
 *.vtm
 *.pvd
+*.pvt?
