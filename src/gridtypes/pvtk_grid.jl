@@ -48,7 +48,7 @@ function pvtk_grid(
     xdoc  = XMLDocument()
     vtk = vtk_grid(fn, args...; kwargs...)
     _, ext = splitext(vtk.path)
-    path = filename * ".p" * @view ext[2:end]
+    path = filename * ".p" * ext[2:end]
     pvtk = PVTKFile(pvtkargs, xdoc, vtk, path)
     _init_pvtk!(pvtk)
     pvtk
