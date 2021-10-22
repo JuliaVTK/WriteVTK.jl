@@ -78,7 +78,7 @@ end
 
 # Helper functions
 function _serial_filename(part, nparts, prefix, extension)
-    p = lpad(part, ceil(Int, log10(nparts)), '0')  # TODO use ndigits?
+    p = lpad(part, ndigits(nparts), '0')
     prefix * "_$p" * extension
 end
 

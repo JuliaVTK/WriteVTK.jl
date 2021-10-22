@@ -20,6 +20,7 @@ function main()
     @test isfile(vtufile)
     @test vtufile ∈ outfiles
     println("Saved:  ", join(outfiles, "  "))
+    @test WriteVTK._serial_filename(3, 100, "prefix", ".ext") == "prefix_003.ext"
     outfiles
 end
 
