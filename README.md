@@ -27,6 +27,7 @@ visualise time series of VTK files.
 - [Parallel file formats](#parallel-file-formats)
 - [Do-block syntax](#do-block-syntax)
 - [Additional options](#additional-options)
+- [Reading VTK files](#reading-vtk-files)
 - [Examples](#examples)
 
 ## Installation
@@ -618,6 +619,16 @@ vtk = vtk_grid("my_vtk_file", points, cells; compress = false, append = false, a
   Its value may also be a compression level between 1 (fast compression)
   and 9 (best compression). This option is ignored when writing inline data in
   ASCII format.
+
+## Reading VTK files
+
+The [ReadVTK.jl](https://github.com/trixi-framework/ReadVTK.jl) package may be
+used to read VTK files.
+Note that ReadVTK.jl is specifically meant for reading VTK XML files generated
+by WriteVTK.jl, and it may not be able to read VTK files coming from other
+sources.
+See the [ReadVTK.jl documentation](https://github.com/trixi-framework/ReadVTK.jl#what-works) for
+details on what can and cannot be done with it.
 
 ## Examples
 
