@@ -1,3 +1,6 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
+
+[compat]
+Documenter = "0.27"

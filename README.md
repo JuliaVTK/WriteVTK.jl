@@ -49,11 +49,11 @@ using WriteVTK
 The `vtk_grid` function is the entry point for creating different kinds of VTK
 files.
 In the simplest cases, one just passes coordinate information to this function.
-WriteVTK then decides on the VTK format that is more adapted for the provided
+WriteVTK.jl then determines the VTK format that is more adapted for the provided
 data.
 
-For instance, it is natural in Julia to describe a 3D uniform grid, with
-regularly spaced increments, as a list of ranges:
+For instance, it is natural in Julia to describe a uniform three-dimensional
+grid (with regularly-spaced increments) as a set of ranges:
 
 ```julia
 x = 0:0.1:1
@@ -66,12 +66,12 @@ VTK format (.vti files).
 The following creates such a file, with some scalar data attached to each point:
 
 ```julia
-vtk_grid("my_dataset", x, y, z) do vtk
-    vtk["my_point_data"] = rand(length(x), length(y), length(z))
+vtk_grid("fields", x, y, z) do vtk
+    vtk["temperature"] = rand(length(x), length(y), length(z))
 end
 ```
 
-This will save a `my_dataset.vti` file with the data.
+This will create a `fields.vti` file with the data.
 Note that the file extension should not be included in the filename, as it will
 be attached automatically according to the dataset type.
 
@@ -80,7 +80,7 @@ generalised to non-uniform grid spacings and to curvilinear and unstructured
 grids.
 In each case, the correct kind of VTK file will be generated.
 
-## Rectilinear and structured meshes
+## Rectilinear and structured grids
 
 ### Define a grid
 
@@ -603,7 +603,7 @@ vtk = vtk_grid("my_vtk_file", points, cells; compress = false, append = false, a
 
 - If `append` is `true` (default), data is written appended at the end of the
   XML file as raw binary data.
-  Note that this violates the XML specification, although it is allowed by VTK.
+  Note that this violates the XML specification, but is allowed by VTK formats.
 
   Otherwise, if `append` is `false`, data is written inline. By default,
   inline data is written base-64 encoded, but may also be written in ASCII
@@ -615,17 +615,20 @@ vtk = vtk_grid("my_vtk_file", points, cells; compress = false, append = false, a
   of base64-encoded. This is not the default. This option is ignored if
   `append` is `true`.
 
-- If `compress` is `true` (default), data is first compressed using zlib.
+- If `compress` is `true` (default), data is first compressed using the [CodecZlib](https://github.com/JuliaIO/CodecZlib.jl) package.
   Its value may also be a compression level between 1 (fast compression)
   and 9 (best compression). This option is ignored when writing inline data in
   ASCII format.
 
 ## Reading VTK files
 
-The [ReadVTK.jl](https://github.com/trixi-framework/ReadVTK.jl) package may be
-used to read VTK files.
+The [ReadVTK.jl](https://github.com/trixi-framework/ReadVTK.jl) package, mainly
+written by [Michael Schlottke-Lakemper](https://www.mi.uni-koeln.de/NumSim/schlottke-lakemper)
+and the [Trixi
+authors](https://github.com/trixi-framework/Trixi.jl/blob/main/AUTHORS.md),
+may be used to read VTK files.
 Note that ReadVTK.jl is specifically meant for reading VTK XML files generated
-by WriteVTK.jl, and it may not be able to read VTK files coming from other
+by WriteVTK.jl, and may not be able to read VTK files coming from other
 sources.
 See the [ReadVTK.jl documentation](https://github.com/trixi-framework/ReadVTK.jl#what-works) for
 details on what can and cannot be done with it.
