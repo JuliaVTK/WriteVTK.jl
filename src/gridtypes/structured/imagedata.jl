@@ -1,11 +1,8 @@
-const TupleOrVec = Union{NTuple{N, T} where {N, T <: Real},
-                         AbstractVector{T} where T <: Real}
-
 function vtk_grid(dtype::VTKImageData, filename::AbstractString,
                   Nx::Integer, Ny::Integer, Nz::Integer=1;
-                  origin::TupleOrVec=(0.0, 0.0, 0.0),
-                  spacing::TupleOrVec=(1.0, 1.0, 1.0),
-                  extent=nothing, kwargs...)
+                  origin = (0.0, 0.0, 0.0),
+                  spacing = (1.0, 1.0, 1.0),
+                  extent = nothing, kwargs...)
     Npts = Nx*Ny*Nz
     Ncls = num_cells_structured(Nx, Ny, Nz)
     ext = extent_attribute(Nx, Ny, Nz, extent)
@@ -70,6 +67,9 @@ Along each direction, the grid is specified in terms of an AbstractRange object.
 julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3, 4:1.:5)  # 3D dataset
 VTK file 'abc.vti' (ImageData file, open)
 
+julia> vtk = vtk_grid("abc", 1:5, 2:1.:3, range(4, 5; length = 3))  # different kinds of ranges
+VTK file 'abc.vti' (ImageData file, open)
+
 julia> vtk = vtk_grid("abc", 1:0.2:5, 2:1.:3)  # 2D dataset
 VTK file 'abc.vti' (ImageData file, open)
 
@@ -82,8 +82,7 @@ VTK file 'def.vti' (ImageData file, open)
 ```
 
 """
-function vtk_grid(filename::AbstractString, xyz::Vararg{AbstractRange{T}};
-                  kwargs...) where {T}
+function vtk_grid(filename::AbstractString, xyz::Vararg{AbstractRange}; kwargs...)
     Nxyz = length.(xyz)
     origin = first.(xyz)
     spacing = step.(xyz)
