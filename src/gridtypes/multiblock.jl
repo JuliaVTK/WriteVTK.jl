@@ -1,5 +1,15 @@
-# Initialise VTK multiblock file (extension .vtm).
-# filename: filename with or without the extension (.vtm).
+"""
+    vtk_multiblock([f::Function], filename) -> MultiblockFile
+
+Initialise VTK multiblock file, linking multiple VTK dataset files.
+
+Returns a handler for a multiblock file.
+To recursively save the multiblock file and linked dataset files, call
+[`vtk_save`](@ref) on the returned handler.
+
+Note that `vtk_save` is implicitly called if the optional `f` argument is passed.
+This is in particular what happens when using the do-block syntax.
+"""
 function vtk_multiblock(filename::AbstractString)
     xvtm = XMLDocument()
     xroot = create_root(xvtm, "VTKFile")

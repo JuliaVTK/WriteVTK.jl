@@ -5,9 +5,28 @@ Abstract type representing any kind of dataset.
 """
 abstract type AbstractFieldData end
 
-# Numerical data may be associated to grid points, cells, or none.
+"""
+    VTKPointData <: AbstractFieldData
+
+Represents data that is to be attached to grid points.
+"""
 struct VTKPointData <: AbstractFieldData end
+
+"""
+    VTKCellData <: AbstractFieldData
+
+Represents data that is to be attached to grid cells.
+"""
 struct VTKCellData <: AbstractFieldData end
+
+"""
+    VTKFieldData <: AbstractFieldData
+
+Represents data that is not attached to the grid geometry.
+
+This is typically used for lightweight metadata, such as timestep information or
+strings.
+"""
 struct VTKFieldData <: AbstractFieldData end
 
 # These are the VTK names associated to each data "location".
@@ -203,14 +222,15 @@ When compression is enabled:
   * the data array is written in compressed form (obviously);
 
   * the header, written before the actual numerical data, is an array of
-  HeaderType (UInt32 / UInt64) values:
-        `[num_blocks, blocksize, last_blocksize, compressed_blocksizes]`
-    All the sizes are in bytes. The header itself is not compressed, only the
-    data is.
+    HeaderType (UInt32 / UInt64) values:
+
+        [num_blocks, blocksize, last_blocksize, compressed_blocksizes]
+
+    All sizes are in bytes.
+    The header itself is not compressed, only the data is.
     For more details, see:
-        http://public.kitware.com/pipermail/paraview/2005-April/001391.html
-        http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats
-    (This is not really documented in the VTK specification...)
+     - <http://public.kitware.com/pipermail/paraview/2005-April/001391.html>
+     - <http://mathema.tician.de/what-they-dont-tell-you-about-vtk-xml-binary-formats>
 
 Otherwise, if compression is disabled, the header is just a single HeaderType value
 containing the size of the data array in bytes.
