@@ -2,7 +2,11 @@ using WriteVTK
 using Documenter
 
 DocMeta.setdocmeta!(
-    WriteVTK, :DocTestSetup, :(using WriteVTK);
+    WriteVTK, :DocTestSetup,
+    quote
+        using WriteVTK
+        using StaticArrays  # not yet used...
+    end;
     recursive = true,
 )
 

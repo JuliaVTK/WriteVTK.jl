@@ -2,17 +2,24 @@
 
 The syntax for writing VTK files typically looks like the following:
 
-```
+```julia
 saved_files = vtk_grid(filename, points..., [cells]; kws...) do vtk
     # add datasets here...
 end
 ```
 
-The returned variable `saved_files` is a `Vector{String}` containing the paths of the actual VTK files that were saved after the operation.
-When writing VTK dataset files (e.g. structured or unstructured grids), this contains just a single path (e.g. `[$(filename).vts]`), but this changes when one is working with metadata files such as [multiblock](@ref Multiblock-files) or [parallel files](@ref Parallel-files).
+- Grid coordinates are passed via one or more `points` arguments, as detailed in [Structured grid formats](@ref) and [Unstructured grid formats](@ref).
+
+- The `cells` argument is only relevant for unstructured grids, as detailed in [Unstructured grid formats](@ref).
+
+- Data may be added to the `vtk` handler at the interior of the do-block.
+  See [Writing datasets](@ref) for more details.
+
+- The returned variable `saved_files` is a `Vector{String}` containing the paths of the actual VTK files that were saved after the operation.
+  When writing VTK dataset files (e.g. structured or unstructured grids), this contains just a single path, but this changes when one is working with metadata files such as [multiblock](@ref Multiblock-files) or [parallel files](@ref Parallel-files).
 
 Note that the above syntax, which uses Julia's
-[Do-block syntax](https://docs.julialang.org/en/v1/manual/functions/#Do-Block-Syntax-for-Function-Arguments)
+[do-block syntax](https://docs.julialang.org/en/v1/manual/functions/#Do-Block-Syntax-for-Function-Arguments)
 is equivalent to:
 
 ```julia

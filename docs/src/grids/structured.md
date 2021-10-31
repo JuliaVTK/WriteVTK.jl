@@ -81,3 +81,11 @@ end
 ```
 
 Again, note that all of the above works similarly in two dimensions, as one may expect.
+
+## Cells in structured formats
+
+In structured grids, cells are implicitly defined as the "bricks" whose vertices are neighbouring grid points.
+In three dimensions, these "bricks" are cuboids or [parallelepipeds](https://en.wikipedia.org/wiki/Parallelepiped) with 8 vertices.
+Similarly, in two dimensions, these are rectangles or parallelograms.
+
+This means that, if the grid is composed of ``N_i × N_j × N_k`` points, then the number of cells is ``N_c = (N_i - 1) × (N_j - 1) × (N_k - 1)``.
