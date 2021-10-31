@@ -548,15 +548,20 @@ function main()
         points = copy(points4)
         points[3, :, :, :] .+= 1
         vtk_grid(identity, block, points, cells4)  # unnamed VTK file
-        subblock = multiblock_add_block(vtm)        # unnamed nested block
+
+        subblock = multiblock_add_block(vtm)  # unnamed nested block
         points[1, :, :, :] .+= 1.2
-        vtk_grid(identity, block, points, cells4)  # unnamed nested block + unnamed VTK file
+        vtk_grid(identity, subblock, points, cells4)  # unnamed nested block + unnamed VTK file
+
         points[2, :, :, :] .+= 2.1
-        vtk_grid(identity, block, "very_nested", points, cells4)  # unnamed nested block + named VTK file
+        vtk_grid(identity, subblock, "very_nested", points, cells4)  # unnamed nested block + named VTK file
 
         subsubblock_named = multiblock_add_block(subblock, "nested-nested")
         subsubblock_unnamed = multiblock_add_block(subblock)
+
+        vtk_grid(identity, subsubblock_named, points .- 2, cells4)
     end
+
     println("Saved:  ", join(outfiles, "  "))
 
     return outfiles::Vector{String}
