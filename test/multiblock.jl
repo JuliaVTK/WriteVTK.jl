@@ -553,6 +553,9 @@ function main()
         vtk_grid(identity, block, points, cells4)  # unnamed nested block + unnamed VTK file
         points[2, :, :, :] .+= 2.1
         vtk_grid(identity, block, "very_nested", points, cells4)  # unnamed nested block + named VTK file
+
+        subsubblock_named = multiblock_add_block(subblock, "nested-nested")
+        subsubblock_unnamed = multiblock_add_block(subblock)
     end
     println("Saved:  ", join(outfiles, "  "))
 
