@@ -34,6 +34,9 @@ makedocs(;
             "metadata/paraview_collections.md",
             "metadata/parallel.md",
         ],
+        "Additional tools" => [
+            "tools/write_array.md",
+        ],
         "API Reference" => "API.md",
     ],
 )
