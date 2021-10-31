@@ -66,7 +66,7 @@ function vtk_grid(vtb::VTKBlock, griddata...; kwargs...)
     new_block_number = length(vtb.blocks) + 1
     block_name = attribute(vtb.xelm, "name", required=false)
     if block_name != nothing
-        vtk_basename = "$(name)_$(new_block_number)"
+        vtk_basename = "$(block_name)_$(new_block_number)"
     else
         block_index = attribute(vtb.xelm, "index")
         vtk_basename = "block$(block_index)_$(new_block_number)"
