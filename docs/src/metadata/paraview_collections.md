@@ -72,3 +72,8 @@ julia> saved_files
  "timestep_20.vti"
  "timestep_21.vti"
 ```
+
+## Acknowledgements
+
+Thanks to [Patrick Belliveau](https://github.com/Pbellive) for the initial
+implementation of ParaView collection functionality, and to [Sebastian Pech](https://github.com/sebastianpech) for additional improvements.

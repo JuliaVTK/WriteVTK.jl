@@ -79,3 +79,9 @@ julia> saved_files
 ```
 
 Note that the files containing the actual data (in this case `simulation_1.vtu`) are stored in a separate `simulation` directory.
+
+## Acknowledgements
+
+Thanks to [Francesc Verdugo](https://www.francescverdugo.com/) and [Alberto
+F. Martin](https://research.monash.edu/en/persons/alberto-f-martin) for
+the initial parallel file format implementation.

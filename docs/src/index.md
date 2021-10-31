@@ -6,6 +6,14 @@ A wide range of VTK formats is supported, including different kinds of
 structured and unstructured grids, as well as metadata files for describing
 time series or multi-block domains.
 
+## Installation
+
+WriteVTK can be installed using the Julia package manager:
+
+```julia
+julia> ] add WriteVTK
+```
+
 ## Quick start
 
 The [`vtk_grid`](@ref) function is the entry point for creating different kinds
@@ -44,7 +52,8 @@ In each case, the correct kind of VTK file will be generated.
 
 ## Supported VTK formats
 
-This package attempts to implement writers for all VTK XML formats described in the [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf).
+This package attempts to implement writers for all VTK XML formats described in
+the [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf).
 Note that legacy (non-XML) files are not supported.
 
 Supported dataset formats include:
@@ -55,15 +64,14 @@ Supported dataset formats include:
 - [polydata](@ref Polydata-grid) (`.vtp`, a specific type of unstructured grid).
 
 Moreover, the following metadata formats are supported:
-- multiblock grids (`.vtm`),
-- ParaView collections (`.pvd`, typically used for time series),
-- parallel formats (`.pvt*`, only partial support for now).
+- [multiblock files](@ref Multiblock-files) (`.vtm`),
+- [ParaView collections](@ref ParaView-collections) (`.pvd`, typically used for time series),
+- [parallel files](@ref Parallel-files) (`.pvt*`, only partial support for now).
 
-## Reading VTK files
+## Authors
 
-The [ReadVTK.jl](https://github.com/trixi-framework/ReadVTK.jl) package, mainly written by [Michael Schlottke-Lakemper](https://www.mi.uni-koeln.de/NumSim/schlottke-lakemper) and the [Trixi authors](https://github.com/trixi-framework/Trixi.jl/blob/main/AUTHORS.md), may be used to read VTK files.
-Note that ReadVTK.jl is specifically meant for reading VTK XML files generated
-by WriteVTK.jl, and may not be able to read VTK files coming from other
-sources.
-See the [ReadVTK.jl documentation](https://github.com/trixi-framework/ReadVTK.jl#what-works) for
-details on what can and cannot be done with it.
+This package is mainly written and maintained by [Juan Ignacio
+Polanco](https://jipolanco.gitlab.io), with many important contributions by
+[Fredrik Ekre](https://fredrikekre.se).
+Moreover, a number of authors have implemented additional functionality, and
+are acknowledged throughout the documentation.

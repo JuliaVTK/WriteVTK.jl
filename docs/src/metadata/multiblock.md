@@ -136,3 +136,8 @@ julia> saved_files
 By opening `full_domain.vtm` in ParaView, one can get the following picture:
 
 ![Visualisation of multiblock file](multiblock.png)
+
+## Acknowledgements
+
+Thanks to [Daniel Ingraham](https://github.com/dingraha) for the implementation
+of recursive multiblock functionality.

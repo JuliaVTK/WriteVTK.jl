@@ -9,9 +9,15 @@ vtk_write_array("filename", p, "Pressure")
 
 This may be useful for visualising the data contained in a Julia array.
 
+## Writing multiple arrays
+
 Multiple arrays can be given as a tuple.
 For instance,
 
     vtk_write_array("filename", (u, v), ("u", "v"))
 
 In that case, the arrays must have the same dimensions.
+
+## Acknowledgements
+
+Thanks to [Júlio Hoffimann](https://juliohm.github.io/) for adding this functionality.

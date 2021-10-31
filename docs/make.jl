@@ -36,6 +36,7 @@ makedocs(;
         ],
         "Additional tools" => [
             "tools/write_array.md",
+            "tools/readvtk.md",
         ],
         "API Reference" => "API.md",
     ],

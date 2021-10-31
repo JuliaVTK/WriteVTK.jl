@@ -89,6 +89,13 @@ vtk_grid("coords_sarray", xs) do vtk
 end
 ```
 
+!!! note "(Lack of) dependencies"
+
+    Note that the WriteVTK package does not directly depend on StaticArrays, as
+    there is no StaticArrays-specific implementation allowing for the
+    functionality described in this section.
+    Instead, the implementation is quite generic, and the above may also work with array types that behave similarly to StaticArrays.
+
 ## Dataset types
 
 The syntax exposed above is high-level, in the sense that WriteVTK
