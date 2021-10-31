@@ -18,7 +18,9 @@ makedocs(;
     format = Documenter.HTML(;
         prettyurls = get(ENV, "CI", "false") == "true",
         canonical = "https://jipolanco.github.io/WriteVTK.jl",
-        assets = String[],
+        assets = [
+            "assets/tomate.js",
+        ],
         mathengine = KaTeX(),
     ),
     pages=[
