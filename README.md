@@ -1,4 +1,4 @@
-# WriteVTK
+# WriteVTK.jl
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://jipolanco.github.io/WriteVTK.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://jipolanco.github.io/WriteVTK.jl/dev/)
@@ -23,8 +23,8 @@ julia> ] add WriteVTK
 
 ## Quick start
 
-The `vtk_grid` function is the entry point for creating different kinds of VTK
-files.
+The [`vtk_grid`](@ref) function is the entry point for creating different kinds
+of VTK files.
 In the simplest cases, one just passes coordinate information to this function.
 WriteVTK.jl then determines the VTK format that is more adapted for the provided
 data.
@@ -38,8 +38,8 @@ y = 0:0.2:1
 z = -1:0.05:1
 ```
 
-This specific way of specifying coordinates is compatible with the *image data*
-VTK format (.vti files).
+This specific way of specifying coordinates is compatible with the [image data](@ref Image-data)
+VTK format, which has the `.vti` extension.
 The following creates such a file, with some scalar data attached to each point:
 
 ```julia
@@ -74,6 +74,10 @@ Moreover, the following metadata formats are supported:
 - [multiblock files](@ref Multiblock-files) (`.vtm`),
 - [ParaView collections](@ref ParaView-collections) (`.pvd`, typically used for time series),
 - [parallel files](@ref Parallel-files) (`.pvt*`, only partial support for now).
+
+## Further reading
+
+See [the documentation](https://jipolanco.github.io/WriteVTK.jl/stable/) for more details on how to use this package.
 
 ## Authors
 
