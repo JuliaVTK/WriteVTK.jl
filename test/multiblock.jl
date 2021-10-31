@@ -101,7 +101,7 @@ end
 
 function fourth_block_data()
     # Create unstructured example with boundaries.
-    imax, jmax, kmax = 40, 50, 20
+    imax, jmax, kmax = 25, 30, 20
     indices = LinearIndices((1:imax, 1:jmax, 1:kmax))
 
     # Create points and point data.
@@ -516,27 +516,43 @@ function main()
 
         # Fourth block is a collection of multiblock files itself.
         block = multiblock_add_block(vtm, "multiblock_4")
-        vtk = vtk_grid(block, "multiblock_4_volume", points4, cells4)
-        vtk["q_values"] = q4
-        vtk["c_values"] = c4
-        vtk = vtk_grid(block, "multiblock_4_imin", points41, cells41)
-        vtk["q_values"] = q41
-        vtk["c_values"] = c41
-        vtk = vtk_grid(block, "multiblock_4_imax", points42, cells42)
-        vtk["q_values"] = q42
-        vtk["c_values"] = c42
-        vtk = vtk_grid(block, "multiblock_4_jmin", points43, cells43)
-        vtk["q_values"] = q43
-        vtk["c_values"] = c43
-        vtk = vtk_grid(block, "multiblock_4_jmax", points44, cells44)
-        vtk["q_values"] = q44
-        vtk["c_values"] = c44
-        vtk = vtk_grid(block, "multiblock_4_kmin", points45, cells45)
-        vtk["q_values"] = q45
-        vtk["c_values"] = c45
-        vtk = vtk_grid(block, "multiblock_4_kmax", points46, cells46)
-        vtk["q_values"] = q46
-        vtk["c_values"] = c46
+        vtk_grid(block, "multiblock_4_volume", points4, cells4) do vtk
+            vtk["q_values"] = q4
+            vtk["c_values"] = c4
+        end
+        vtk_grid(block, "multiblock_4_imin", points41, cells41) do vtk
+            vtk["q_values"] = q41
+            vtk["c_values"] = c41
+        end
+        vtk_grid(block, "multiblock_4_imax", points42, cells42) do vtk
+            vtk["q_values"] = q42
+            vtk["c_values"] = c42
+        end
+        vtk_grid(block, "multiblock_4_jmin", points43, cells43) do vtk
+            vtk["q_values"] = q43
+            vtk["c_values"] = c43
+        end
+        vtk_grid(block, "multiblock_4_jmax", points44, cells44) do vtk
+            vtk["q_values"] = q44
+            vtk["c_values"] = c44
+        end
+        vtk_grid(block, "multiblock_4_kmin", points45, cells45) do vtk
+            vtk["q_values"] = q45
+            vtk["c_values"] = c45
+        end
+        vtk_grid(block, "multiblock_4_kmax", points46, cells46) do vtk
+            vtk["q_values"] = q46
+            vtk["c_values"] = c46
+        end
+
+        points = copy(points4)
+        points[3, :, :, :] .+= 1
+        vtk_grid(identity, block, points, cells4)  # unnamed VTK file
+        subblock = multiblock_add_block(vtm)        # unnamed nested block
+        points[1, :, :, :] .+= 1.2
+        vtk_grid(identity, block, points, cells4)  # unnamed nested block + unnamed VTK file
+        points[2, :, :, :] .+= 2.1
+        vtk_grid(identity, block, "very_nested", points, cells4)  # unnamed nested block + named VTK file
     end
     println("Saved:  ", join(outfiles, "  "))
 
