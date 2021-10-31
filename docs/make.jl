@@ -20,13 +20,15 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Grid formats" => [
+            "grids/syntax.md",
             "grids/structured.md",
             "grids/unstructured.md",
-            "grids/options.md",
-        ],
-        "Writing datasets" => [
+            "grids/datasets.md",
         ],
         "Metadata formats" => [
+            "metadata/multiblock.md",
+            "metadata/paraview_collections.md",
+            "metadata/parallel.md",
         ],
         "API Reference" => "API.md",
     ],

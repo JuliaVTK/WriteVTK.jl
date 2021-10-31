@@ -23,8 +23,8 @@ y = 0:0.2:1
 z = -1:0.05:1
 ```
 
-This specific way of specifying coordinates is compatible with the *image data*
-VTK format, which have the `.vti` extension.
+This specific way of specifying coordinates is compatible with the [image data](@ref Image-data)
+VTK format, which has the `.vti` extension.
 The following creates such a file, with some scalar data attached to each point:
 
 ```julia

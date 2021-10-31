@@ -37,7 +37,7 @@ which will save the file `filename.vtr`.
 The "image data" (or **uniform grid**) format is a specific case of a rectilinear grid, in which points are uniformly spaced along each of the Cartesian directions.
 In this case, grid points may be specified as
 ``\bm{x}_{ijk} = (x_i, y_j, z_k)``.
-This time, each sequence is constrained to the form ``x_i = x_0 + (i - 1) Δx``, where ``x_0`` is an offset and ``Δx`` is the uniform spacing (this also applies to ``y_j`` and ``z_k``).
+This time, each sequence is constrained to the form ``x_i = δx + (i - 1) Δx``, where ``δx`` is an offset and ``Δx`` is the uniform spacing (this equivalently applies to ``y_j`` and ``z_k``).
 
 In WriteVTK, an image data file is automatically created if all coordinates are given as `AbstractRange` objects.
 For instance, this will save a `filename.vti` file:

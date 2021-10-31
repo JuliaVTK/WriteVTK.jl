@@ -1,11 +1,5 @@
 # API reference
 
-## Contents
-
-```@contents
-Pages = ["API.md"]
-```
-
 ## Index
 
 ```@index

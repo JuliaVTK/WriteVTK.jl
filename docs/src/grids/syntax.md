@@ -1,4 +1,27 @@
-# Additional options
+# General syntax
+
+The syntax for writing VTK files typically looks like the following:
+
+```
+saved_files = vtk_grid(filename, points..., [cells]; kws...) do vtk
+    # add datasets here...
+end
+```
+
+The returned variable `saved_files` is a `Vector{String}` containing the paths of the actual VTK files that were saved after the operation.
+When writing VTK dataset files (e.g. structured or unstructured grids), this contains just a single path (e.g. `[$(filename).vts]`), but this changes when one is working with metadata files such as [multiblock](@ref Multiblock-files) or [parallel files](@ref Parallel-files).
+
+Note that the above syntax, which uses Julia's
+[Do-block syntax](https://docs.julialang.org/en/v1/manual/functions/#Do-Block-Syntax-for-Function-Arguments)
+is equivalent to:
+
+```julia
+vtk = vtk_grid(filename, points..., [cells]; kws...)
+# add datasets here...
+saved_files = vtk_save(vtk)
+```
+
+## Supported options
 
 By default, numerical data is written to the XML files as compressed raw binary
 data.
@@ -8,10 +31,10 @@ For instance, to disable both compressing and appending raw data in the case of
 unstructured meshes:
 
 ``` julia
-vtk_grid("my_vtk_file", points, cells; compress = false, append = false, ascii = false)
+vtk_grid(filename, points, cells; compress = false, append = false, ascii = false)
 ```
 
-## Supported options
+More generally:
 
 - If `append` is `true` (default), data is written appended at the end of the
   XML file as raw binary data.
