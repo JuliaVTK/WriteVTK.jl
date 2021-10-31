@@ -23,7 +23,7 @@ julia> ] add WriteVTK
 
 ## Quick start
 
-The [`vtk_grid`](@ref) function is the entry point for creating different kinds
+The `vtk_grid` function is the entry point for creating different kinds
 of VTK files.
 In the simplest cases, one just passes coordinate information to this function.
 WriteVTK.jl then determines the VTK format that is more adapted for the provided
@@ -38,7 +38,7 @@ y = 0:0.2:1
 z = -1:0.05:1
 ```
 
-This specific way of specifying coordinates is compatible with the [image data](@ref Image-data)
+This specific way of specifying coordinates is compatible with the [image data](https://jipolanco.github.io/WriteVTK.jl/dev/grids/structured/#Image-data)
 VTK format, which has the `.vti` extension.
 The following creates such a file, with some scalar data attached to each point:
 
@@ -64,16 +64,16 @@ the [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf).
 Note that legacy (non-XML) files are not supported.
 
 Supported dataset formats include:
-- [image data](@ref Image-data) (`.vti`),
-- [rectilinear grid](@ref Rectilinear-grid) (`.vtr`),
-- [structured (or curvilinear) grid](@ref Structured-grid) (`.vts`),
-- [unstructured grid](@ref Unstructured-grid) (`.vtu`),
-- [polydata](@ref Polydata-grid) (`.vtp`, a specific type of unstructured grid).
+- [image data](https://jipolanco.github.io/WriteVTK.jl/dev/grids/structured/#Image-data) (`.vti`),
+- [rectilinear grid](https://jipolanco.github.io/WriteVTK.jl/dev/grids/structured/#Rectilinear-grid) (`.vtr`),
+- [structured (or curvilinear) grid](https://jipolanco.github.io/WriteVTK.jl/dev/grids/structured/#Structured-grid) (`.vts`),
+- [unstructured grid](https://jipolanco.github.io/WriteVTK.jl/dev/grids/unstructured/#Unstructured-grid) (`.vtu`),
+- [polydata](https://jipolanco.github.io/WriteVTK.jl/dev/grids/unstructured/#Polydata-grid) (`.vtp`, a specific type of unstructured grid).
 
 Moreover, the following metadata formats are supported:
-- [multiblock files](@ref Multiblock-files) (`.vtm`),
-- [ParaView collections](@ref ParaView-collections) (`.pvd`, typically used for time series),
-- [parallel files](@ref Parallel-files) (`.pvt*`, only partial support for now).
+- [multiblock files](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/multiblock/) (`.vtm`),
+- [ParaView collections](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/paraview_collections/) (`.pvd`, typically used for time series),
+- [parallel files](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/parallel/) (`.pvt*`, only partial support for now).
 
 ## Further reading
 
