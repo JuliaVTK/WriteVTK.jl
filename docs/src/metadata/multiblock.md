@@ -16,7 +16,7 @@ as the first argument:
 
 ``` julia
 # First block.
-vtk = vtk_grid(vtm, x1, y1, z1)
+let vtk = vtk_grid(vtm, x1, y1, z1)
     vtk["Pressure"] = p1
 end
 
