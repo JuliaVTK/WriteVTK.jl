@@ -34,11 +34,22 @@ const IS_LITTLE_ENDIAN = ENDIAN_BOM == 0x04030201
 const HeaderType = UInt64  # should be UInt32 or UInt64
 
 ## Types ##
+
+"""
+    VTKFile
+
+Abstract type describing a VTK file that may be written using [`vtk_save`](@ref).
+"""
 abstract type VTKFile end
 
 _compression_level(x::Bool) = x ? DEFAULT_COMPRESSION_LEVEL : 0
 _compression_level(x) = Int(x)
 
+"""
+    DatasetFile <: VTKFile
+
+Handler for a data-containing VTK file.
+"""
 struct DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::String
@@ -76,6 +87,11 @@ function show(io::IO, vtk::DatasetFile)
     print(io, "VTK file '$(vtk.path)' ($(vtk.grid_type) file, $open_str)")
 end
 
+"""
+    VTKBlock
+
+Handler for a nested block in a multiblock file.
+"""
 struct VTKBlock
     xelm::XMLElement
     blocks::Vector{Union{VTKFile,VTKBlock}}
@@ -83,6 +99,13 @@ struct VTKBlock
     VTKBlock(xelm) = new(xelm, Union{VTKFile,VTKBlock}[])
 end
 
+xml_block_root(vtb::VTKBlock) = vtb.xelm
+
+"""
+    MultiblockFile <: VTKFile
+
+Handler for a multiblock VTK file (`.vtm`).
+"""
 struct MultiblockFile <: VTKFile
     xdoc::XMLDocument
     path::String
@@ -90,6 +113,17 @@ struct MultiblockFile <: VTKFile
     MultiblockFile(xdoc, path) = new(xdoc, path, Union{VTKFile,VTKBlock}[])
 end
 
+function xml_block_root(vtm::MultiblockFile)
+    # Find vtkMultiBlockDataSet node
+    xroot = root(vtm.xdoc)
+    find_element(xroot, "vtkMultiBlockDataSet")
+end
+
+"""
+    CollectionFile <: VTKFile
+
+Handler for a ParaView collection file (`.pvd`).
+"""
 struct CollectionFile <: VTKFile
     xdoc::XMLDocument
     path::String

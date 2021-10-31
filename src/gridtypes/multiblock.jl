@@ -1,3 +1,5 @@
+const AnyBlock = Union{VTKBlock, MultiblockFile}
+
 """
     vtk_multiblock([f::Function], filename) -> MultiblockFile
 
@@ -21,64 +23,58 @@ function vtk_multiblock(filename::AbstractString)
         set_attribute(xroot, "byte_order", "BigEndian")
     end
     new_child(xroot, "vtkMultiBlockDataSet")
-    return MultiblockFile(xvtm, add_extension(filename, ".vtm"))
+    MultiblockFile(xvtm, add_extension(filename, ".vtm"))
 end
 
 """
-    vtk_grid(vtm::MultiblockFile, [filename], griddata...; kwargs...)
+    vtk_grid(vtm::Union{MultiblockFile, VTKBlock}, [filename], griddata...; kwargs...)
 
 Create new dataset file that is added to an existent multiblock file.
 The VTK grid is specified by the elements of `griddata`.
 
 If the filename is not given, it is determined automatically from the filename
-of the vtm file and the number of existent blocks.
+associated to `vtm` and the number of existent blocks.
 """
-function vtk_grid(vtm::MultiblockFile, vtk_filename::AbstractString,
+function vtk_grid(vtm::AnyBlock, vtk_filename::AbstractString,
                   griddata...; kwargs...)
     vtk = vtk_grid(vtk_filename, griddata...; kwargs...)
-    push!(vtm, vtk)
-    vtk :: DatasetFile
+    # I'm not sure why these two cases should be different... It would probably
+    # be OK to always pass the filename.
+    if vtm isa MultiblockFile
+        multiblock_add_block(vtm, vtk)
+    elseif vtm isa VTKBlock
+        multiblock_add_block(vtm, vtk, vtk_filename)
+    end
+    vtk
 end
 
-function vtk_grid(vtm::MultiblockFile, griddata...; kwargs...)
-    vtm_basename, _ = splitext(vtm.path)
-    vtk_basename = string(vtm_basename, "_", 1 + length(vtm.blocks))
+function vtk_grid(vtm::AnyBlock, griddata...; kwargs...)
+    vtk_basename = _generate_gridfile_basename(vtm)
     vtk_grid(vtm, vtk_basename, griddata...; kwargs...)
 end
 
-"""
-    vtk_grid(vtb::vtkBlock, [filename], griddata...; kwargs...)
-
-Create new dataset file that is added to an existent VTKBlock.
-The VTK grid is specified by the elements of `griddata`.
-
-If the filename is not given, it is determined automatically from the filename
-of the vtb file and the number of existent blocks.
-"""
-function vtk_grid(vtb::VTKBlock, vtk_filename::AbstractString,
-                  griddata...; kwargs...)
-    vtk = vtk_grid(vtk_filename, griddata...; kwargs...)
-    multiblock_add_block(vtb, vtk, vtk_filename)
-    vtk :: DatasetFile
+function _generate_gridfile_basename(vtm::MultiblockFile)
+    new_block_number = length(vtm.blocks) + 1
+    block_name, _ = splitext(vtm.path)
+    "$(block_name)_$(new_block_number)"
 end
 
-function vtk_grid(vtb::VTKBlock, griddata...; kwargs...)
-    new_block_number = length(vtb.blocks) + 1
-    block_name = attribute(vtb.xelm, "name", required=false)
-    if block_name != nothing
-        vtk_basename = "$(block_name)_$(new_block_number)"
+function _generate_gridfile_basename(vtm::VTKBlock)
+    new_block_number = length(vtm.blocks) + 1
+    xroot = xml_block_root(vtm)
+    block_name = attribute(xroot, "name"; required = false)
+    if block_name !== nothing
+        "$(block_name)_$(new_block_number)"
     else
-        block_index = attribute(vtb.xelm, "index")
-        vtk_basename = "block$(block_index)_$(new_block_number)"
+        block_index = attribute(xroot, "index")
+        "block$(block_index)_$(new_block_number)"
     end
-
-    vtk_grid(vtb, vtk_basename, griddata...; kwargs...)
 end
 
 """
     vtk_save(vtm::MultiblockFile)
 
-Save and close multiblock file (.vtm).
+Save and close multiblock file (`.vtm`).
 The VTK files included in the multiblock file are also saved.
 """
 function vtk_save(vtm::MultiblockFile)
@@ -90,7 +86,7 @@ function vtk_save(vtm::MultiblockFile)
         save_file(vtm.xdoc, vtm.path)
         close(vtm)
     end
-    return outfiles
+    outfiles
 end
 
 function vtk_save(vtm::VTKBlock)
@@ -102,22 +98,42 @@ function vtk_save(vtm::VTKBlock)
     return outfiles
 end
 
-function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile, name="")
-    # Add VTK file as a new block to a multiblock file.
+"""
+    multiblock_add_block(
+        vtm::Union{MultiblockFile, VTKBlock},
+        vtk::VTKFile,
+        [name = ""],
+    ) -> nothing
 
-    # Find vtkMultiBlockDataSet node
-    xroot = root(vtm.xdoc)
-    xMBDS = find_element(xroot, "vtkMultiBlockDataSet")
+Add a block to a [`MultiblockFile`](@ref) or a [`VTKBlock`](@ref).
+
+---
+
+    multiblock_add_block(
+        vtm::Union{MultiblockFile, VTKBlock},
+        [name = ""],
+    ) -> VTKBlock
+
+Create a sub-block in a [`MultiblockFile`](@ref) or a [`VTKBlock`](@ref).
+
+Returns a new [`VTKBlock`](@ref).
+
+"""
+function multiblock_add_block end
+
+function multiblock_add_block(vtm::AnyBlock, vtk::VTKFile, name="")
+    # Add VTK file as a new block to a multiblock file or to a nested block.
+    xroot = xml_block_root(vtm)
 
     # DataSet node
     fname = splitdir(vtk.path)[2]
 
-    xDataSet = new_child(xMBDS, "DataSet")
+    xDataSet = new_child(xroot, "DataSet")
     nblock = length(vtm.blocks)
-    set_attribute(xDataSet, "index", "$nblock")
-    set_attribute(xDataSet, "file",  fname)
-    if name != ""
-        set_attribute(xDataSet, "name",  name)
+    set_attribute(xDataSet, "index", string(nblock))
+    set_attribute(xDataSet, "file", fname)
+    if !isempty(name)
+        set_attribute(xDataSet, "name", name)
     end
 
     # Add the block file to vtm.
@@ -126,17 +142,11 @@ function multiblock_add_block(vtm::MultiblockFile, vtk::VTKFile, name="")
     nothing
 end
 
-function multiblock_add_block(vtm::MultiblockFile, name="")
-    # Add VTK block to a multiblock file.
-
-    # Find vtkMultiBlockDataSet node
-    xroot = root(vtm.xdoc)
-    xMBDS = find_element(xroot, "vtkMultiBlockDataSet")
-
-    # Add the block metadata to the XML.
-    xBlock = new_child(xMBDS, "Block")
+function multiblock_add_block(vtm::AnyBlock, name="")
+    xroot = xml_block_root(vtm)
+    xBlock = new_child(xroot, "Block")
     nblock = length(vtm.blocks)
-    set_attribute(xBlock, "index", "$nblock")
+    set_attribute(xBlock, "index", string(nblock))
     if name != ""
         set_attribute(xBlock, "name",  name)
     end
@@ -149,49 +159,5 @@ function multiblock_add_block(vtm::MultiblockFile, name="")
 
     # Return the new block so the user can add VTKFiles or VTKBlocks under it,
     # if desired.
-    return block
+    block
 end
-
-function multiblock_add_block(vtb::VTKBlock, vtk::VTKFile, name="")
-    # Add VTKFile to a VTKBlock.
-
-    # DataSet node
-    fname = splitdir(vtk.path)[2]
-
-    xDataSet = new_child(vtb.xelm, "DataSet")
-    nblock = length(vtb.blocks)
-    set_attribute(xDataSet, "index", "$nblock")
-    set_attribute(xDataSet, "file",  fname)
-    if name != ""
-        set_attribute(xDataSet, "name",  name)
-    end
-
-    # Add the block to vtb.
-    push!(vtb.blocks, vtk)
-
-    nothing
-end
-
-function multiblock_add_block(vtb::VTKBlock, name="")
-    # Add VTK block to a VTK Block.
-
-    xBlock = new_child(vtb.xelm, "Block")
-    nblock = length(vtb.blocks)
-    set_attribute(xBlock, "index", "$nblock")
-    if name != ""
-        set_attribute(xBlock, "name",  name)
-    end
-
-    # Create the new block.
-    block = VTKBlock(xBlock)
-
-    # Add the block to vtb.
-    push!(vtb.blocks, block)
-
-    # Return the new block so the user can add VTKFiles or VTKBlocks under it,
-    # if desired.
-    return block
-end
-
-Base.push!(vtm::MultiblockFile, vtk::VTKFile) = multiblock_add_block(vtm, vtk)
-Base.push!(vtb::VTKBlock, vtk::VTKFile) = multiblock_add_block(vtb, vtk)
