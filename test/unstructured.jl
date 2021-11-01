@@ -149,47 +149,54 @@ function mesh_data(::Val{1})
     return pts, cells, pdata, cdata
 end
 
-function main()
-    outfiles = String[]
-    for dim in 1:3
-        pts, cells, pdata, cdata = mesh_data(Val(dim))
+function test_dimension!(outfiles, ::Val{dim}) where {dim}
+    pts, cells, pdata, cdata = mesh_data(Val(dim))
 
-        @time begin
-            # Initialise new vtu file (unstructured grid).
-            fname = "$(vtk_filename_noext)_$(dim)D"
-            outfile = vtk_grid(fname, pts, cells, compress=3) do vtk
-                # Add some point and cell data.
-                vtk["my_point_data"] = pdata
-                vtk["my_cell_data"] = cdata
-            end
-            append!(outfiles, outfile)
+    fname = "$(vtk_filename_noext)_$(dim)D"
 
-            # This should give the exact same file.
-            xyz = ntuple(d -> view(pts, d, :), Val(dim))
-            outfile = vtk_grid(fname * "_tuple", xyz..., cells, compress=3) do vtk
-                vtk["my_point_data"] = pdata
-                vtk["my_cell_data"] = cdata
-            end
-            append!(outfiles, outfile)
-
-            # Similar using arrays of SVector's
-            let
-                T = eltype(pts)
-                xs = similar(xyz[1], SVector{3, T})
-                for n ∈ eachindex(xs)
-                    xs[n] = ntuple(i -> i ≤ dim ? xyz[i][n] : zero(T), 3)
-                end
-                outfile = vtk_grid(fname * "_SVector", xs, cells, compress=3) do vtk
-                    vtk["my_point_data"] = pdata
-                    vtk["my_cell_data"] = cdata
-                end
-                append!(outfiles, outfile)
-            end
+    let outfile = vtk_grid(fname, pts, cells, compress=3) do vtk
+            # Add some point and cell data.
+            vtk["my_point_data"] = pdata
+            vtk["my_cell_data"] = cdata
         end
+        append!(outfiles, outfile)
     end
 
+    # This should give the exact same file.
+    xyz = ntuple(d -> view(pts, d, :), Val(dim))
+    let outfile = vtk_grid(fname * "_tuple", xyz..., cells, compress=3) do vtk
+            vtk["my_point_data"] = pdata
+            vtk["my_cell_data"] = cdata
+        end
+        append!(outfiles, outfile)
+    end
+
+    # Similar using arrays of SVector's
+    T = eltype(pts)
+    xs = similar(xyz[1], SVector{3, T})
+    for n ∈ eachindex(xs)
+        xs[n] = ntuple(i -> i ≤ dim ? xyz[i][n] : zero(T), 3)
+    end
+    let outfile = vtk_grid(fname * "_SVector", xs, cells, compress=3) do vtk
+            vtk["my_point_data"] = pdata
+            vtk["my_cell_data"] = cdata
+        end
+        append!(outfiles, outfile)
+    end
+
+    outfiles
+end
+
+function main()
+    outfiles = String[]
+
+    @time test_dimension!(outfiles, Val(1))
+    @time test_dimension!(outfiles, Val(2))
+    @time test_dimension!(outfiles, Val(3))
+
     println("Saved:  ", join(outfiles, "  "))
-    return outfiles::Vector{String}
+
+    return outfiles
 end
 
 main()
