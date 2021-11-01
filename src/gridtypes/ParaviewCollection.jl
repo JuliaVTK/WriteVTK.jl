@@ -1,3 +1,15 @@
+"""
+    CollectionFile <: VTKFile
+
+Handler for a ParaView collection file (`.pvd`).
+"""
+struct CollectionFile <: VTKFile
+    xdoc::XMLDocument
+    path::String
+    timeSteps::Vector{String}
+    CollectionFile(xdoc, path) = new(xdoc, path, String[])
+end
+
 function paraview_collection(filename::AbstractString;
                              append=false) :: CollectionFile
     # Initialise Paraview collection file (extension .pvd).
@@ -30,7 +42,7 @@ function paraview_collection_load(filename::AbstractString)
     pvd = paraview_collection(filename)
     xroot = root(pvd.xdoc)
     xMBDS = find_element(xroot, "Collection")
-    # Iterate the child elements and only add 
+    # Iterate the child elements and only add
     # attributes considered by pvd.
     # This also preserves the formatting of the resulting
     # file as the empty textnodes created during loading

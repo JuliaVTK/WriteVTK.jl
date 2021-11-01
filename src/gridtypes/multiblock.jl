@@ -1,3 +1,35 @@
+"""
+    VTKBlock
+
+Handler for a nested block in a multiblock file.
+"""
+struct VTKBlock
+    xelm::XMLElement
+    blocks::Vector{Union{VTKFile,VTKBlock}}
+    # Constructor.
+    VTKBlock(xelm) = new(xelm, Union{VTKFile,VTKBlock}[])
+end
+
+xml_block_root(vtb::VTKBlock) = vtb.xelm
+
+"""
+    MultiblockFile <: VTKFile
+
+Handler for a multiblock VTK file (`.vtm`).
+"""
+struct MultiblockFile <: VTKFile
+    xdoc::XMLDocument
+    path::String
+    blocks::Vector{Union{VTKFile,VTKBlock}}
+    MultiblockFile(xdoc, path) = new(xdoc, path, Union{VTKFile,VTKBlock}[])
+end
+
+function xml_block_root(vtm::MultiblockFile)
+    # Find vtkMultiBlockDataSet node
+    xroot = root(vtm.xdoc)
+    find_element(xroot, "vtkMultiBlockDataSet")
+end
+
 const AnyBlock = Union{VTKBlock, MultiblockFile}
 
 """
