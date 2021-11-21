@@ -200,6 +200,17 @@ end
 
 # Variant of vtk_grid with 2-D array "points".
 #   size(points) = (dim, num_points), with dim ∈ {1, 2, 3}
+"""
+    vtk_grid(filename,
+             X::AbstractMatrix,
+             cells::AbstractVector{<:AbstractMeshCell};
+             kwargs...)
+
+        
+Create an unstructured mesh  image data (`.vtu`) file.
+        
+`X` is a matrix with each column containing the Cartesian coordinates of a point
+"""
 function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
                   cells::CellVector, args...; kwargs...) where T
     dim, Npts = size(points)
@@ -232,6 +243,16 @@ end
 
 # Variant of vtk_grid with 1-D arrays x, y, z.
 # Size of each array: (num_points)
+"""
+    vtk_grid(filename,
+             x::AbstractVector{T}, [y::AbstractVector{T}, [z::AbstractVector{T}]],
+             cells::AbstractVector{<:AbstractMeshCell};
+             kwargs...) where {T<:Number}
+        
+Create an unstructured mesh  image data (`.vtu`) file.
+        
+`x`, `y` and `z` are vectors of containing the corresponding Cartesian coordinates of each point.
+"""
 function vtk_grid(filename::AbstractString, x::AbstractVector{T},
                   y::AbstractVector{T}, z::AbstractVector{T},
                   cells::CellVector, args...; kwargs...) where {T}
@@ -259,6 +280,16 @@ function vtk_grid(filename::AbstractString, x::AbstractVector{T},
 end
 
 # This is typically the case when T = SVector{3}
+"""
+    vtk_grid(filename,
+             xs::AbstractVector,
+             cells::AbstractVector{<:AbstractMeshCell};
+             kwargs...)
+        
+Create an unstructured mesh  image data (`.vtu`) file.
+        
+`xs` is a vector of coordinates, such as a vector of `SVector{3}` elements.
+"""
 function vtk_grid(filename::AbstractString, xs::AbstractVector,
                   cells::CellVector, args...; kwargs...)
     gtype = grid_type(eltype(cells))
