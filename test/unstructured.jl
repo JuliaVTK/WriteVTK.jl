@@ -158,6 +158,8 @@ function test_dimension!(outfiles, ::Val{dim}) where {dim}
             # Add some point and cell data.
             vtk["my_point_data"] = pdata
             vtk["my_cell_data"] = cdata
+            # Custom component names
+            vtk_point_data(vtk, pdata, "my_point_data_with_names"; component_names=["Ux", "Uy", "Uz"])
         end
         append!(outfiles, outfile)
     end
@@ -167,6 +169,8 @@ function test_dimension!(outfiles, ::Val{dim}) where {dim}
     let outfile = vtk_grid(fname * "_tuple", xyz..., cells, compress=3) do vtk
             vtk["my_point_data"] = pdata
             vtk["my_cell_data"] = cdata
+            # Custom component names
+            vtk["my_point_data_with_names", component_names=["Ux", "Uy", "Uz"]] = pdata
         end
         append!(outfiles, outfile)
     end

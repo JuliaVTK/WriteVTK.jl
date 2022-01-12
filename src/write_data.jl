@@ -180,7 +180,8 @@ xml_data_array_name(::Union{String,ListOfStrings}) = "Array"
 """
     data_to_xml(
         vtk::DatasetFile, xParent::XMLElement, data,
-        name::AbstractString, Nc::Union{Int,AbstractFieldData} = 1,
+        name::AbstractString, Nc::Union{Int,AbstractFieldData} = 1;
+        component_names::Union{AbstractVector, Nothing} = nothing
     )
 
 Add numerical data to VTK XML file.
@@ -192,7 +193,8 @@ In the latter case, the number of components will be deduced from the data
 dimensions and the type of field data.
 """
 function data_to_xml(vtk, xParent, data, name,
-                     Nc::Union{Int,AbstractFieldData}=1)
+                     Nc::Union{Int,AbstractFieldData}=1;
+                     component_names::Union{AbstractVector,Nothing}=nothing)
     xDA = new_child(xParent, xml_data_array_name(data))
     set_attribute(xDA, "type", datatype_str(data))
     set_attribute(xDA, "Name", name)
@@ -200,6 +202,11 @@ function data_to_xml(vtk, xParent, data, name,
         set_attribute(xDA, "NumberOfComponents", Nc)
     else
         set_num_components(xDA, vtk, data, Nc)
+    end
+    if component_names !== nothing
+        for (i, n) in enumerate(component_names)
+            set_attribute(xDA, "ComponentName$(i - 1)", n) # 0-based
+        end
     end
     if vtk.appended
         data_to_xml_appended(vtk, xDA, data)
@@ -353,7 +360,8 @@ end
 Add either point or cell data to VTK file.
 """
 function add_field_data(vtk::DatasetFile, data, name::AbstractString,
-                        loc::AbstractFieldData)
+                        loc::AbstractFieldData;
+                        component_names::Union{AbstractVector, Nothing}=nothing)
     # Find Piece node.
     xroot = root(vtk.xdoc)
     xGrid = find_element(xroot, vtk.grid_type)
@@ -370,14 +378,14 @@ function add_field_data(vtk::DatasetFile, data, name::AbstractString,
     xPD = (xtmp === nothing) ? new_child(xbase, nodetype) : xtmp
 
     # DataArray node
-    xDA = data_to_xml(vtk, xPD, data, name, loc)
+    xDA = data_to_xml(vtk, xPD, data, name, loc; component_names=component_names)
 
     xDA
 end
 
-vtk_point_data(args...) = add_field_data(args..., VTKPointData())
-vtk_cell_data(args...) = add_field_data(args..., VTKCellData())
-vtk_field_data(args...) = add_field_data(args..., VTKFieldData())
+vtk_point_data(args...; kwargs...) = add_field_data(args..., VTKPointData(); kwargs...)
+vtk_cell_data(args...; kwargs...) = add_field_data(args..., VTKCellData(); kwargs...)
+vtk_field_data(args...; kwargs...) = add_field_data(args..., VTKFieldData(); kwargs...)
 
 """
     setindex!(vtk::DatasetFile, data, name::AbstractString, [field_type])
@@ -411,9 +419,9 @@ vtk["time"] = time
 ```
 """
 Base.setindex!(vtk::DatasetFile, data, name::AbstractString,
-               loc::AbstractFieldData) = add_field_data(vtk, data, name, loc)
+               loc::AbstractFieldData; kwargs...) = add_field_data(vtk, data, name, loc; kwargs...)
 
-function Base.setindex!(vtk::DatasetFile, data, name::AbstractString)
+function Base.setindex!(vtk::DatasetFile, data, name::AbstractString; kwargs...)
     loc = guess_data_location(data, vtk) :: AbstractFieldData
-    setindex!(vtk, data, name, loc)
+    setindex!(vtk, data, name, loc; kwargs...)
 end
