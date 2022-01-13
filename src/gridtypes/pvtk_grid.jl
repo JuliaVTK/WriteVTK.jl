@@ -116,18 +116,45 @@ function _init_pvtk!(pvtk::PVTKFile)
     # Recover point type and number of components
     vtk_root = root(vtk.xdoc)
     vtk_grid = find_element(vtk_root, vtk.grid_type)
+    # adding whole extent if necessary
+    whole_extent = attribute(vtk_grid, "WholeExtent")
+    if ~isnothing(whole_extent)
+        set_attribute(pvtk_grid, "WholeExtent", whole_extent)
+    end
     vtk_piece = find_element(vtk_grid, "Piece")
-    vtk_points = find_element(vtk_piece, "Points")
-    vtk_data_array = find_element(vtk_points, "DataArray")
-    point_type = attribute(vtk_data_array, "type")
-    Nc = attribute(vtk_data_array, "NumberOfComponents")
+    # adding extent if necessary
+    extent = attribute(vtk_piece, "Extent")
+    if ~isnothing(extent)
+        for c in child_elements(pvtk_grid)
+            set_attribute(c, "Extent", extent)
+        end
+    end
 
-    ## PPoints node
-    pvtk_ppoints = new_child(pvtk_grid, "PPoints")
-    pvtk_pdata_array = new_child(pvtk_ppoints, "PDataArray")
-    set_attribute(pvtk_pdata_array, "type", point_type)
-    set_attribute(pvtk_pdata_array, "Name", "Points")
-    set_attribute(pvtk_pdata_array, "NumberOfComponents", Nc)
+    # If serial VTK has points
+    vtk_points = find_element(vtk_piece, "Points")
+    if ~isnothing(vtk_points)
+        vtk_data_array = find_element(vtk_points, "DataArray")
+        point_type = attribute(vtk_data_array, "type")
+        Nc = attribute(vtk_data_array, "NumberOfComponents")
+        ## PPoints node
+        pvtk_ppoints = new_child(pvtk_grid, "PPoints")
+        pvtk_pdata_array = new_child(pvtk_ppoints, "PDataArray")
+        set_attribute(pvtk_pdata_array, "type", point_type)
+        set_attribute(pvtk_pdata_array, "Name", "Points")
+        set_attribute(pvtk_pdata_array, "NumberOfComponents", Nc)
+    end
+
+    # If serial VTK has coordinates
+    vtk_coordinates = find_element(vtk_piece, "Coordinates")
+    if ~isnothing(vtk_coordinates)
+        pvtk_pcoordinates = new_child(pvtk_grid, "PCoordinates")
+        for c in child_elements(vtk_coordinates)
+            pvtk_pdata_array = new_child(pvtk_pcoordinates, "PDataArray")
+            set_attribute(pvtk_pdata_array, "type", attribute(c, "type"))
+            set_attribute(pvtk_pdata_array, "Name", attribute(c, "Name"))
+            set_attribute(pvtk_pdata_array, "NumberOfComponents", attribute(c, "NumberOfComponents"))
+        end
+    end
 
     pvtk
 end
