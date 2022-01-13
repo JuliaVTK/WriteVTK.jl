@@ -115,12 +115,25 @@ function _init_pvtk!(pvtk::PVTKFile)
 
     # Recover point type and number of components
     vtk_root = root(vtk.xdoc)
+
+    # Getting original grid informations
     vtk_grid = find_element(vtk_root, vtk.grid_type)
     # adding whole extent if necessary
     whole_extent = attribute(vtk_grid, "WholeExtent")
     if ~isnothing(whole_extent)
         set_attribute(pvtk_grid, "WholeExtent", whole_extent)
     end
+    # adding origin and spacing if necessary
+    origin = attribute(vtk_grid, "Origin")
+    if ~isnothing(origin)
+        set_attribute(pvtk_grid, "Origin", origin)
+    end
+    spacing = attribute(vtk_grid, "Spacing")
+    if ~isnothing(origin)
+        set_attribute(pvtk_grid, "Spacing", spacing)
+    end
+
+    # Getting original piece informations
     vtk_piece = find_element(vtk_grid, "Piece")
     # adding extent if necessary
     extent = attribute(vtk_piece, "Extent")
