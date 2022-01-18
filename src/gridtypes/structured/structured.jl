@@ -10,18 +10,21 @@ structured_dims(xyz::Array4) = ntuple(d -> size(xyz, d + 1), 3)
 structured_dims(xyz::Array3Tuple3) = size(first(xyz))
 structured_dims(xyz::Array3ofVec3) = size(xyz)
 
-function vtk_grid(dtype::VTKStructuredGrid, filename::AbstractString,
-                  xyz::StructuredCoords; extent=nothing, kwargs...)
-    Ni, Nj, Nk = structured_dims(xyz)
-    Npts = Ni * Nj * Nk
+function vtk_grid(
+        dtype::VTKStructuredGrid, filename::AbstractString,
+        xyz::StructuredCoords;
+        extent = nothing, whole_extent = extent, kwargs...,
+    )
+    Ns = structured_dims(xyz)
+    Npts = prod(Ns)
     Ncomp = num_components(xyz, Npts)
-    Ncls = num_cells_structured((Ni, Nj, Nk))
-    ext = extent_attribute((Ni, Nj, Nk), extent)
+    Ncls = num_cells_structured(Ns)
 
     if Ncomp != 3  # three components (x, y, z)
+        # TODO the error message is only accurate when xyz isa Array4
         msg = "coordinate array `xyz` has incorrect dimensions.\n" *
-              "Expected dimensions: $((3, Ni, Nj, Nk)).\n" *
-              "Actual dimensions: $((Ncomp, Ni, Nj, Nk))"
+              "Expected dimensions: $((3, Ns...)).\n" *
+              "Actual dimensions: $((Ncomp, Ns...))"
         throw(DimensionMismatch(msg))
     end
 
@@ -33,11 +36,15 @@ function vtk_grid(dtype::VTKStructuredGrid, filename::AbstractString,
 
     # StructuredGrid node
     xGrid = new_child(xroot, vtk.grid_type)
-    set_attribute(xGrid, "WholeExtent", ext)
+    let ext = extent_attribute(Ns, whole_extent)
+        set_attribute(xGrid, "WholeExtent", ext)
+    end
 
     # Piece node
     xPiece = new_child(xGrid, "Piece")
-    set_attribute(xPiece, "Extent", ext)
+    let ext = extent_attribute(Ns, extent)
+        set_attribute(xPiece, "Extent", ext)
+    end
 
     # Points node
     xPoints = new_child(xPiece, "Points")

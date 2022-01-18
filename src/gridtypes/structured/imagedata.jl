@@ -2,11 +2,10 @@ function vtk_grid(
         dtype::VTKImageData, filename::AbstractString, Ns::Dims{N};
         origin::NTuple{N} = ntuple(d -> 0.0, Val(N)),
         spacing::NTuple{N} = ntuple(d -> 1.0, Val(N)),
-        extent = nothing, kwargs...,
+        extent = nothing, whole_extent = extent, kwargs...,
     ) where {N}
     Npts = prod(Ns)
     Ncls = num_cells_structured(Ns)
-    ext = extent_attribute(Ns, extent)
 
     xvtk = XMLDocument()
     vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
@@ -16,7 +15,9 @@ function vtk_grid(
 
     # ImageData node
     xGrid = new_child(xroot, vtk.grid_type)
-    set_attribute(xGrid, "WholeExtent", ext)
+    let ext = extent_attribute(Ns, whole_extent)
+        set_attribute(xGrid, "WholeExtent", ext)
+    end
 
     origin_str = _tuple_to_str3(origin, zero(eltype(origin)))
     spacing_str = _tuple_to_str3(spacing, one(eltype(origin)))
@@ -26,7 +27,9 @@ function vtk_grid(
 
     # Piece node
     xPiece = new_child(xGrid, "Piece")
-    set_attribute(xPiece, "Extent", ext)
+    let ext = extent_attribute(Ns, extent)
+        set_attribute(xPiece, "Extent", ext)
+    end
 
     vtk
 end

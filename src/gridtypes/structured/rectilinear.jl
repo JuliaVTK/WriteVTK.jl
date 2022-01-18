@@ -1,12 +1,11 @@
 function vtk_grid(
         dtype::VTKRectilinearGrid, filename::AbstractString,
         xs::Tuple{Vararg{AbstractVector, 3}};
-        extent = nothing, kwargs...,
+        extent = nothing, whole_extent = extent, kwargs...,
     )
     Ns = length.(xs)
     Npts = prod(Ns)
     Ncls = num_cells_structured(Ns)
-    ext = extent_attribute(Ns, extent)
 
     xvtk = XMLDocument()
     vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
@@ -16,11 +15,15 @@ function vtk_grid(
 
     # RectilinearGrid node
     xGrid = new_child(xroot, vtk.grid_type)
-    set_attribute(xGrid, "WholeExtent", ext)
+    let ext = extent_attribute(Ns, whole_extent)
+        set_attribute(xGrid, "WholeExtent", ext)
+    end
 
     # Piece node
     xPiece = new_child(xGrid, "Piece")
-    set_attribute(xPiece, "Extent", ext)
+    let ext = extent_attribute(Ns, extent)
+        set_attribute(xPiece, "Extent", ext)
+    end
 
     # Coordinates node
     xPoints = new_child(xPiece, "Coordinates")
