@@ -41,7 +41,8 @@ function _tuple_to_str3(ts::NTuple{N, T}, default::T) where {N, T}
 end
 
 function vtk_grid(filename::AbstractString, Ns::Vararg{Integer}; kwargs...)
-    vtk_grid(filename, map(N -> 1:N, Ns)...; kwargs...)
+    # We put the origin at (0.0, 0.0, 0.0)
+    vtk_grid(filename, map(N -> range(0.0; length = N), Ns)...; kwargs...)
 end
 
 """
