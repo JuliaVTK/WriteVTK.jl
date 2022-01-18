@@ -17,37 +17,45 @@ end
 # Specifies the "extent" of a structured grid, e.g. (1:4, 0:3, 1:42)
 const Extent{N} = Tuple{Vararg{AbstractUnitRange{<:Integer}, N}} where {N}
 
-# Returns the "extent" attribute required for structured (including rectilinear)
-# grids.
-function extent_attribute(Ns::Dims{3}, extent::Extent{3})
-    all(pair -> pair[1] == length(pair[2]), zip(Ns, extent)) ||
+function maybe_check_extent(Ns::Dims{N}, ext::Extent{N}; check = true) where {N}
+    check || return true
+    all(pair -> pair[1] == length(pair[2]), zip(Ns, ext)) ||
         throw(DimensionMismatch("extent is not consistent with dataset dimensions."))
-    iter = Iterators.map(e -> string(first(e), " ", last(e)), extent)
-    join(iter, " ")
 end
 
-function extent_attribute(Ns::Dims{N}, extent::Extent{N}) where {N}
+function to_extent(Ns::Dims{3}, extent::Extent{3}; kws...)
+    maybe_check_extent(Ns, extent; kws...)
+    extent
+end
+
+function to_extent(Ns::Dims{N}, extent::Extent{N}; kws...) where {N}
     if N > 3
         throw(ArgumentError("dimensionalities N > 3 not supported (got N = $N)"))
     elseif N < 3
+        maybe_check_extent(Ns, extent; kws...)
         M = 3 - N
-        extent_attribute(
-            (Ns..., ntuple(d -> 1, Val(M))...),
-            (extent..., ntuple(d -> 0:0, Val(M))...),
-        )
+        (extent..., ntuple(d -> 0:0, Val(M))...)
     end
 end
 
-function extent_attribute(Ns::Dims, ::Nothing = nothing)
+function to_extent(Ns::Dims, ::Nothing = nothing; kws...)
     ext = map(N -> 0:(N - 1), Ns)
-    extent_attribute(Ns, ext)
+    to_extent(Ns, ext; kws...)
 end
 
 # This is left for compatibility...
-function extent_attribute(Ns::Dims{N}, ext::Array{T}) where {N, T <: Integer}
+function to_extent(Ns::Dims{N}, ext::Array{T}; kws...) where {N, T <: Integer}
     length(ext) == 2N || throw(ArgumentError("extent must have length $(2N)."))
     rs = ntuple(i -> (ext[2i - 1]):(ext[2i]), Val(N))
-    extent_attribute(Ns, rs)
+    to_extent(Ns, rs; kws...)
+end
+
+# Returns the "extent" attribute required for structured (including rectilinear)
+# grids.
+function extent_attribute(Ns::Dims, extent = nothing; kws...)
+    ext = to_extent(Ns, extent; kws...)
+    iter = Iterators.map(e -> string(first(e), " ", last(e)), ext)
+    join(iter, " ")
 end
 
 # Number of cells in structured grids.

@@ -36,13 +36,13 @@ function vtk_grid(
 
     # StructuredGrid node
     xGrid = new_child(xroot, vtk.grid_type)
-    let ext = extent_attribute(Ns, whole_extent)
+    let ext = extent_attribute(Ns, whole_extent; check = false)
         set_attribute(xGrid, "WholeExtent", ext)
     end
 
     # Piece node
     xPiece = new_child(xGrid, "Piece")
-    let ext = extent_attribute(Ns, extent)
+    let ext = extent_attribute(Ns, extent; check = true)
         set_attribute(xPiece, "Extent", ext)
     end
 

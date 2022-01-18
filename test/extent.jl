@@ -6,6 +6,7 @@ using WriteVTK
         Ns = (6, 8)
         ext = (1:6, 3:10)
         @test_throws DimensionMismatch WriteVTK.extent_attribute(Ns .- 1, ext)
+        @test WriteVTK.extent_attribute(Ns .- 1, ext; check = false) == "1 6 3 10 0 0"  # disabling checks
         @test WriteVTK.extent_attribute(Ns, ext) == "1 6 3 10 0 0"
         @test WriteVTK.extent_attribute(Ns) == "0 5 0 7 0 0"
     end
