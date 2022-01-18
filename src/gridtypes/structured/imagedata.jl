@@ -78,9 +78,9 @@ VTK file 'def.vti' (ImageData file, open)
 
 """
 function vtk_grid(filename::AbstractString, xyz::Vararg{AbstractRange}; kwargs...)
-    Nxyz = length.(xyz)
-    origin = first.(xyz)
-    spacing = step.(xyz)
+    Nxyz = promote(length.(xyz)...)
+    origin = promote(first.(xyz)...)
+    spacing = promote(step.(xyz)...)
     vtk_grid(VTKImageData(), filename, Nxyz;
              origin=origin, spacing=spacing, kwargs...)
 end
