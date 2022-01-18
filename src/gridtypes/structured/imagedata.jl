@@ -1,11 +1,12 @@
-function vtk_grid(dtype::VTKImageData, filename::AbstractString,
-                  Nx::Integer, Ny::Integer, Nz::Integer=1;
-                  origin = (0.0, 0.0, 0.0),
-                  spacing = (1.0, 1.0, 1.0),
-                  extent = nothing, kwargs...)
-    Npts = Nx*Ny*Nz
-    Ncls = num_cells_structured(Nx, Ny, Nz)
-    ext = extent_attribute(Nx, Ny, Nz, extent)
+function vtk_grid(
+        dtype::VTKImageData, filename::AbstractString, Ns::Dims{N};
+        origin::NTuple{N} = ntuple(d -> 0.0, Val(N)),
+        spacing::NTuple{N} = ntuple(d -> 1.0, Val(N)),
+        extent = nothing, kwargs...,
+    ) where {N}
+    Npts = prod(Ns)
+    Ncls = num_cells_structured(Ns)
+    ext = extent_attribute(Ns, extent)
 
     xvtk = XMLDocument()
     vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)
@@ -17,28 +18,8 @@ function vtk_grid(dtype::VTKImageData, filename::AbstractString,
     xGrid = new_child(xroot, vtk.grid_type)
     set_attribute(xGrid, "WholeExtent", ext)
 
-    No = length(origin)
-    Ns = length(spacing)
-
-    if No > 3
-        throw(ArgumentError("origin array must have length <= 3"))
-    elseif Ns > 3
-        throw(ArgumentError("spacing array must have length <= 3"))
-    end
-
-    origin_str = join(origin, " ")
-    spacing_str = join(spacing, " ")
-
-    while No != 3
-        # Fill additional dimensions (e.g. the z dimension if 2D grid)
-        origin_str *= (" 0.0")
-        No += 1
-    end
-
-    while Ns != 3
-        spacing_str *= (" 1.0")
-        Ns += 1
-    end
+    origin_str = _tuple_to_str3(origin, zero(eltype(origin)))
+    spacing_str = _tuple_to_str3(spacing, one(eltype(origin)))
 
     set_attribute(xGrid, "Origin", origin_str)
     set_attribute(xGrid, "Spacing", spacing_str)
@@ -50,8 +31,18 @@ function vtk_grid(dtype::VTKImageData, filename::AbstractString,
     vtk
 end
 
-vtk_grid(filename::AbstractString, xyz::Vararg{Integer}; kwargs...) =
-    vtk_grid(VTKImageData(), filename, xyz...; kwargs...)
+_tuple_to_str3(ts::NTuple{3, T}, default::T) where {T} = join(ts, " ")
+
+function _tuple_to_str3(ts::NTuple{N, T}, default::T) where {N, T}
+    @assert N < 3
+    M = 3 - N
+    tt = (ts..., ntuple(d -> default, Val(M))...)
+    _tuple_to_str3(tt, default)
+end
+
+function vtk_grid(filename::AbstractString, Ns::Vararg{Integer}; kwargs...)
+    vtk_grid(filename, map(N -> 1:N, Ns)...; kwargs...)
+end
 
 """
     vtk_grid(filename, x::AbstractRange{T}, y::AbstractRange{T}, [z::AbstractRange{T}];
@@ -86,6 +77,6 @@ function vtk_grid(filename::AbstractString, xyz::Vararg{AbstractRange}; kwargs..
     Nxyz = length.(xyz)
     origin = first.(xyz)
     spacing = step.(xyz)
-    vtk_grid(VTKImageData(), filename, Nxyz...;
+    vtk_grid(VTKImageData(), filename, Nxyz;
              origin=origin, spacing=spacing, kwargs...)
 end

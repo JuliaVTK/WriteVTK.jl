@@ -15,8 +15,8 @@ function vtk_grid(dtype::VTKStructuredGrid, filename::AbstractString,
     Ni, Nj, Nk = structured_dims(xyz)
     Npts = Ni * Nj * Nk
     Ncomp = num_components(xyz, Npts)
-    Ncls = num_cells_structured(Ni, Nj, Nk)
-    ext = extent_attribute(Ni, Nj, Nk, extent)
+    Ncls = num_cells_structured((Ni, Nj, Nk))
+    ext = extent_attribute((Ni, Nj, Nk), extent)
 
     if Ncomp != 3  # three components (x, y, z)
         msg = "coordinate array `xyz` has incorrect dimensions.\n" *

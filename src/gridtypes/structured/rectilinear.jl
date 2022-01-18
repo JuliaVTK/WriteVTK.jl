@@ -3,8 +3,8 @@ function vtk_grid(dtype::VTKRectilinearGrid, filename::AbstractString,
                   extent=nothing, kwargs...)
     Ni, Nj, Nk = length(x), length(y), length(z)
     Npts = Ni*Nj*Nk
-    Ncls = num_cells_structured(Ni, Nj, Nk)
-    ext = extent_attribute(Ni, Nj, Nk, extent)
+    Ncls = num_cells_structured((Ni, Nj, Nk))
+    ext = extent_attribute((Ni, Nj, Nk), extent)
 
     xvtk = XMLDocument()
     vtk = DatasetFile(dtype, xvtk, filename, Npts, Ncls; kwargs...)

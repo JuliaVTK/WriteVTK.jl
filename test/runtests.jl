@@ -4,6 +4,8 @@ using WriteVTK
 using Test: @test
 using SHA: sha1
 
+include("extent.jl")
+
 const tests = [
     "polyhedron_cube.jl",
     "multiblock.jl",
