@@ -13,7 +13,7 @@ structured_dims(xyz::Array3ofVec3) = size(xyz)
 function vtk_grid(
         dtype::VTKStructuredGrid, filename::AbstractString,
         xyz::StructuredCoords;
-        extent = nothing, whole_extent = extent, kwargs...,
+        extent = structured_dims(xyz), whole_extent = extent, kwargs...,
     )
     Ns = structured_dims(xyz)
     Npts = prod(Ns)
@@ -36,13 +36,13 @@ function vtk_grid(
 
     # StructuredGrid node
     xGrid = new_child(xroot, vtk.grid_type)
-    let ext = extent_attribute(Ns, whole_extent; check = false)
+    let ext = extent_attribute(whole_extent)
         set_attribute(xGrid, "WholeExtent", ext)
     end
 
     # Piece node
     xPiece = new_child(xGrid, "Piece")
-    let ext = extent_attribute(Ns, extent; check = true)
+    let ext = extent_attribute(extent)
         set_attribute(xPiece, "Extent", ext)
     end
 

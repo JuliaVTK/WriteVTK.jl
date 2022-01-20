@@ -14,46 +14,35 @@ function vtk_xml_write_header(vtk::DatasetFile)
     xroot::XMLElement
 end
 
-# Specifies the "extent" of a structured grid, e.g. (1:4, 0:3, 1:42)
+# Specifies the "extent" of a structured grid, e.g. (1:4, 1:3, 1:42)
 const Extent{N} = Tuple{Vararg{AbstractUnitRange{<:Integer}, N}} where {N}
 
-function maybe_check_extent(Ns::Dims{N}, ext::Extent{N}; check = true) where {N}
-    check || return true
-    all(pair -> pair[1] == length(pair[2]), zip(Ns, ext)) ||
-        throw(DimensionMismatch("extent is not consistent with dataset dimensions."))
+# Switch to zero-based extent used by VTK.
+to_vtk_extent(r::AbstractUnitRange) = oftype(r, r .- 1)
+
+function to_vtk_extent(extent::Union{Tuple, AbstractArray})
+    ext = to_extent3(extent)
+    map(to_vtk_extent, ext)
 end
 
-function to_extent(Ns::Dims{3}, extent::Extent{3}; kws...)
-    maybe_check_extent(Ns, extent; kws...)
-    extent
-end
+# Convert different extent specifications to Extent{3}.
+to_extent3(extent::Extent{3}) = extent
 
-function to_extent(Ns::Dims{N}, extent::Extent{N}; kws...) where {N}
+function to_extent3(extent::Extent{N}) where {N}
     if N > 3
         throw(ArgumentError("dimensionalities N > 3 not supported (got N = $N)"))
     elseif N < 3
-        maybe_check_extent(Ns, extent; kws...)
         M = 3 - N
-        (extent..., ntuple(d -> 0:0, Val(M))...)
+        (extent..., ntuple(d -> 1:1, Val(M))...) :: Extent{3}
     end
 end
 
-function to_extent(Ns::Dims, ::Nothing = nothing; kws...)
-    ext = map(N -> 0:(N - 1), Ns)
-    to_extent(Ns, ext; kws...)
-end
-
-# This is left for compatibility...
-function to_extent(Ns::Dims{N}, ext::Array{T}; kws...) where {N, T <: Integer}
-    length(ext) == 2N || throw(ArgumentError("extent must have length $(2N)."))
-    rs = ntuple(i -> (ext[2i - 1]):(ext[2i]), Val(N))
-    to_extent(Ns, rs; kws...)
-end
+to_extent3(Ns::Dims) = to_extent3(map(N -> 1:N, Ns))
 
 # Returns the "extent" attribute required for structured (including rectilinear)
 # grids.
-function extent_attribute(Ns::Dims, extent = nothing; kws...)
-    ext = to_extent(Ns, extent; kws...)
+function extent_attribute(extent_in)
+    ext = to_vtk_extent(extent_in)
     iter = Iterators.map(e -> string(first(e), " ", last(e)), ext)
     join(iter, " ")
 end
