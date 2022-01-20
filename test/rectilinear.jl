@@ -72,7 +72,7 @@ function main()
         end
 
         # Test extents (this is optional!!)
-        ext = [0, Ni-1, 0, Nj-1, 0, Nk-1] .+ 42
+        ext = map(N -> (1:N) .+ 42, (Ni, Nj, Nk))
 
         # Initialise new vtr file (rectilinear grid).
         @time begin

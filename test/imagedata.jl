@@ -33,7 +33,7 @@ function main()
     end
 
     # These are all optional:
-    extent = map(r -> r .+ 42, (1:Ni, 1:Nj, 1:Nk))
+    extent = map(r -> r .+ 43, (1:Ni, 1:Nj, 1:Nk))
     origin = (1.2, 4.3, -3.1)
     spacing = (0.1, 0.5, 1.2)
 
