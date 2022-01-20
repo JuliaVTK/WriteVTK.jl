@@ -79,8 +79,17 @@ VTK file 'def.vti' (ImageData file, open)
 """
 function vtk_grid(filename::AbstractString, xyz::Vararg{AbstractRange}; kwargs...)
     Nxyz = promote(length.(xyz)...)
-    origin = promote(first.(xyz)...)
     spacing = promote(step.(xyz)...)
+    origin = promote(first.(xyz)...)
+
+    if (extent = get(kwargs, :extent, nothing)) !== nothing
+        # Shift origin accordingly
+        length.(extent) == Nxyz ||
+            throw(DimensionMismatch("`extent` argument doesn't match grid dimensions"))
+        origin_new = @. origin + (1 - first(extent)) * spacing
+        origin = oftype(origin, origin_new)
+    end
+
     vtk_grid(VTKImageData(), filename, Nxyz;
              origin=origin, spacing=spacing, kwargs...)
 end
