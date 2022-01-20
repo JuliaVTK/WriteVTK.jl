@@ -20,7 +20,7 @@ const Extent{N} = Tuple{Vararg{AbstractUnitRange{<:Integer}, N}} where {N}
 # Switch to zero-based extent used by VTK.
 to_vtk_extent(r::AbstractUnitRange) = r .- 1
 
-function to_vtk_extent(extent::Union{Tuple, AbstractArray})
+function to_vtk_extent(extent::Tuple)
     ext = to_extent3(extent)
     map(to_vtk_extent, ext)
 end
