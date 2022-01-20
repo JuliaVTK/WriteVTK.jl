@@ -18,7 +18,7 @@ end
 const Extent{N} = Tuple{Vararg{AbstractUnitRange{<:Integer}, N}} where {N}
 
 # Switch to zero-based extent used by VTK.
-to_vtk_extent(r::AbstractUnitRange) = oftype(r, r .- 1)
+to_vtk_extent(r::AbstractUnitRange) = r .- 1
 
 function to_vtk_extent(extent::Union{Tuple, AbstractArray})
     ext = to_extent3(extent)
@@ -33,11 +33,11 @@ function to_extent3(extent::Extent{N}) where {N}
         throw(ArgumentError("dimensionalities N > 3 not supported (got N = $N)"))
     elseif N < 3
         M = 3 - N
-        (extent..., ntuple(d -> 1:1, Val(M))...) :: Extent{3}
+        (extent..., ntuple(d -> Base.OneTo(1), Val(M))...) :: Extent{3}
     end
 end
 
-to_extent3(Ns::Dims) = to_extent3(map(N -> 1:N, Ns))
+to_extent3(Ns::Dims) = to_extent3(map(Base.OneTo, Ns))
 
 # Returns the "extent" attribute required for structured (including rectilinear)
 # grids.
