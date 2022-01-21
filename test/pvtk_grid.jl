@@ -1,4 +1,5 @@
 using Base.Threads: @spawn
+using StaticArrays
 using WriteVTK
 using Test
 
@@ -20,7 +21,6 @@ function pvtk_unstructured()
     end
     @test isfile(vtufile)
     @test vtufile ∈ outfiles
-    println("Saved:  ", join(outfiles, "  "))
     @test WriteVTK._serial_filename(3, 100, "prefix", ".ext") == "prefix_003.ext"
     outfiles
 end
@@ -42,10 +42,61 @@ function pvtk_imagedata()
     @sync for (n, extent) ∈ enumerate(extents)
         @spawn begin
             xs = getindex.(xs_whole, extent)  # local grid
-            point_data = map(x -> +(x...), Iterators.product(xs...))
+            point_data = map(sum, Iterators.product(xs...))
             processid = fill(n, length.(xs) .- 1)  # cell data
             filenames[n] = pvtk_grid(
                 "pimage", xs...;
+                part = n, extents = extents,
+                append = false, compress = false,
+            ) do vtk
+                vtk["point_data"] = point_data
+                vtk["process_id"] = processid
+            end
+        end
+    end
+    collect(Iterators.flatten(filenames))
+end
+
+function pvtk_rectilinear()
+    Ns, extents = make_structured_partition()
+    nparts = length(extents)  # number of "processes"
+    filenames = Vector{Vector{String}}(undef, nparts)
+    @sync for (n, extent) ∈ enumerate(extents)
+        @spawn begin
+            xs = map(is -> [sqrt(i) for i ∈ is], extent)  # local grid
+            point_data = map(sum, Iterators.product(xs...))
+            processid = fill(n, length.(xs) .- 1)  # cell data
+            filenames[n] = pvtk_grid(
+                "prectilinear", xs...;
+                part = n, extents = extents,
+                append = false, compress = false,
+            ) do vtk
+                vtk["point_data"] = point_data
+                vtk["process_id"] = processid
+            end
+        end
+    end
+    collect(Iterators.flatten(filenames))
+end
+
+function pvtk_structured()
+    Ns, extents = make_structured_partition()
+    nparts = length(extents)  # number of "processes"
+    filenames = Vector{Vector{String}}(undef, nparts)
+    @sync for (n, extent) ∈ enumerate(extents)
+        @spawn begin
+            points = [
+                SVector(
+                    I[1] + sqrt(I[2]),
+                    I[2] + sqrt(I[1]),
+                    I[3] + sqrt(I[1] + I[2]),
+                )
+                for I ∈ CartesianIndices(extent)
+            ]
+            point_data = map(sum, points)
+            processid = fill(n, length.(extent) .- 1)  # cell data
+            filenames[n] = pvtk_grid(
+                "pstructured", points;
                 part = n, extents = extents,
                 append = false, compress = false,
             ) do vtk
@@ -61,6 +112,8 @@ function main()
     vcat(
         pvtk_unstructured(),
         pvtk_imagedata(),
+        pvtk_rectilinear(),
+        pvtk_structured(),
     )
 end
 
