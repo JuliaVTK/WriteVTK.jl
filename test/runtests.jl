@@ -1,5 +1,3 @@
-#!/usr/bin/env julia
-
 using WriteVTK
 using Test: @test
 using SHA: sha1
@@ -45,6 +43,7 @@ for test in tests
             write(csio, sha_str)
         else
             # Returns `nothing` if string is not found.
+            @info "Verifying $file"
             @test findfirst(sha_str, checksum_list) !== nothing
         end
     end
