@@ -14,31 +14,45 @@ function vtk_xml_write_header(vtk::DatasetFile)
     xroot::XMLElement
 end
 
+# Specifies the "extent" of a structured grid, e.g. (1:4, 1:3, 1:42)
+const Extent{N} = Tuple{Vararg{AbstractUnitRange{<:Integer}, N}} where {N}
+
+# Switch to zero-based extent used by VTK.
+to_vtk_extent(r::AbstractUnitRange) = r .- 1
+
+function to_vtk_extent(extent::Tuple)
+    ext = to_extent3(extent)
+    map(to_vtk_extent, ext)
+end
+
+# Convert different extent specifications to Extent{3}.
+to_extent3(extent::Extent{3}) = extent
+
+function to_extent3(extent::Extent{N}) where {N}
+    if N > 3
+        throw(ArgumentError("dimensionalities N > 3 not supported (got N = $N)"))
+    elseif N < 3
+        M = 3 - N
+        (extent..., ntuple(d -> Base.OneTo(1), Val(M))...) :: Extent{3}
+    end
+end
+
+to_extent3(Ns::Dims) = to_extent3(map(Base.OneTo, Ns))
 
 # Returns the "extent" attribute required for structured (including rectilinear)
 # grids.
-extent_attribute(Ni, Nj, Nk, ::Nothing=nothing) =
-    "0 $(Ni - 1) 0 $(Nj - 1) 0 $(Nk - 1)"
-
-function extent_attribute(Ni, Nj, Nk, extent::Array{T}) where T <: Integer
-    length(extent) == 6 || throw(ArgumentError("extent must have length 6."))
-    (extent[2] - extent[1] + 1 == Ni) &&
-    (extent[4] - extent[3] + 1 == Nj) &&
-    (extent[6] - extent[5] + 1 == Nk) ||
-    throw(ArgumentError("extent is not consistent with dataset dimensions."))
-    join(extent, " ")
+function extent_attribute(extent_in)
+    ext = to_vtk_extent(extent_in)
+    iter = Iterators.map(e -> string(first(e), " ", last(e)), ext)
+    join(iter, " ")
 end
 
 # Number of cells in structured grids.
 # In 3D, all cells are hexahedrons (i.e. VTK_HEXAHEDRON), and the number of
 # cells is (Ni-1)*(Nj-1)*(Nk-1). In 2D, they are quadrilaterals (VTK_QUAD), and in
 # 1D they are line segments (VTK_LINE).
-function num_cells_structured(Ni, Nj, Nk)
-    Ncls = one(Ni)
-    for N in (Ni, Nj, Nk)
-        Ncls *= max(1, N - 1)
-    end
-    Ncls
+function num_cells_structured(Ns::Dims)
+    prod(N -> max(1, N - 1), Ns)
 end
 
 # Accept passing coordinates as a tuple.

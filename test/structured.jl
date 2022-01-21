@@ -69,9 +69,6 @@ function generate_structured(grid_format, ::Val{dim}) where {dim}
         end
     end
 
-    # Test extents (this is optional!!)
-    ext = [0, Ni-1, 0, Nj-1, 0, Nk-1]
-
     # We test defining grid points using different formats.
     points = if grid_format === SingleArray()
         xyz
@@ -96,7 +93,7 @@ function generate_structured(grid_format, ::Val{dim}) where {dim}
     @time begin
         # Initialise new vts file (structured grid).
         fname = "$(vtk_filename_noext)_$(dim)D_$(name(grid_format))"
-        vtk = vtk_grid(fname, points; extent=ext)
+        vtk = vtk_grid(fname, points)
 
         # Add data.
         vtk["p_values"] = psub

@@ -33,9 +33,9 @@ function main()
     end
 
     # These are all optional:
-    extent = [1, Ni, 1, Nj, 1, Nk] .+ 42
-    origin = [1.2, 4.3, -3.1]
-    spacing = [0.1, 0.5, 1.2]
+    extent = map(r -> r .+ 43, (1:Ni, 1:Nj, 1:Nk))
+    origin = (1.2, 4.3, -3.1)
+    spacing = (0.1, 0.5, 1.2)
 
     # Initialise new vti file (image data).
     @time outfiles = vtk_grid(vtk_filename_noext, Ni, Nj, Nk, extent=extent,
@@ -59,7 +59,7 @@ function main()
 
     # Test 2D dataset
     @time outfiles_2D = vtk_grid(vtk_filename_noext * "_2D", Ni, Nj,
-                                 # extent=extent[1:2],  # doesn't work for now (TODO)
+                                 # extent=extent[1:2],
                                  origin=origin[1:2], spacing=spacing[1:2]) do vtk
         vtk["p_values"] = p[:, :, 1]
         vtk["myVector"] = vec[:, :, :, 1]
