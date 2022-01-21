@@ -73,7 +73,7 @@ Supported dataset formats include:
 Moreover, the following metadata formats are supported:
 - [multiblock files](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/multiblock/) (`.vtm`),
 - [ParaView collections](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/paraview_collections/) (`.pvd`, typically used for time series),
-- [parallel files](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/parallel/) (`.pvt*`, only partial support for now).
+- [parallel files](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/parallel/) (`.pvt*`).
 
 ## Further reading
 

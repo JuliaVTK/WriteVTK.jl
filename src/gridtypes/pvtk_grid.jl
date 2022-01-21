@@ -14,43 +14,117 @@ struct PVTKFile <: VTKFile
     path::String
 end
 
-"""
-    pvtk_grid(args...; part, nparts, ismain = (part == 1), ghost_level = 0, kwargs...)
+# Returns true if the arguments do *not* contain any cell vectors.
+_pvtk_is_structured(x::AbstractVector{<:AbstractMeshCell}, args...) = Val(false)
+_pvtk_is_structured(x, args...) = _pvtk_is_structured(args...)
+_pvtk_is_structured() = Val(true)
 
-Returns a handler representing a parallel vtk file, which can be
+_pvtk_nparts(structured::Val{false}; nparts::Integer, etc...) = nparts
+_pvtk_nparts(structured::Val{true}; extents::AbstractArray, etc...) = length(extents)
+
+_pvtk_extents(structured::Val{false}; etc...) = nothing
+_pvtk_extents(structured::Val{true}; extents::AbstractArray, etc...) = extents
+
+# Filter keyword arguments to be passed to vtk_grid.
+_remove_parallel_kwargs(; nparts = nothing, extents = nothing, kws...) =
+    NamedTuple(kws)
+
+# Determine whole extent from the local extents associated to each process.
+function compute_whole_extent(extents::AbstractArray{<:Extent})
+    # Compute the minimum and maximum across each dimension
+    begins = mapreduce(ext -> map(first, ext), min, extents)
+    ends = mapreduce(ext -> map(last, ext), max, extents)
+    map((b, e) -> b:e, begins, ends)
+end
+
+compute_whole_extent(::Nothing) = nothing
+
+"""
+    pvtk_grid(
+        filename, args...;
+        part, nparts, extents, ismain = (part == 1), ghost_level = 0,
+        kwargs...,
+    )
+
+Returns a handler representing a parallel VTK file, which can be
 eventually written to file with `vtk_save`.
 
-Positional and keyword arguments in `args` and `kwargs`
-are passed to `vtk_grid` verbatim (except file names that are augmented with the
-corresponding part id).
+Positional and keyword arguments in `args` and `kwargs` are passed to `vtk_grid`
+verbatim.
+Note that serial filenames are automatically generated from `filename` and from
+the process id `part`.
 
-The extra keyword arguments only apply to parallel VTK file formats.
+The following keyword arguments only apply to parallel VTK file formats.
 
 Mandatory ones are:
 
-- `part` current (1-based) part id,
-- `nparts` total number of parts,
+- `part`: current (1-based) part id,
+- `nparts`: total number of parts (only required for **unstructured** grids),
+- `extents`: array specifying the partitioning of a **structured** grid across
+  different processes (see below for details).
 
 Optional ones are:
 
-- `ismain` true if the current part id `part` is the main (the only one that will write the `.pvtk` file),
-- `ghost_level` ghost level.
+- `ismain`: `true` if the current part id `part` is the main (the only one that will write the `.pvtk` file),
+- `ghost_level`: ghost level.
+
+## Specifying extents for a structured grid
+
+For structured grids, the partitioning of the dataset across different processes
+must be specified via the `extents` argument.
+This is an array where each element represents the data extent associated to a
+given process.
+
+For example, for a dataset of global dimensions ``15×12×4`` distributed across 4
+processes, this array may look like the following:
+
+```julia
+extents = [
+    ( 1:10,  1:5, 1:4),  # process 1
+    (10:15,  1:5, 1:4),  # process 2
+    ( 1:10, 5:12, 1:4),  # process 3
+    (10:15, 5:12, 1:4),  # process 4
+]
+```
+
+Some important notes:
+
+- the `extents` argument must be the same for all processes;
+- the extents **must overlap**, or VTK / ParaView will complain when trying to
+  open the files;
+- the length of the `extents` array gives the number of processes.
+  Therefore, the `nparts` argument is redundant and does not need to be passed.
+
 """
 function pvtk_grid(
         filename::AbstractString, args...;
-        part, nparts, ismain = (part == 1), ghost_level = 0, kwargs...,
+        part, ismain = (part == 1), ghost_level = 0, kwargs...,
     )
-    bname = basename(filename)
+    is_structured = _pvtk_is_structured(args...)
+    nparts = _pvtk_nparts(is_structured; kwargs...)
+    extents = _pvtk_extents(is_structured; kwargs...)
+
     mkpath(filename)
+    bname = basename(filename)
     prefix = joinpath(filename, bname)
     fn = _serial_filename(part, nparts, prefix, "")
+
+    vtk = let kws_vtk = _remove_parallel_kwargs(; kwargs...)
+        kws = if extents === nothing
+            kws_vtk
+        else
+            (; kws_vtk..., extent = extents[part])
+        end
+        vtk_grid(fn, args...; kws...)
+    end
+
     pvtkargs = PVTKArgs(part, nparts, ismain, ghost_level)
-    xdoc  = XMLDocument()
-    vtk = vtk_grid(fn, args...; kwargs...)
+    xdoc = XMLDocument()
     _, ext = splitext(vtk.path)
     path = filename * ".p" * ext[2:end]
     pvtk = PVTKFile(pvtkargs, xdoc, vtk, path)
-    _init_pvtk!(pvtk)
+    _init_pvtk!(pvtk, extents)
+
     pvtk
 end
 
@@ -82,7 +156,7 @@ function _serial_filename(part, nparts, prefix, extension)
     prefix * "_$p" * extension
 end
 
-function _init_pvtk!(pvtk::PVTKFile)
+function _init_pvtk!(pvtk::PVTKFile, extents)
     # Recover some data
     vtk = pvtk.vtk
     pvtkargs = pvtk.pvtkargs
@@ -107,27 +181,67 @@ function _init_pvtk!(pvtk::PVTKFile)
     set_attribute(pvtk_grid, "GhostLevel", string(pvtkargs.ghost_level))
 
     # Pieces (i.e. Pointers to serial files)
-    for piece in 1:npieces
+    for piece ∈ 1:npieces
         pvtk_piece = new_child(pvtk_grid, "Piece")
         fn = _serial_filename(piece, npieces, prefix, ext)
         set_attribute(pvtk_piece, "Source", fn)
+
+        # Add local extent if necessary
+        if extents !== nothing
+            set_attribute(pvtk_piece, "Extent", extent_attribute(extents[piece]))
+        end
     end
 
+    # Add whole extent if necessary
+    whole_extent = compute_whole_extent(extents)
+    if whole_extent !== nothing
+        set_attribute(pvtk_grid, "WholeExtent", extent_attribute(whole_extent))
+    end
+
+    # Getting original grid informations
     # Recover point type and number of components
     vtk_root = root(vtk.xdoc)
     vtk_grid = find_element(vtk_root, vtk.grid_type)
-    vtk_piece = find_element(vtk_grid, "Piece")
-    vtk_points = find_element(vtk_piece, "Points")
-    vtk_data_array = find_element(vtk_points, "DataArray")
-    point_type = attribute(vtk_data_array, "type")
-    Nc = attribute(vtk_data_array, "NumberOfComponents")
 
-    ## PPoints node
-    pvtk_ppoints = new_child(pvtk_grid, "PPoints")
-    pvtk_pdata_array = new_child(pvtk_ppoints, "PDataArray")
-    set_attribute(pvtk_pdata_array, "type", point_type)
-    set_attribute(pvtk_pdata_array, "Name", "Points")
-    set_attribute(pvtk_pdata_array, "NumberOfComponents", Nc)
+    # adding origin and spacing if necessary
+    origin = attribute(vtk_grid, "Origin")
+    if origin !== nothing
+        set_attribute(pvtk_grid, "Origin", origin)
+    end
+
+    spacing = attribute(vtk_grid, "Spacing")
+    if spacing !== nothing
+        set_attribute(pvtk_grid, "Spacing", spacing)
+    end
+
+    # Getting original piece informations
+    vtk_piece = find_element(vtk_grid, "Piece")
+
+    # If serial VTK has points
+    vtk_points = find_element(vtk_piece, "Points")
+    if vtk_points !== nothing
+        vtk_data_array = find_element(vtk_points, "DataArray")
+        point_type = attribute(vtk_data_array, "type")
+        Nc = attribute(vtk_data_array, "NumberOfComponents")
+        ## PPoints node
+        pvtk_ppoints = new_child(pvtk_grid, "PPoints")
+        pvtk_pdata_array = new_child(pvtk_ppoints, "PDataArray")
+        set_attribute(pvtk_pdata_array, "type", point_type)
+        set_attribute(pvtk_pdata_array, "Name", "Points")
+        set_attribute(pvtk_pdata_array, "NumberOfComponents", Nc)
+    end
+
+    # If serial VTK has coordinates
+    vtk_coordinates = find_element(vtk_piece, "Coordinates")
+    if vtk_coordinates !== nothing
+        pvtk_pcoordinates = new_child(pvtk_grid, "PCoordinates")
+        for c in child_elements(vtk_coordinates)
+            pvtk_pdata_array = new_child(pvtk_pcoordinates, "PDataArray")
+            set_attribute(pvtk_pdata_array, "type", attribute(c, "type"))
+            set_attribute(pvtk_pdata_array, "Name", attribute(c, "Name"))
+            set_attribute(pvtk_pdata_array, "NumberOfComponents", attribute(c, "NumberOfComponents"))
+        end
+    end
 
     pvtk
 end
