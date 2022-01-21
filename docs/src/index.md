@@ -66,7 +66,7 @@ Supported dataset formats include:
 Moreover, the following metadata formats are supported:
 - [multiblock files](@ref Multiblock-files) (`.vtm`),
 - [ParaView collections](@ref ParaView-collections) (`.pvd`, typically used for time series),
-- [parallel files](@ref Parallel-files) (`.pvt*`, only partial support for now).
+- [parallel files](@ref Parallel-files) (`.pvt*`).
 
 ## Authors
 
