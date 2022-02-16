@@ -269,6 +269,7 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
         write_array(zWriter, data)
         write(zWriter, TranscodingStreams.TOKEN_END)
         flush(zWriter)
+        TranscodingStreams.finalize(zWriter.codec) # Release allocated resources (issue #43)
 
         # Go back to `initpos` and write real header.
         endpos = position(buf)
