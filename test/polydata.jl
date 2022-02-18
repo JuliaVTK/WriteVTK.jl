@@ -62,17 +62,19 @@ function empty_cells()
     points = [0 0 0; 1. 1. 1.]
     vel = [0 .5 .5; 1 1 0]
     verts = MeshCell{PolyData.Verts}[]
-    vtk_grid("parts.vtp", points, verts) do vtk
+    @time filenames = vtk_grid("empty_cells.vtp", points, verts,
+                               compress=false, append=false, ascii=true) do vtk
         vtk["vel"] = vel
     end
 end
 
 function main()
-    empty_cells()
+    filenames = empty_cells()
 
     Np = 128
-    filenames = vcat(write_vtp.(Np, 2:3)...)
+    append!(filenames, write_vtp.(Np, 2:3)...)
     println("Saved:  ", join(filenames, "  "))
+
     filenames
 end
 

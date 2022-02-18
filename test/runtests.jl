@@ -19,9 +19,11 @@ const tests = [
 ]
 
 # Only toggle to generate new checksums, if new tests are added.
-const OVERWRITE_CHECKSUMS = false
+const OVERWRITE_CHECKSUMS = parse(Bool, get(ENV, "OVERWRITE_CHECKSUMS", "false"))
 const checksums_file = joinpath(dirname(@__FILE__), "checksums.sha1")
 const checksum_list = read(checksums_file, String)
+
+@show OVERWRITE_CHECKSUMS
 
 if OVERWRITE_CHECKSUMS
     csio = open(checksums_file, "w")
