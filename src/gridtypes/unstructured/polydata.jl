@@ -60,11 +60,6 @@ add_poly_cells!(vtk, xml) = vtk
 function vtk_grid(dtype::VTKPolyData, filename::AbstractString,
                   points::UnstructuredCoords,
                   cells::Vararg{AbstractArray{<:PolyCell}}; kwargs...)
-    if isempty(cells)
-        throw(ArgumentError(
-            "constructing PolyData dataset with no cells is not allowed"))
-    end
-
     Npts = num_points(dtype, points)
     Ncls = sum(length, cells)
 
