@@ -36,7 +36,7 @@ end
 
 function pvtk_imagedata()
     Ns, extents = make_structured_partition()
-    xs_whole = map(N -> range(-1; step = 0.2, length = N), Ns)  # full grid
+    xs_whole = map(N -> range(-1.0; step = 0.2, length = N), Ns)  # full grid
     nparts = length(extents)  # number of "processes"
     filenames = Vector{Vector{String}}(undef, nparts)
     @sync for (n, extent) ∈ enumerate(extents)
