@@ -64,12 +64,11 @@ cell_type(cell::MeshCell) = cell.ctype
 
 function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
                     with_types::Val=Val(true))
-    Cell = eltype(cells)
     Ncls = length(cells)
     write_types = with_types === Val(true)
 
     # Create data arrays.
-    offsets = Array{Int32}(undef, Ncls)
+    offsets = Array{Int}(undef, Ncls)
 
     # Write `types` array? This must be true for unstructured grids,
     # and false for polydata.
@@ -94,7 +93,7 @@ function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
     end
 
     # Create connectivity array.
-    conn = Array{Int32}(undef, Nconn)
+    conn = Array{Int}(undef, Nconn)
     n = 1
     for c in cells, i in c.connectivity
         # We transform to zero-based indexing, required by VTK.
@@ -122,8 +121,8 @@ end
 # This will be the case if there are polyhedron cells (VTK_POLYHEDRON).
 function maybe_write_faces(vtk, xnode, cells)
     offset = 0
-    data_faces = Int32[]
-    data_offsets = Int32[]
+    data_faces = Int[]
+    data_offsets = Int[]
 
     for cell in cells
         ndata = process_faces!(data_faces, cell, offset)
@@ -206,9 +205,9 @@ end
              cells::AbstractVector{<:AbstractMeshCell};
              kwargs...)
 
-        
+
 Create an unstructured mesh  image data (`.vtu`) file.
-        
+
 `X` is a matrix with each column containing the Cartesian coordinates of a point
 """
 function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
@@ -248,9 +247,9 @@ end
              x::AbstractVector{T}, [y::AbstractVector{T}, [z::AbstractVector{T}]],
              cells::AbstractVector{<:AbstractMeshCell};
              kwargs...) where {T<:Number}
-        
-Create an unstructured mesh  image data (`.vtu`) file.
-        
+
+Create an unstructured mesh image data (`.vtu`) file.
+
 `x`, `y` and `z` are vectors of containing the corresponding Cartesian coordinates of each point.
 """
 function vtk_grid(filename::AbstractString, x::AbstractVector{T},
@@ -285,9 +284,9 @@ end
              xs::AbstractVector,
              cells::AbstractVector{<:AbstractMeshCell};
              kwargs...)
-        
+
 Create an unstructured mesh  image data (`.vtu`) file.
-        
+
 `xs` is a vector of coordinates, such as a vector of `SVector{3}` elements.
 """
 function vtk_grid(filename::AbstractString, xs::AbstractVector,
