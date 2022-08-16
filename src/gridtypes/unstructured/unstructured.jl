@@ -62,13 +62,31 @@ end
 
 cell_type(cell::MeshCell) = cell.ctype
 
+# Obtain common integer type for holding connectivity indices.
+# If all elements of `cells` have the same type, then the return type is equal
+# to the element type of the `connectivity` field of each cell.
+# Otherwise, fall back to Int.
+function connectivity_type(cells)
+    Cell = eltype(cells) :: Type{<:AbstractMeshCell}
+    if isconcretetype(Cell)
+        _connectivity_type(Cell) :: Type{<:Integer}
+    else
+        Int
+    end
+end
+
+_connectivity_type(::Type{MeshCell{T,V}}) where {T,V} = _connectivity_type(V)
+_connectivity_type(::Type{V}) where {V <: Connectivity} = eltype(V)
+
 function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
                     with_types::Val=Val(true))
     Ncls = length(cells)
     write_types = with_types === Val(true)
 
+    IntType = connectivity_type(cells) :: Type{<:Integer}
+
     # Create data arrays.
-    offsets = Array{Int}(undef, Ncls)
+    offsets = Array{IntType}(undef, Ncls)
 
     # Write `types` array? This must be true for unstructured grids,
     # and false for polydata.
@@ -93,11 +111,11 @@ function add_cells!(vtk, xml_piece, number_attr, xml_name, cells;
     end
 
     # Create connectivity array.
-    conn = Array{Int}(undef, Nconn)
+    conn = Array{IntType}(undef, Nconn)
     n = 1
     for c in cells, i in c.connectivity
         # We transform to zero-based indexing, required by VTK.
-        conn[n] = i - 1
+        conn[n] = i - one(i)
         n += 1
     end
 

@@ -74,12 +74,12 @@ function third_block_data()
 
     # Create cells (all hexahedrons in this case) and cell data.
     celltype = VTKCellTypes.VTK_HEXAHEDRON
-    cells = MeshCell[]
+    cells = MeshCell{VTKCellType, SVector{8, Int}}[]
     cdata = FloatType[]
 
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
-        inds = SVector{8, Int32}(
+        inds = SVector{8, Int}(
             indices[i-1, j-1, k-1],
             indices[i  , j-1, k-1],
             indices[i  , j  , k-1],
@@ -116,12 +116,12 @@ function fourth_block_data()
 
     # Create cells (all tetrahedra in this case) and cell data.
     celltype = VTKCellTypes.VTK_TETRA
-    cells_vol = MeshCell[]
+    cells_vol = MeshCell{VTKCellType, SVector{4, Int}}[]
     cdata_vol = FloatType[]
 
     for k = 1:kmax-1, j = 1:jmax-1, i = 1:imax-1
         # 1, 3, 4, 5
-        inds = SVector{4, Int32}(
+        inds = SVector{4, Int}(
             indices[i, j, k],
             indices[i+1, j, k+1],
             indices[i, j, k+1],
@@ -134,7 +134,7 @@ function fourth_block_data()
         push!(cdata_vol, i*j*k)
 
         # 8, 5, 4, 3
-        inds = SVector{4, Int32}(
+        inds = SVector{4, Int}(
             indices[i, j+1, k+1],
             indices[i, j+1, k],
             indices[i, j, k+1],
@@ -147,7 +147,7 @@ function fourth_block_data()
         push!(cdata_vol, i*j*k)
 
         # 8, 7, 5, 3
-        inds = SVector{4, Int32}(
+        inds = SVector{4, Int}(
             indices[i, j+1, k+1],
             indices[i+1, j+1, k+1],
             indices[i, j+1, k],
@@ -160,7 +160,7 @@ function fourth_block_data()
         push!(cdata_vol, i*j*k)
 
         # 7, 6, 5, 3
-        inds = SVector{4, Int32}(
+        inds = SVector{4, Int}(
             indices[i+1, j+1, k+1],
             indices[i+1, j+1, k],
             indices[i, j+1, k],
@@ -173,7 +173,7 @@ function fourth_block_data()
         push!(cdata_vol, i*j*k)
 
         # 6, 2, 5, 3
-        inds = SVector{4, Int32}(
+        inds = SVector{4, Int}(
             indices[i+1, j+1, k],
             indices[i+1, j, k],
             indices[i, j+1, k],
@@ -186,7 +186,7 @@ function fourth_block_data()
         push!(cdata_vol, i*j*k)
 
         # 5, 2, 1, 3
-        inds = SVector{4, Int32}(
+        inds = SVector{4, Int}(
             indices[i, j+1, k],
             indices[i+1, j, k],
             indices[i, j, k],
@@ -215,12 +215,12 @@ function fourth_block_data()
     @. pdata_imin = sin(2*pi*x)*sin(4*pi*y)*sin(6*pi*z)
 
     celltype = VTKCellTypes.VTK_TRIANGLE
-    cells_imin = MeshCell[]
+    cells_imin = MeshCell{VTKCellType, SVector{3, Int}}[]
     cdata_imin = FloatType[]
 
     for k = 1:kmax-1, j = 1:jmax-1, i = 1:1
         # 1, 3, 4, 5
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i, j, k],
             indices[i, j, k+1],
             indices[i, j+1, k])
@@ -232,7 +232,7 @@ function fourth_block_data()
         push!(cdata_imin, i*j*k)
 
         # 8, 5, 4, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i, j+1, k+1],
             indices[i, j+1, k],
             indices[i, j, k+1])
@@ -262,12 +262,12 @@ function fourth_block_data()
     @. pdata_imax = sin(2*pi*x)*sin(4*pi*y)*sin(6*pi*z)
 
     celltype = VTKCellTypes.VTK_TRIANGLE
-    cells_imax = MeshCell[]
+    cells_imax = MeshCell{VTKCellType, SVector{3, Int}}[]
     cdata_imax = FloatType[]
 
     for k = 1:kmax-1, j = 1:jmax-1, i = imax-1:imax-1
         # 7, 6, 5, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i+1, j+1, k+1],
             indices[i+1, j+1, k],
             indices[i+1, j, k+1])
@@ -279,7 +279,7 @@ function fourth_block_data()
         push!(cdata_imax, i*j*k)
 
         # 6, 2, 5, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i+1, j+1, k],
             indices[i+1, j, k],
             indices[i+1, j, k+1])
@@ -307,12 +307,12 @@ function fourth_block_data()
     @. pdata_jmin = sin(2*pi*x)*sin(4*pi*y)*sin(6*pi*z)
 
     celltype = VTKCellTypes.VTK_TRIANGLE
-    cells_jmin = MeshCell[]
+    cells_jmin = MeshCell{VTKCellType, SVector{3, Int}}[]
     cdata_jmin = FloatType[]
 
     for k = 1:kmax-1, j = 1:1, i = 1:imax-1
         # 1, 3, 4, 5
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i, j, k],
             indices[i+1, j, k+1],
             indices[i, j, k+1])
@@ -324,7 +324,7 @@ function fourth_block_data()
         push!(cdata_jmin, i*j*k)
 
         # 5, 2, 1, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i+1, j, k],
             indices[i, j, k],
             indices[i+1, j, k+1])
@@ -354,12 +354,12 @@ function fourth_block_data()
     @. pdata_jmax = sin(2*pi*x)*sin(4*pi*y)*sin(6*pi*z)
 
     celltype = VTKCellTypes.VTK_TRIANGLE
-    cells_jmax = MeshCell[]
+    cells_jmax = MeshCell{VTKCellType, SVector{3, Int}}[]
     cdata_jmax = FloatType[]
 
     for k = 1:kmax-1, j = jmax-1:jmax-1, i = 1:imax-1
         # 8, 7, 5, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i, j+1, k+1],
             indices[i+1, j+1, k+1],
             indices[i, j+1, k])
@@ -371,7 +371,7 @@ function fourth_block_data()
         push!(cdata_jmax, i*j*k)
 
         # 7, 6, 5, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i+1, j+1, k+1],
             indices[i+1, j+1, k],
             indices[i, j+1, k])
@@ -399,12 +399,12 @@ function fourth_block_data()
     @. pdata_kmin = sin(2*pi*x)*sin(4*pi*y)*sin(6*pi*z)
 
     celltype = VTKCellTypes.VTK_TRIANGLE
-    cells_kmin = MeshCell[]
+    cells_kmin = MeshCell{VTKCellType, SVector{3, Int}}[]
     cdata_kmin = FloatType[]
 
     for k = 1:1, j = 1:jmax-1, i = 1:imax-1
         # 6, 2, 5, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i+1, j+1, k],
             indices[i+1, j, k],
             indices[i, j+1, k])
@@ -416,7 +416,7 @@ function fourth_block_data()
         push!(cdata_kmin, i*j*k)
 
         # 5, 2, 1, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i, j+1, k],
             indices[i+1, j, k],
             indices[i, j, k])
@@ -446,12 +446,12 @@ function fourth_block_data()
     @. pdata_kmax = sin(2*pi*x)*sin(4*pi*y)*sin(6*pi*z)
 
     celltype = VTKCellTypes.VTK_TRIANGLE
-    cells_kmax = MeshCell[]
+    cells_kmax = MeshCell{VTKCellType, SVector{3, Int}}[]
     cdata_kmax = FloatType[]
 
     for k = kmax-1:kmax-1, j = 1:jmax-1, i = 1:imax-1
         # 8, 5, 4, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i, j+1, k+1],
             indices[i, j, k+1],
             indices[i+1, j, k+1])
@@ -463,7 +463,7 @@ function fourth_block_data()
         push!(cdata_kmax, i*j*k)
 
         # 8, 7, 5, 3
-        inds = SVector{3, Int32}(
+        inds = SVector{3, Int}(
             indices[i, j+1, k+1],
             indices[i+1, j+1, k+1],
             indices[i+1, j, k+1])

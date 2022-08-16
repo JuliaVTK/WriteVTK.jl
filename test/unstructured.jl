@@ -31,7 +31,7 @@ function mesh_data(::Val{3})
 
     # Create cells (all hexahedrons in this case) and cell data.
     celltype = VTKCellTypes.VTK_HEXAHEDRON
-    cells = MeshCell[]
+    cells = MeshCell{VTKCellType, SVector{8, Int}}[]
     cdata = FloatType[]
 
     @test VTKCellType(celltype.vtk_id) === celltype
@@ -40,7 +40,7 @@ function mesh_data(::Val{3})
 
     for k = 2:Nk, j = 2:Nj, i = 2:Ni
         # Define connectivity of cell.
-        inds = MVector{8, Int32}(undef)
+        inds = MVector{8, Int}(undef)
         inds[1] = indices[i-1, j-1, k-1]
         inds[2] = indices[i  , j-1, k-1]
         inds[3] = indices[i  , j  , k-1]
@@ -83,7 +83,7 @@ function mesh_data(::Val{2})
 
     # Create cells (all quads in this case) and cell data.
     celltype = VTKCellTypes.VTK_QUAD
-    cells = MeshCell[]
+    cells = MeshCell{VTKCellType, Vector{Int32}}[]
     cdata = FloatType[]
 
     @test VTKCellType(celltype.vtk_id) === celltype
@@ -125,7 +125,7 @@ function mesh_data(::Val{1})
 
     # Create cells (all lines in this case) and cell data.
     celltype = VTKCellTypes.VTK_LINE
-    cells = MeshCell[]
+    cells = MeshCell{VTKCellType, Vector{Int32}}[]
     cdata = FloatType[]
 
     @test VTKCellType(celltype.vtk_id) === celltype

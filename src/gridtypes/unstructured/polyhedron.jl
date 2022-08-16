@@ -44,6 +44,9 @@ end
 Base.eltype(::Type{<:VTKPolyhedron}) = VTKCellTypes.VTKCellType
 cell_type(::VTKPolyhedron) = VTKCellTypes.VTK_POLYHEDRON
 
+_connectivity_type(::Type{<:VTKPolyhedron{V}}) where {V} =
+    _connectivity_type(V)
+
 faces(cell::VTKPolyhedron) = cell.faces
 
 function process_faces!(data, cell::VTKPolyhedron, offset)
