@@ -141,6 +141,7 @@ include("gridtypes/pvtk_grid.jl")
 
 # Convenient high-level tools.
 include("utils/array.jl")
+include("utils/surface.jl")
 
 # This allows using do-block syntax for generation of VTK files.
 for func in (:vtk_grid, :pvtk_grid, :vtk_multiblock, :paraview_collection,
