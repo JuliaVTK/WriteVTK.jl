@@ -37,6 +37,7 @@ makedocs(;
             "metadata/parallel.md",
         ],
         "Additional tools" => [
+            "tools/surface.md",
             "tools/write_array.md",
             "tools/readvtk.md",
         ],
