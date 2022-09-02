@@ -5,6 +5,7 @@ using SHA: sha1
 include("extent.jl")
 
 const tests = [
+    "surface.jl",
     "polyhedron_cube.jl",
     "multiblock.jl",
     "rectilinear.jl",
