@@ -135,7 +135,7 @@ julia> saved_files
 
 By opening `full_domain.vtm` in ParaView, one can get the following picture:
 
-![Visualisation of multiblock file](multiblock.png)
+![Visualisation of multiblock file.](multiblock.png)
 
 ## Acknowledgements
 
