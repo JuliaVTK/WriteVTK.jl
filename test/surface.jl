@@ -11,7 +11,10 @@ files = String[]
 @test_throws DimensionMismatch vtk_surface("will_fail", xs, [0.3, 0.4], zs)
 
 let
-    @time output = vtk_surface("surface_basic", xs, ys, zs)
+    @time output = let
+        vtk = vtk_surface("surface_basic", xs, ys, zs)
+        vtk_save(vtk)
+    end
     append!(files, output)
 end
 

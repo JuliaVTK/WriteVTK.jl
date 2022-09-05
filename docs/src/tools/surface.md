@@ -9,7 +9,8 @@ This works in a similar way to surface plots in many plotting packages, e.g.
 ## Basic usage
 
 The `vtk_surface` function takes the coordinates `xs` and `ys` as well as the
-heights `zs` of the data:
+heights `zs` of the data.
+Other than that, it works in the same way as [`vtk_grid`](@ref):
 
 ```jldoctest surface
 julia> using WriteVTK
@@ -18,7 +19,10 @@ julia> xs = 0:0.5:10; ys = 0:1.0:20;
 
 julia> zs = @. cos(xs) + sin(ys');
 
-julia> vtk_surface("surf", xs, ys, zs)
+julia> vtk = vtk_surface("surf", xs, ys, zs)
+VTK file 'surf.vtu' (UnstructuredGrid file, open)
+
+julia> vtk_save(vtk)
 1-element Vector{String}:
  "surf.vtu"
 ```

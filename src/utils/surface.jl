@@ -81,13 +81,20 @@ julia> vtk_surface("surf", xs, ys, zs) do vtk
 Note that the included data must have dimensions `(Nx, Ny)` (for point data) or
 `(Nx - 1, Ny - 1)` (for cell data).
 """
-function vtk_surface(
-        f::F,
-        filename::AbstractString,
+function vtk_surface end
+
+vtk_surface(filename::AbstractString, args...; kws...) =
+    _vtk_surface((filename,), args...; kws...)
+
+vtk_surface(f::F, filename::AbstractString, args...; kws...) where {F} =
+    _vtk_surface((f, filename,), args...; kws...)
+
+function _vtk_surface(
+        args::Tuple,  # may be (function, filename) or just (filename,)
         xs::AbstractMatrix, ys::AbstractMatrix,
         zs::AbstractMatrix;
         kwargs...,
-    ) where {F}
+    )
     if !(size(xs) == size(ys) == size(zs))
         throw(DimensionMismatch("input arrays have incompatible dimensions"))
     end
@@ -95,20 +102,16 @@ function vtk_surface(
     QuadCell = typeof(MeshCell(VTKCellTypes.VTK_QUAD, (1, 2, 3, 4)))
     cells = Array{QuadCell}(undef, Nx - 1, Ny - 1)
     _generate_quad_cells!(cells)
-    vtk_grid(f, filename, vec(xs), vec(ys), vec(zs), vec(cells); kwargs...)
+    vtk_grid(args..., vec(xs), vec(ys), vec(zs), vec(cells); kwargs...)
 end
 
 # Case of a regular grid: coordinates passed as vectors.
-function vtk_surface(
-        f::F,
-        filename::AbstractString,
+function _vtk_surface(
+        args::Tuple,
         xs::AbstractVector, ys::AbstractVector,
         zs::AbstractMatrix;
         kwargs...,
-    ) where {F}
+    )
     Xs, Ys = _meshgrid(xs, ys)
-    vtk_surface(f, filename, Xs, Ys, zs; kwargs...)
+    _vtk_surface(args, Xs, Ys, zs; kwargs...)
 end
-
-vtk_surface(filename::AbstractString, args...; kws...) =
-    vtk_surface(identity, filename, args...; kws...)
