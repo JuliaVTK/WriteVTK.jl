@@ -38,6 +38,9 @@ function pvtk_unstructured_higherorderdegrees()
     outfiles = pvtk_grid("higherorderdegrees", x, y, cells; part = 1, nparts = 1) do pvtk
         pvtk["HigherOrderDegrees", VTKCellData()] = [2;3;12]
         pvtk[VTKCellData()] = Dict("HigherOrderDegrees"=>"HigherOrderDegrees")
+        # This is not very useful... it's just for testing the alternative syntax:
+        pvtk[VTKPointData()] = "AttributeA" => "A"
+        pvtk[VTKFieldData()] = ("AttributeX" => "X", "AttributeY" => "Y")
     end
     @test isfile(vtufile)
     @test vtufile ∈ outfiles
