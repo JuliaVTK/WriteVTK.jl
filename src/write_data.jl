@@ -426,3 +426,68 @@ function Base.setindex!(vtk::DatasetFile, data, name::AbstractString; kwargs...)
     loc = guess_data_location(data, vtk) :: AbstractFieldData
     setindex!(vtk, data, name, loc; kwargs...)
 end
+
+"""
+    add_loc_attributes(vtk::DatasetFile, attributes, loc::AbstractFieldData)
+
+Add attributes to point, cell, or field dataset type tags in a VTK file.
+"""
+function add_loc_attributes(vtk::DatasetFile, attributes, loc::AbstractFieldData)
+    # Find Piece node.
+    xroot = root(vtk.xdoc)
+    xGrid = find_element(xroot, vtk.grid_type)
+
+    xbase = if loc === VTKFieldData()
+        xGrid
+    else
+        find_element(xGrid, "Piece")
+    end
+
+    # Find or create "nodetype" (PointData, CellData or FieldData) node.
+    nodetype = node_type(loc)
+    xtmp = find_element(xbase, nodetype)
+    xPD = (xtmp === nothing) ? new_child(xbase, nodetype) : xtmp
+
+    _set_attributes(xPD, attributes)
+
+    return
+end
+
+# This wraps LightXML.set_attribute(s) to support attributes passed as a single
+# Pair or as a tuple of Pairs.
+_set_attributes(x::XMLElement, attrs::Pair) = _set_attributes(x, (attrs,))
+function _set_attributes(x::XMLElement, attrs::Tuple{Vararg{Pair}})
+    for (nam, val) in attrs
+        set_attribute(x, string(nam), string(val))
+    end
+end
+
+# Fallback (e.g. for dicts and vectors of pairs)
+_set_attributes(x::XMLElement, attrs) = set_attributes(x, attrs)
+
+"""
+    setindex!(vtk::DatasetFile, attributes, loc::AbstractFieldData)
+
+Add attributes to point, cell, or field dataset type in a VTK file.
+
+# Example
+
+Add "HigherOrderDegrees" dataset and cell dataset type attribute to VTK file.
+
+```julia
+vtk = vtk_grid(...)
+vtk["HigherOrderDegrees", VTKCellData()] = [2; 3; 12]
+vtk[VTKCellData()] = Dict("HigherOrderDegrees" => "HigherOrderDegrees")
+```
+
+Note that all three are possible and equivalent:
+
+```julia
+vtk[VTKCellData()] = Dict("HigherOrderDegrees" => "HigherOrderDegrees")
+vtk[VTKCellData()] = "HigherOrderDegrees" => "HigherOrderDegrees"
+vtk[VTKCellData()] = ("HigherOrderDegrees" => "HigherOrderDegrees",)
+```
+"""
+function Base.setindex!(vtk::DatasetFile, attributes, loc::AbstractFieldData)
+    add_loc_attributes(vtk, attributes, loc)
+end

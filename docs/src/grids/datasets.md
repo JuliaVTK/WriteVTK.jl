@@ -128,3 +128,21 @@ vtk_grid("fields_explicit", x, y, z) do vtk
     vtk["time", VTKFieldData()] = 0.42
 end
 ```
+
+Attributes can also be added to dataset types.  In the following example this is
+used to set direction dependent degrees for
+`VTKCellTypes.VTK_LAGRANGE_QUADRILATERAL` cells.
+
+```julia
+cells = [
+  MeshCell(VTKCellTypes.VTK_LAGRANGE_QUADRILATERAL, [
+    1, 3, 12, 10, 2, 6, 9, 11, 4, 7, 5, 8
+  ]),
+]
+x = [0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1]
+y = [0, 0, 0, 1/3, 1/3, 1/3, 2/3, 2/3, 2/3, 1, 1, 1]
+vtk_grid("higherorderdegrees", x, y, cells; part = 1, nparts = 1) do pvtk
+  pvtk["HigherOrderDegrees", VTKCellData()] = [2;3;12]
+  pvtk[VTKCellData()] = Dict("HigherOrderDegrees"=>"HigherOrderDegrees")
+end
+```

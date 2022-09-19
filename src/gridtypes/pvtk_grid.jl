@@ -135,6 +135,12 @@ function Base.setindex!(
     pvtk.vtk[name, args...] = data
 end
 
+function Base.setindex!(
+        pvtk::PVTKFile, attributes, loc::AbstractFieldData,
+    )
+    pvtk.vtk[loc] = attributes
+end
+
 # Save as usual
 function vtk_save(pvtk::PVTKFile)
     outfiles = String[]
@@ -260,6 +266,9 @@ function _update_pvtk!(pvtk::PVTKFile)
     vtk_point_data = find_element(vtk_piece, "PointData")
     if vtk_point_data !== nothing
         pvtk_ppoint_data = new_child(pvtk_grid, "PPointData")
+        for a in attributes(vtk_point_data)
+            set_attribute(pvtk_ppoint_data, name(a), value(a))
+        end
         for vtk_data_array in child_elements(vtk_point_data)
             t = attribute(vtk_data_array, "type")
             name = attribute(vtk_data_array, "Name")
@@ -275,6 +284,9 @@ function _update_pvtk!(pvtk::PVTKFile)
     vtk_cell_data = find_element(vtk_piece, "CellData")
     if vtk_cell_data !== nothing
         pvtk_pcell_data = new_child(pvtk_grid, "PCellData")
+        for a in attributes(vtk_cell_data)
+            set_attribute(pvtk_pcell_data, name(a), value(a))
+        end
         for vtk_data_array in child_elements(vtk_cell_data)
             t = attribute(vtk_data_array, "type")
             name = attribute(vtk_data_array, "Name")

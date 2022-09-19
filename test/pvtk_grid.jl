@@ -25,6 +25,28 @@ function pvtk_unstructured()
     outfiles
 end
 
+function pvtk_unstructured_higherorderdegrees()
+    cells = [
+        MeshCell(VTKCellTypes.VTK_LAGRANGE_QUADRILATERAL, [
+            1, 3, 12, 10, 2, 6, 9, 11, 4, 7, 5, 8
+        ]),
+    ]
+    x = [0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1, 0, 0.5, 1]
+    y = [0, 0, 0, 1/3, 1/3, 1/3, 2/3, 2/3, 2/3, 1, 1, 1]
+    vtufile = "higherorderdegrees/higherorderdegrees_1.vtu"
+    rm(vtufile, force = true)
+    outfiles = pvtk_grid("higherorderdegrees", x, y, cells; part = 1, nparts = 1) do pvtk
+        pvtk["HigherOrderDegrees", VTKCellData()] = [2;3;12]
+        pvtk[VTKCellData()] = Dict("HigherOrderDegrees"=>"HigherOrderDegrees")
+        # This is not very useful... it's just for testing the alternative syntax:
+        pvtk[VTKPointData()] = "AttributeA" => "A"
+        pvtk[VTKFieldData()] = ("AttributeX" => "X", "AttributeY" => "Y")
+    end
+    @test isfile(vtufile)
+    @test vtufile ∈ outfiles
+    outfiles
+end
+
 function make_structured_partition()
     Ns = (10, 15, 3)
     xp = (1:5, 5:10)  # NOTE: overlapping is required by VTK
@@ -111,6 +133,7 @@ end
 function main()
     vcat(
         pvtk_unstructured(),
+        pvtk_unstructured_higherorderdegrees(),
         pvtk_imagedata(),
         pvtk_rectilinear(),
         pvtk_structured(),
