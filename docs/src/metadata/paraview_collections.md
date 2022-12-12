@@ -26,7 +26,7 @@ pvd[time] = vtk
 
 or equivalently
 
-```juila
+```julia
 collection_add_timestep(pvd, vtk, time)
 ```
 
