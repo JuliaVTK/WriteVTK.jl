@@ -28,7 +28,7 @@ vtk = vtk_grid(filename, points..., [cells]; kws...)
 saved_files = vtk_save(vtk)
 ```
 
-## Supported options
+## Data formatting options
 
 By default, numerical data is written to the XML files as compressed raw binary
 data.
@@ -62,3 +62,33 @@ More generally:
   Its value may also be a compression level between 1 (fast compression)
   and 9 (best compression).
   This option is ignored when writing inline data in ASCII format.
+
+## Setting the VTK file version
+
+The `vtk_grid` function also allows setting the VTK file version using the optional `vtkversion` keyword argument.
+This refers to the version of the VTK XML file format that is to be written, and which appears in the `VTKFile` element of the XML file.
+Different versions may be interpreted differently by ParaView.
+Note that this is a somewhat **advanced option** that may be used to solve
+potential issues.
+
+As a real-life example, say that you want to write an [unstructured
+dataset](@ref Unstructured-grid-formats) made of Lagrange hexahedron cells.
+Defining each cell requires defining (1) a set of space coordinates, and (2)
+determining the way these coordinates connect to form the cell.
+The order of the points in the connectivity arrays must follow the specific
+node numbering expected by the VTK libraries.
+But the node numbering [can change](https://gitlab.kitware.com/vtk/vtk/-/blob/master/Documentation/release/9.1.md#data) from one VTK version to the other.
+So, if one constructs the cells following the latest VTK specification, one
+should set the VTK file version to the newest one.
+See [this discussion](https://discourse.julialang.org/t/writevtk-node-numbering-for-27-node-lagrange-hexahedron/93698) for more details.
+
+The `vtkversion` option is used as follows:
+
+```julia
+vtk_grid(filename, points, [cells]; vtkversion = :default, etc...)
+```
+
+where `something` can be `:default` (same as `v1.0`) or `:latest` (currently, same as `v2.2`).
+VTK file version `1.0` is used by default for backwards compatibility and to
+make sure that files can be read by old versions of ParaView.
+
