@@ -45,6 +45,14 @@ abstract type VTKFile end
 _compression_level(x::Bool) = x ? DEFAULT_COMPRESSION_LEVEL : 0
 _compression_level(x) = Int(x)
 
+vtk_version(s::Symbol) = if s === :latest
+    "2.2"
+else
+    "1.0"
+end
+vtk_version(v::VersionNumber) = string(v.major, '.', v.minor)
+vtk_version(s::AbstractString) = string(s)
+
 """
     DatasetFile <: VTKFile
 
@@ -54,14 +62,18 @@ struct DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::String
     grid_type::String
+    version::String     # VTK XML file version
     Npts::Int           # Number of grid points.
     Ncls::Int           # Number of cells.
     compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
     appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
     ascii::Bool         # if true, inline data is written in ASCII format (only used if `appended` is false)
     buf::IOBuffer       # Buffer with appended data.
-    function DatasetFile(xdoc, path, grid_type, Npts, Ncls;
-                         compress=true, append=true, ascii=false)
+    function DatasetFile(
+            xdoc, path, grid_type, Npts, Ncls;
+            compress=true, append=true, ascii=false,
+            vtkversion = :default,
+        )
         clevel = _compression_level(compress)
         if !(0 ≤ clevel ≤ 9)
             throw(ArgumentError("unexpected value of `compress` argument: $compress.\n" *
@@ -75,7 +87,8 @@ struct DatasetFile <: VTKFile
         if !append  # in this case we don't need a buffer
             close(buf)
         end
-        new(xdoc, path, grid_type, Npts, Ncls, clevel, append, ascii, buf)
+        version = vtk_version(vtkversion)
+        new(xdoc, path, grid_type, version, Npts, Ncls, clevel, append, ascii, buf)
     end
 end
 

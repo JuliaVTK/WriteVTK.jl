@@ -1,7 +1,7 @@
 function vtk_xml_write_header(vtk::DatasetFile)
     xroot = create_root(vtk.xdoc, "VTKFile")
     set_attribute(xroot, "type", vtk.grid_type)
-    set_attribute(xroot, "version", "1.0")
+    set_attribute(xroot, "version", vtk.version)
     if IS_LITTLE_ENDIAN
         set_attribute(xroot, "byte_order", "LittleEndian")
     else

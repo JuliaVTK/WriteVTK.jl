@@ -22,7 +22,9 @@ let
     @time output = vtk_surface(
             "surface", xs, ys, zs;
             compress = false, append = false,
+            vtkversion = "1.0",
         ) do vtk
+        @test vtk.version == "1.0"
         vtk["point_data"] = zs
         vtk["cell_data"] = @views abs2.(zs[2:end, 2:end])
     end
