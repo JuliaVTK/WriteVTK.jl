@@ -72,7 +72,7 @@ Note that this is a somewhat **advanced option** that may be used to solve
 potential issues.
 
 As a real-life example, say that you want to write an [unstructured
-dataset](@ref Unstructured-grid-formats) made of Lagrange hexahedron cells.
+dataset](@ref Unstructured-grid-formats) made of [Lagrange hexahedron](https://www.kitware.com/modeling-arbitrary-order-lagrange-finite-elements-in-the-visualization-toolkit/) cells.
 Defining each cell requires defining (1) a set of space coordinates, and (2)
 determining the way these coordinates connect to form the cell.
 The order of the points in the connectivity arrays must follow the specific
@@ -88,7 +88,13 @@ The `vtkversion` option is used as follows:
 vtk_grid(filename, points, [cells]; vtkversion = :default, etc...)
 ```
 
-where `something` can be `:default` (same as `v1.0`) or `:latest` (currently, same as `v2.2`).
+The `vtkversion` argument can take the following values:
+
+- `:default` (equivalent to `v1.0`);
+- `:latest` (currently equivalent to `v2.2`);
+- some other version number of the form `vX.Y`.
+
 VTK file version `1.0` is used by default for backwards compatibility and to
-make sure that files can be read by old versions of ParaView.
+make sure that the generated files can be read by old versions of the VTK
+libraries and of ParaView.
 
