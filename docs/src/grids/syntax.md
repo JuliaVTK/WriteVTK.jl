@@ -90,9 +90,9 @@ vtk_grid(filename, points, [cells]; vtkversion = :default, etc...)
 
 The `vtkversion` argument can take the following values:
 
-- `:default` (equivalent to `v1.0`);
-- `:latest` (currently equivalent to `v2.2`);
-- some other version number of the form `vX.Y`.
+- `:default` (equivalent to `v"1.0"`);
+- `:latest` (currently equivalent to `v"2.2"`);
+- some other version number of the form `v"X.Y"`.
 
 VTK file version `1.0` is used by default for backwards compatibility and to
 make sure that the generated files can be read by old versions of the VTK
