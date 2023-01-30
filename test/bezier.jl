@@ -48,7 +48,8 @@ function main()
 
     cells = [MeshCell(cell_type, connectivity)]
 
-    outfiles = vtk_grid(VTK_BASENAME, points, cells) do vtk
+    outfiles = vtk_grid(VTK_BASENAME, points, cells; vtkversion = v"1.0") do vtk
+        @test vtk.version == "1.0"
         vtk["RationalWeights"] = rational_weights
     end
 

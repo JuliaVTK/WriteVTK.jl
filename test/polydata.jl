@@ -63,8 +63,12 @@ function empty_cells()
     vel = [0 .5 .5; 1 1 0]
     verts = MeshCell{PolyData.Verts, Vector{Int}}[]
     @test isconcretetype(eltype(verts))
-    @time filenames = vtk_grid("empty_cells.vtp", points, verts,
-                               compress=false, append=false, ascii=true) do vtk
+    @time filenames = vtk_grid(
+            "empty_cells.vtp", points, verts,
+            compress=false, append=false, ascii=true,
+            vtkversion = :default,
+        ) do vtk
+        @test vtk.version == "1.0"
         vtk["vel"] = vel
     end
 end

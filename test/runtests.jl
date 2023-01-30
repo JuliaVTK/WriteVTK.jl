@@ -5,6 +5,7 @@ using SHA: sha1
 include("extent.jl")
 
 const tests = [
+    "lagrange_hexahedron.jl",
     "surface.jl",
     "polyhedron_cube.jl",
     "multiblock.jl",
@@ -36,7 +37,7 @@ cd(EXECDIR)
 
 # Run the test scripts.
 for test in tests
-    println("TEST (first run): ", test)
+    println("TEST (first pass): ", test)
     outfiles = evalfile(test)::Vector{String}
 
     # Check that the generated files match the stored checksums.
@@ -60,7 +61,7 @@ println("="^60, "\n")
 # Run the tests again, just to measure the time and allocations once all the
 # functions have already been compiled.
 for test in tests
-    println("TEST (second run): ", test)
+    println("TEST (second pass): ", test)
     outfiles = evalfile(test)::Vector{String}
     println()
 end
