@@ -5,7 +5,8 @@ function vtk_save(vtk::DatasetFile)
         else
             save_file(vtk.xdoc, vtk.path)
         end
-        @assert isopen(vtk)
+    end
+    if isopen(vtk)  # just in case the file was closed by calls to save_* above
         close(vtk)
     end
     return [vtk.path] :: Vector{String}
