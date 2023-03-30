@@ -1,38 +1,10 @@
-"""
-    AbstractFieldData
-
-Abstract type representing any kind of dataset.
-"""
-abstract type AbstractFieldData end
-
-"""
-    VTKPointData <: AbstractFieldData
-
-Represents data that is to be attached to grid points.
-"""
-struct VTKPointData <: AbstractFieldData end
-
-"""
-    VTKCellData <: AbstractFieldData
-
-Represents data that is to be attached to grid cells.
-"""
-struct VTKCellData <: AbstractFieldData end
-
-"""
-    VTKFieldData <: AbstractFieldData
-
-Represents data that is not attached to the grid geometry.
-
-This is typically used for lightweight metadata, such as timestep information or
-strings.
-"""
-struct VTKFieldData <: AbstractFieldData end
-
-# These are the VTK names associated to each data "location".
-node_type(::VTKPointData) = "PointData"
-node_type(::VTKCellData) = "CellData"
-node_type(::VTKFieldData) = "FieldData"
+using VTKBase:
+    VTKDataType,
+    AbstractFieldData,
+    VTKPointData,
+    VTKCellData,
+    VTKFieldData,
+    node_type
 
 const ArrayOrValue = Union{AbstractArray, Number, String}
 const ListOfStrings = Union{Tuple{Vararg{String}}, AbstractArray{String}}
@@ -96,16 +68,8 @@ guess_data_location(data::Tuple, args...) =
 
 guess_data_location(data::Tuple{}, args...) = VTKPointData()
 
-"""
-    VTKDataType
-
-Union of data types allowed by VTK.
-"""
-const VTKDataType = Union{Int8, UInt8, Int16, UInt16, Int32, UInt32,
-                          Int64, UInt64, Float32, Float64, String}
-
 # Return the VTK string representation of a numerical data type.
-function datatype_str(::Type{T}) where T <: VTKDataType
+function datatype_str(::Type{T}) where {T <: VTKDataType}
     # Note: the VTK type names are exactly the same as the Julia type names
     # (e.g.  Float64 -> "Float64"), so that we can simply use the `string`
     # function.

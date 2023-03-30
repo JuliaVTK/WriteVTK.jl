@@ -23,8 +23,20 @@ using Base64: base64encode
 
 import Base: close, isopen, show
 
-# Cell type definitions as in vtkCellType.h
-include("VTKCellTypes.jl")
+using VTKBase:
+    VTKBase,
+    VTKCellTypes,  # cell type definitions as in vtkCellType.h
+    AbstractVTKDataset,
+    StructuredVTKDataset,
+    VTKImageData,
+    VTKRectilinearGrid,
+    VTKStructuredGrid,
+    UnstructuredVTKDataset,
+    VTKPolyData,
+    VTKUnstructuredGrid,
+    file_extension,
+    xml_name
+
 using .VTKCellTypes
 export VTKCellTypes, VTKCellType
 
@@ -133,7 +145,6 @@ add_extension(filename, dtype) = add_extension(filename, file_extension(dtype))
 # Common functions and types.
 include("write_data.jl")
 include("save_files.jl")
-include("gridtypes/types.jl")
 include("gridtypes/common.jl")
 
 # Multiblock-specific functions and types.
