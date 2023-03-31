@@ -1,6 +1,7 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+VTKBase = "4004b06d-e244-455f-a6ce-a5f9919cc534"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]

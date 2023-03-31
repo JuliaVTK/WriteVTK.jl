@@ -1,17 +1,39 @@
+using VTKBase
 using WriteVTK
 using Documenter
 
 DocMeta.setdocmeta!(
+    VTKBase, :DocTestSetup,
+    quote
+        using VTKBase
+    end;
+    recursive = true,
+)
+
+DocMeta.setdocmeta!(
     WriteVTK, :DocTestSetup,
     quote
+        using VTKBase
         using WriteVTK
         using StaticArrays  # not yet used...
     end;
     recursive = true,
 )
 
+# Path to markdown file containing docs for VTKBase.jl
+# We copy the file to src/external/
+vtkbase_docs_src = joinpath(
+    dirname(dirname(pathof(VTKBase))),  # VTKBase directory
+    "docs",
+    "src",
+    "VTKBase.md",
+)
+isfile(vtkbase_docs_src) || error("file not found: $vtkbase_docs_src")
+vtkbase_docs = joinpath("external", "VTKBase.md")
+cp(vtkbase_docs_src, joinpath(@__DIR__, "src", vtkbase_docs); force = true)
+
 makedocs(;
-    modules = [WriteVTK],
+    modules = [VTKBase, WriteVTK],
     authors = "Juan Ignacio Polanco <juan-ignacio.polanco@cnrs.fr> and contributors",
     repo = "https://github.com/JuliaVTK/WriteVTK.jl/blob/{commit}{path}#L{line}",
     sitename = "WriteVTK.jl",
@@ -23,7 +45,7 @@ makedocs(;
         ],
         mathengine = KaTeX(),
     ),
-    pages=[
+    pages = [
         "Home" => "index.md",
         "Grid formats" => [
             "grids/syntax.md",
@@ -42,6 +64,7 @@ makedocs(;
             "tools/readvtk.md",
         ],
         "API Reference" => "API.md",
+        "VTKBase.jl" => vtkbase_docs,
     ],
 )
 
