@@ -110,7 +110,7 @@ WriteVTK also supports the creation of unstructured VTK files containing [polyhe
 The specificity of polyhedron cells is that they require the specification not only of a connectivity vector, but also of a list of faces constituting the polyhedron.
 To specify a polyhedron cell, instead of using the [`MeshCell`](@ref) type, one should create an instance of [`VTKPolyhedron`](@ref).
 
-The following simple example creates a cube as a polyhedron cell (see also [`test/polyhedron_cube.jl`](https://github.com/jipolanco/WriteVTK.jl/blob/master/test/polyhedron_cube.jl) for an example with two cubes):
+The following simple example creates a cube as a polyhedron cell (see also [`test/polyhedron_cube.jl`](https://github.com/JuliaVTK/WriteVTK.jl/blob/master/test/polyhedron_cube.jl) for an example with two cubes):
 
 ```julia
 # Vertices of the cube
