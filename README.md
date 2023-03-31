@@ -1,11 +1,11 @@
 # WriteVTK.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://jipolanco.github.io/WriteVTK.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://jipolanco.github.io/WriteVTK.jl/dev/)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliavtk.github.io/WriteVTK.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliavtk.github.io/WriteVTK.jl/dev/)
 [![DOI](https://zenodo.org/badge/32700186.svg)](https://zenodo.org/badge/latestdoi/32700186)
 
-[![Build Status](https://github.com/jipolanco/WriteVTK.jl/workflows/CI/badge.svg)](https://github.com/jipolanco/WriteVTK.jl/actions)
-[![Coverage](https://codecov.io/gh/jipolanco/WriteVTK.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jipolanco/WriteVTK.jl)
+[![Build Status](https://github.com/JuliaVTK/WriteVTK.jl/workflows/CI/badge.svg)](https://github.com/JuliaVTK/WriteVTK.jl/actions)
+[![Coverage](https://codecov.io/gh/JuliaVTK/WriteVTK.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaVTK/WriteVTK.jl)
 
 This package allows to write VTK XML files for visualisation of multidimensional
 datasets using tools such as [ParaView](http://www.paraview.org/).
@@ -38,7 +38,7 @@ y = 0:0.2:1
 z = -1:0.05:1
 ```
 
-This specific way of specifying coordinates is compatible with the [image data](https://jipolanco.github.io/WriteVTK.jl/dev/grids/structured/#Image-data)
+This specific way of specifying coordinates is compatible with the [image data](https://juliavtk.github.io/WriteVTK.jl/dev/grids/structured/#Image-data)
 VTK format, which has the `.vti` extension.
 The following creates such a file, with some scalar data attached to each point:
 
@@ -64,20 +64,20 @@ the [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf).
 Note that legacy (non-XML) files are not supported.
 
 Supported dataset formats include:
-- [image data](https://jipolanco.github.io/WriteVTK.jl/dev/grids/structured/#Image-data) (`.vti`),
-- [rectilinear grid](https://jipolanco.github.io/WriteVTK.jl/dev/grids/structured/#Rectilinear-grid) (`.vtr`),
-- [structured (or curvilinear) grid](https://jipolanco.github.io/WriteVTK.jl/dev/grids/structured/#Structured-grid) (`.vts`),
-- [unstructured grid](https://jipolanco.github.io/WriteVTK.jl/dev/grids/unstructured/#Unstructured-grid) (`.vtu`),
-- [polydata](https://jipolanco.github.io/WriteVTK.jl/dev/grids/unstructured/#Polydata-grid) (`.vtp`, a specific type of unstructured grid).
+- [image data](https://juliavtk.github.io/WriteVTK.jl/dev/grids/structured/#Image-data) (`.vti`),
+- [rectilinear grid](https://juliavtk.github.io/WriteVTK.jl/dev/grids/structured/#Rectilinear-grid) (`.vtr`),
+- [structured (or curvilinear) grid](https://juliavtk.github.io/WriteVTK.jl/dev/grids/structured/#Structured-grid) (`.vts`),
+- [unstructured grid](https://juliavtk.github.io/WriteVTK.jl/dev/grids/unstructured/#Unstructured-grid) (`.vtu`),
+- [polydata](https://juliavtk.github.io/WriteVTK.jl/dev/grids/unstructured/#Polydata-grid) (`.vtp`, a specific type of unstructured grid).
 
 Moreover, the following metadata formats are supported:
-- [multiblock files](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/multiblock/) (`.vtm`),
-- [ParaView collections](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/paraview_collections/) (`.pvd`, typically used for time series),
-- [parallel files](https://jipolanco.github.io/WriteVTK.jl/dev/metadata/parallel/) (`.pvt*`).
+- [multiblock files](https://juliavtk.github.io/WriteVTK.jl/dev/metadata/multiblock/) (`.vtm`),
+- [ParaView collections](https://juliavtk.github.io/WriteVTK.jl/dev/metadata/paraview_collections/) (`.pvd`, typically used for time series),
+- [parallel files](https://juliavtk.github.io/WriteVTK.jl/dev/metadata/parallel/) (`.pvt*`).
 
 ## Further reading
 
-See [the documentation](https://jipolanco.github.io/WriteVTK.jl/stable/) for more details on how to use this package.
+See [the documentation](https://juliavtk.github.io/WriteVTK.jl/stable/) for more details on how to use this package.
 
 ## Authors
 
