@@ -6,3 +6,4 @@ WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
 Documenter = "0.27"
+VTKBase = "1.0"
