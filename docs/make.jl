@@ -35,7 +35,7 @@ cp(vtkbase_docs_src, joinpath(@__DIR__, "src", vtkbase_docs); force = true)
 makedocs(;
     modules = [VTKBase, WriteVTK],
     authors = "Juan Ignacio Polanco <juan-ignacio.polanco@cnrs.fr> and contributors",
-    repo = "https://github.com/JuliaVTK/WriteVTK.jl/blob/{commit}{path}#L{line}",
+    repo = Remotes.GitHub("JuliaVTK", "WriteVTK.jl"),
     sitename = "WriteVTK.jl",
     format = Documenter.HTML(;
         prettyurls = get(ENV, "CI", "false") == "true",

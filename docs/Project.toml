@@ -5,5 +5,5 @@ VTKBase = "4004b06d-e244-455f-a6ce-a5f9919cc534"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
-Documenter = "0.27"
-VTKBase = "1.0"
+Documenter = "1"
+VTKBase = "1"
