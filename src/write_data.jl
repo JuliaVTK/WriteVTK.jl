@@ -67,6 +67,7 @@ guess_data_location(data::Tuple, args...) =
     guess_data_location(first(data), args...)
 
 guess_data_location(data::Tuple{}, args...) = VTKPointData()
+guess_data_location(data::AbstractString, args...) = VTKFieldData()  # a single string is always field data
 
 # Return the VTK string representation of a numerical data type.
 function datatype_str(::Type{T}) where {T <: VTKDataType}
