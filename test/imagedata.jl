@@ -64,6 +64,12 @@ function main()
         vtk["p_values"] = p[:, :, 1]
         vtk["myVector"] = vec[:, :, :, 1]
         vtk["myCellData"] = cdata[:, :, 1]
+        # Pass string whose length is equal to the number of points.
+        # The idea is to make sure it's written as field data and not point data.
+        n = Ni * Nj
+        str = String(('0' + 1):('0' + n))
+        @assert length(str) == n
+        vtk["string"] = str
     end
 
     append!(outfiles, outfiles_2D)
