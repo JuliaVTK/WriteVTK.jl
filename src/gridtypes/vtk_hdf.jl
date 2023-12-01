@@ -1,12 +1,12 @@
 using HDF5
 
-abstract type VTKFileType end 
+abstract type VTKFileType end
 struct VTKHDF5 <: VTKFileType end
 struct VTKXML <: VTKFileType end
 
 struct VTKHDFUnstructuredGrid <: UnstructuredVTKDataset end
 
-struct VTKHDF5File <: VTKFile 
+struct VTKHDF5File <: VTKFile
     h5file # an HDF5.File
     version::AbstractString
     grid_type::AbstractString
@@ -15,7 +15,7 @@ struct VTKHDF5File <: VTKFile
 end
 
 # for unstructured
-struct VTKHDFTimeSeries{T <: AbstractFieldData}
+struct VTKHDFTimeSeries{T<:AbstractFieldData}
     vtkhdf::VTKHDF5File
     name::AbstractString
 end
@@ -32,7 +32,7 @@ end
 function vtk_grid(
     ::VTKHDF5,
     filename,
-    points, 
+    points,
     cells;
     kws...)
     vtk_grid(
@@ -41,9 +41,9 @@ function vtk_grid(
 end
 
 function vtk_grid(
-    dtype::VTKHDFUnstructuredGrid, 
+    dtype::VTKHDFUnstructuredGrid,
     filename::AbstractString,
-    points::UnstructuredCoords, 
+    points::UnstructuredCoords,
     cells::CellVector;
     kwargs...)
 
@@ -55,9 +55,9 @@ function vtk_grid(
     # for VTKHDF case 
 
     # vtk cell information
-    IntType = connectivity_type(cells) :: Type{<:Integer}
+    IntType = connectivity_type(cells)::Type{<:Integer}
     # Create data arrays.
-    offsets = Array{IntType}(undef, Ncls+1)
+    offsets = Array{IntType}(undef, Ncls + 1)
     offsets[1] = 0
 
     types = Array{UInt8}(undef, Ncls)
@@ -66,7 +66,7 @@ function vtk_grid(
     if Ncls >= 1  # it IS possible to have no cells
         offsets[2] = length(cells[1].connectivity)
     end
-    
+
     for (n, c) in enumerate(cells)
         Npts_cell = length(c.connectivity)
         Nconn += Npts_cell
@@ -75,7 +75,7 @@ function vtk_grid(
             offsets[n+1] = offsets[n] + Npts_cell
         end
     end
-    
+
     # Create connectivity array.
     conn = Array{IntType}(undef, Nconn)
     n = 1
@@ -91,14 +91,14 @@ function vtk_grid(
     VTKHDF_group = create_group(h5file, "VTKHDF")
     HDF5.attributes(VTKHDF_group)["Version"] = [2, 0]
 
-	type = "UnstructuredGrid"
+    type = "UnstructuredGrid"
     h5_dspace = HDF5.dataspace(type)
     h5_dtype = HDF5.datatype(type)
     HDF5.h5t_set_cset(h5_dtype, HDF5.H5T_CSET_ASCII)
     attr = create_attribute(VTKHDF_group, "Type", h5_dtype, h5_dspace)
     write_attribute(attr, h5_dtype, type)
 
-	VTKHDF_group["NumberOfConnectivityIds"] = [Nconn]
+    VTKHDF_group["NumberOfConnectivityIds"] = [Nconn]
     VTKHDF_group["NumberOfPoints"] = [Npts]
     VTKHDF_group["NumberOfCells"] = [Ncls]
     VTKHDF_group["Points"] = points
@@ -118,9 +118,9 @@ Return VTKHDFTimeSeries
 function vtkhdf_open_timeseries(
     vtkhdf::VTKHDF5File,
     name::AbstractString,
-    data_type::Union{VTKCellData, VTKPointData},
+    data_type::Union{VTKCellData,VTKPointData},
     vec_dim=1
-    )
+)
     root = vtkhdf.h5file["VTKHDF"]
 
     if !haskey(root, "Steps")
@@ -130,12 +130,12 @@ function vtkhdf_open_timeseries(
         attrs(steps)["NSteps"] = num_steps
 
         create_dataset(steps, "Values", Float64, dataspace((0,), (-1,)), chunk=(100,))
-        
+
         # offsets that are just all zeros
-		create_dataset(steps, "PartOffsets", Int64, dataspace((0,), (-1,)), chunk=(100,))
+        create_dataset(steps, "PartOffsets", Int64, dataspace((0,), (-1,)), chunk=(100,))
         create_dataset(steps, "PointOffsets", Int64, dataspace((0,), (-1,)), chunk=(100,))
         create_dataset(steps, "CellOffsets", Int64, dataspace((0,), (-1,)), chunk=(100,))
-        create_dataset(steps, "ConnectivityIdOffsets", Int64, dataspace((1,0), (-1,-1)), chunk=(1,100))
+        create_dataset(steps, "ConnectivityIdOffsets", Int64, dataspace((1, 0), (-1, -1)), chunk=(1, 100))
         create_dataset(steps, "NumberOfParts", Int64, dataspace((0,), (-1,)), chunk=(100,))
     else
         steps = root["Steps"]
@@ -144,11 +144,11 @@ function vtkhdf_open_timeseries(
     # check for and maybe create CellDataOffsets of PointDataOffsets respectively
     if data_type isa VTKCellData
         if vec_dim == 1
-            data_size = dataspace((0,),(-1,))
-            chunk_size = chunk=(vtkhdf.Ncls,)
+            data_size = dataspace((0,), (-1,))
+            chunk_size = (vtkhdf.Ncls,)
         else
             data_size = dataspace((vec_dim, 0), (-1, -1))
-            chunk_size = chunk=(vec_dim, vtkhdf.Ncls)
+            chunk_size = (vec_dim, vtkhdf.Ncls)
         end
 
         # where data is stored
@@ -158,7 +158,7 @@ function vtkhdf_open_timeseries(
             CellData = root["CellData"]
         end
         create_dataset(CellData, name, Float64, data_size, chunk=chunk_size)
-        
+
         if !haskey(steps, "CellDataOffsets")
             CellDataOffsets = create_group(steps, "CellDataOffsets")
         else
@@ -167,7 +167,7 @@ function vtkhdf_open_timeseries(
         # where offsets are stored
         create_dataset(CellDataOffsets, name, Int64, dataspace((0,), (-1,)), chunk=(100,))
     end
-    
+
     if data_type isa VTKPointData
         if !haskey(root, "PointData")
             CellData = create_group(root, "PointData")
@@ -183,7 +183,7 @@ function vtkhdf_open_timeseries(
             PointDataOffsets = steps["PointDataOffsets"]
         end
         create_dataset(PointDataOffsets, name, Int64, (0,))
-        
+
     end
 
     VTKHDFTimeSeries{typeof(data_type)}(vtkhdf, name)
@@ -202,13 +202,19 @@ function append_and_resize(dset, array)
     if length(array_dims) == 2
         new_size = (array_dims[1], data_size + prev_size)
         HDF5.set_extent_dims(dset, new_size)
-        dset[:,1+prev_size:end] = array
+        dset[:, 1+prev_size:end] = array
     else
         new_size = (data_size + prev_size,)
         HDF5.set_extent_dims(dset, new_size)
         dset[1+prev_size:end] = array
     end
 end
+
+Base.setindex!(
+    series::VTKHDFTimeSeries{VTKCellData},
+    data,
+    time::Float64
+) = vtkhdf_append_timeseries_dataset(series, time, data)
 
 function vtkhdf_append_timeseries_dataset(
     series::VTKHDFTimeSeries{VTKCellData},
@@ -218,33 +224,39 @@ function vtkhdf_append_timeseries_dataset(
     root = series.vtkhdf.h5file["VTKHDF"]
     steps = root["Steps"]
 
-    # increment NSteps
-    attrs(steps)["NSteps"] += 1
-
     # append and resize the underlying datasets
-    
-    # Values, append time
-    append_and_resize(steps["Values"], [time])
 
     # CellDataOffsets, append previous offset + length(CellData)
     current_len = size(root["CellData"][series.name])[end]
     append_and_resize(steps["CellDataOffsets"][series.name], [current_len])
-
     # CellData, append 'data'
     append_and_resize(root["CellData"][series.name], data)
 
-    # PartOffsets, append 0
-    append_and_resize(steps["PartOffsets"], [0])
+    # check the number of CellData datasets matches number of time steps
+    num_datasets = current_len ÷ size(data)[end]
 
-    # PointOffsets, append 0
-    append_and_resize(steps["PointOffsets"], [0])
+    if num_datasets == length(steps["Values"])
+        # increment NSteps
+        attrs(steps)["NSteps"] += 1
 
-    # CellOffsets, append 0
-    append_and_resize(steps["CellOffsets"], [0])
+        # Values, append time
+        append_and_resize(steps["Values"], [time])
 
-    # ConnectivityIdOffsets, append 0
-    append_and_resize(steps["ConnectivityIdOffsets"], [0][:,:])
 
-    # NumberOfParts, append 1
-    append_and_resize(steps["NumberOfParts"], [1])
+
+        # PartOffsets, append 0
+        append_and_resize(steps["PartOffsets"], [0])
+
+        # PointOffsets, append 0
+        append_and_resize(steps["PointOffsets"], [0])
+
+        # CellOffsets, append 0
+        append_and_resize(steps["CellOffsets"], [0])
+
+        # ConnectivityIdOffsets, append 0
+        append_and_resize(steps["ConnectivityIdOffsets"], [0][:, :])
+
+        # NumberOfParts, append 1
+        append_and_resize(steps["NumberOfParts"], [1])
+    end # need some sort of reasonable else condition to see if time steps are in sync or not
 end
