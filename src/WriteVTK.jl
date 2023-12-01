@@ -14,7 +14,7 @@ export PolyData
 export pvtk_grid
 
 # vtkhdf needed
-export VTKHDF5
+export VTKHDF5, vtkhdf_open_timeseries, vtkhdf_append_timeseries_dataset
 
 import CodecZlib: ZlibCompressorStream
 import TranscodingStreams
