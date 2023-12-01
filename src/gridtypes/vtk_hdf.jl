@@ -1,4 +1,4 @@
-using HDF5
+using HDF5: HDF5
 
 abstract type VTKFileType end
 struct VTKHDF5 <: VTKFileType end
