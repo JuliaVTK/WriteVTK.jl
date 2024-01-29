@@ -1,15 +1,16 @@
 #!/usr/bin/env julia
 
-# Reproduce the VTK_BEZIER_TETRA_quartic_solidSphereOctant.vtu file from the VTK
-# test suite.
 
 using WriteVTK
 
 using Test
 
-const VTK_BASENAME = "bezier_tetra_quartic_solidSphereOctant"
+const VTK_BASENAME_SPHERE = "bezier_tetra_quartic_solidSphereOctant"
+const VTK_BASENAME_ANNULUS = "bezier_anisotropic_degree_quarterAnnulus"
 
-function main()
+# Reproduce the VTK_BEZIER_TETRA_quartic_solidSphereOctant.vtu file from the VTK
+# test suite
+function bezier_tetra_quartic_solid_sphere_octant()
     cell_type = VTKCellTypes.VTK_BEZIER_TETRAHEDRON
 
     # Copied from VTK generated file.
@@ -48,14 +49,44 @@ function main()
 
     cells = [MeshCell(cell_type, connectivity)]
 
-    outfiles = vtk_grid(VTK_BASENAME, points, cells; vtkversion = v"1.0") do vtk
+    output = vtk_grid(VTK_BASENAME_SPHERE, points, cells; vtkversion = v"1.0") do vtk
         @test vtk.version == "1.0"
         vtk["RationalWeights"] = rational_weights
+        vtk[VTKPointData()] = "RationalWeights" => "RationalWeights"
+    end
+end
+
+# Test Bezier quadrilateral with anisotropic degrees
+function bezier_anisotropic_degree_quarter_annulus()
+    cell_type = VTKCellTypes.VTK_BEZIER_QUADRILATERAL
+    points = [1.0 0.0 0.0 2.0 1.0 2.0; 0.0 1.0 2.0 0.0 1.0 2.0]
+    connectivity = 1:size(points, 2)
+    rational_weights = [1.0, 1.0, 1.0, 1.0, sqrt(0.5), sqrt(0.5)]
+    cells = [MeshCell(cell_type, connectivity)]
+
+    output = vtk_grid(VTK_BASENAME_ANNULUS, points, cells; vtkversion = v"1.0") do vtk
+        vtk["HigherOrderDegrees", VTKCellData()] = [2.0 1.0 1.0]
+        vtk["RationalWeights", VTKPointData()] = rational_weights
+        vtk[VTKPointData()] = "RationalWeights" => "RationalWeights"
+        vtk[VTKCellData()] = "HigherOrderDegrees" => "HigherOrderDegrees"
+    end
+end
+
+function main()
+    files = String[]
+
+    let
+        @time output = bezier_tetra_quartic_solid_sphere_octant()
+        append!(files, output)
     end
 
-    println("Saved:  ", join(outfiles, "  "))
+    let
+        @time output = bezier_anisotropic_degree_quarter_annulus()
+        append!(files, output)
+    end
 
-    outfiles
+    println("Saved:  ", join(files, "  "))
+    files
 end
 
 main()
