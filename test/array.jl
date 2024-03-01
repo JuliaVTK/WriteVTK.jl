@@ -10,9 +10,9 @@ using StableRNGs: StableRNG
 # Ref: https://github.com/DEShawResearch/random123/blob/9545ff6413f258be2f04c1d319d99aaef7521150/include/Random123/boxmuller.hpp
 function my_randn(rng::StableRNG, dims::Integer...)
     # Box–Muller transform
-    u1 = rand(rng, UInt64, dims...) .* (2.0^-64) .+ (2.0^-65)
-    u2 = rand(rng, Int64, dims...) .* (2.0^-64) .+ (2.0^-65)
-    sqrt.(-2 .* log.(u1)) .* cospi.(u2)
+    u01 = rand(rng, UInt64, dims...) .* (2.0^-64) .+ (2.0^-65)
+    uneg11 = rand(rng, Int64, dims...) .* (2.0^-63) .+ (2.0^-64)
+    sqrt.(-2 .* log.(u01)) .* cospi.(uneg11)
 end
 
 function main()
