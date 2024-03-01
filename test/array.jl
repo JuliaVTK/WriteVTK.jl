@@ -4,7 +4,16 @@
 # This corresponds to a rectilinear grid with uniform spacing in each direction.
 
 using WriteVTK
-using Random: randn, MersenneTwister
+using StableRNGs: StableRNG
+
+# Version of randn that is stable across different julia versions
+# Ref: https://github.com/DEShawResearch/random123/blob/9545ff6413f258be2f04c1d319d99aaef7521150/include/Random123/boxmuller.hpp
+function my_randn(rng::StableRNG, dims::Integer...)
+    # Box–Muller transform
+    u1 = rand(rng, UInt64, dims...) .* (2.0^-64) .+ (2.0^-65)
+    u2 = rand(rng, Int64, dims...) .* (2.0^-64) .+ (2.0^-65)
+    sqrt.(-2 .* log.(u1)) .* cospi.(u2)
+end
 
 function main()
     Ni, Nj, Nk = 20, 30, 40
@@ -12,13 +21,9 @@ function main()
 
     # Initialise random number generator with deterministic seed (for
     # reproducibility).
-    rng = MersenneTwister(42)
+    rng = StableRNG(42)
 
-    # Workaround recent improvements in randn! for arrays (Julia 1.5).
-    # See issue #62 and https://github.com/JuliaLang/julia/pull/35078.
-    # We avoid using the new randn! implementation for arrays, so that the
-    # results don't change between Julia versions.
-    data = [randn(rng) for i = 1:Ni, j = 1:Nj, k = 1:Nk]
+    data = my_randn(rng, Ni, Nj, Nk)
 
     # Write 2D and 3D arrays.
     @time begin

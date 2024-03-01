@@ -2,17 +2,25 @@
 
 using WriteVTK
 
-using Random
+using StableRNGs: StableRNG
 using Test
 
 const vtk_filename_noext = "polydata"
 
+# Version of randn that is stable across different julia versions
+# Ref: https://github.com/DEShawResearch/random123/blob/9545ff6413f258be2f04c1d319d99aaef7521150/include/Random123/boxmuller.hpp
+function my_randn(rng::StableRNG, dims::Integer...)
+    # Box–Muller transform
+    u01 = rand(rng, UInt64, dims...) .* (2.0^-64) .+ (2.0^-65)
+    uneg11 = rand(rng, Int64, dims...) .* (2.0^-63) .+ (2.0^-64)
+    sqrt.(-2 .* log.(u01)) .* cospi.(uneg11)
+end
+
 # Write file with D-dimensional grid.
 function write_vtp(Np, D)
-    rng = MersenneTwister(42)
+    rng = StableRNG(42)
 
-    # Workaround changes in rand output in Julia 1.5. See array.jl.
-    points = sortslices([rand(rng) for i = 1:D, j = 1:Np], dims=2)
+    points = sortslices(rand(rng, D, Np), dims=2)
 
     M = Np >> 2
     @assert 4M == Np
@@ -47,14 +55,14 @@ function write_vtp(Np, D)
     print("PolyData $(D)D...")
     @time filenames = vtk_grid(fname, points, all_cells...,
                                compress=false, append=false, ascii=true) do vtk
-        vtk["my_point_data"] = [randn(rng) for i = 1:3, j = 1:Np]
-        vtk["vector_as_tuple"] = ntuple(_ -> [randn(rng) for j = 1:Np], D)
+        vtk["my_point_data"] = my_randn(rng, 3, Np)
+        vtk["vector_as_tuple"] = ntuple(_ -> my_randn(rng, Np), D)
         # NOTE: cell data is not correctly parsed by VTK when multiple kinds of
         # cells are combined in the same dataset.
         # This seems to be a really old VTK issue:
         # - https://vtk.org/pipermail/vtkusers/2004-August/026448.html
         # - https://gitlab.kitware.com/vtk/vtk/-/issues/564
-        vtk["my_cell_data"] = [randn(rng) for j = 1:num_cells]
+        vtk["my_cell_data"] = my_randn(rng, num_cells)
     end
 end
 
