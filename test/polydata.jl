@@ -7,15 +7,6 @@ using Test
 
 const vtk_filename_noext = "polydata"
 
-# Version of randn that is stable across different julia versions
-# Ref: https://github.com/DEShawResearch/random123/blob/9545ff6413f258be2f04c1d319d99aaef7521150/include/Random123/boxmuller.hpp
-function my_randn(rng::StableRNG, dims::Integer...)
-    # Box–Muller transform
-    u01 = rand(rng, UInt64, dims...) .* (2.0^-64) .+ (2.0^-65)
-    uneg11 = rand(rng, Int64, dims...) .* (2.0^-63) .+ (2.0^-64)
-    sqrt.(-2 .* log.(u01)) .* cospi.(uneg11)
-end
-
 # Write file with D-dimensional grid.
 function write_vtp(Np, D)
     rng = StableRNG(42)
@@ -55,14 +46,14 @@ function write_vtp(Np, D)
     print("PolyData $(D)D...")
     @time filenames = vtk_grid(fname, points, all_cells...,
                                compress=false, append=false, ascii=true) do vtk
-        vtk["my_point_data"] = my_randn(rng, 3, Np)
-        vtk["vector_as_tuple"] = ntuple(_ -> my_randn(rng, Np), D)
+        vtk["my_point_data"] = rand(rng, 3, Np) .- 0.5
+        vtk["vector_as_tuple"] = ntuple(_ -> rand(rng, Np) .- 0.5, D)
         # NOTE: cell data is not correctly parsed by VTK when multiple kinds of
         # cells are combined in the same dataset.
         # This seems to be a really old VTK issue:
         # - https://vtk.org/pipermail/vtkusers/2004-August/026448.html
         # - https://gitlab.kitware.com/vtk/vtk/-/issues/564
-        vtk["my_cell_data"] = my_randn(rng, num_cells)
+        vtk["my_cell_data"] = rand(rng, num_cells) .- 0.5
     end
 end
 
