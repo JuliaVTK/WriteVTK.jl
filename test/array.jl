@@ -4,7 +4,7 @@
 # This corresponds to a rectilinear grid with uniform spacing in each direction.
 
 using WriteVTK
-using Random: randn, MersenneTwister
+using StableRNGs: StableRNG
 
 function main()
     Ni, Nj, Nk = 20, 30, 40
@@ -12,13 +12,9 @@ function main()
 
     # Initialise random number generator with deterministic seed (for
     # reproducibility).
-    rng = MersenneTwister(42)
+    rng = StableRNG(42)
 
-    # Workaround recent improvements in randn! for arrays (Julia 1.5).
-    # See issue #62 and https://github.com/JuliaLang/julia/pull/35078.
-    # We avoid using the new randn! implementation for arrays, so that the
-    # results don't change between Julia versions.
-    data = [randn(rng) for i = 1:Ni, j = 1:Nj, k = 1:Nk]
+    data = (2.0*rand(rng, Ni, Nj, Nk)) .- 1.0
 
     # Write 2D and 3D arrays.
     @time begin
