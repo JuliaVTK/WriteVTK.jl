@@ -230,11 +230,10 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
         end
 
         # Write compressed data.
-        zWriter = ZlibCompressorStream(buf, level=vtk.compression_level)
+        zWriter = ZlibCompressorStream(buf, level=vtk.compression_level, stop_on_end=true)
         write_array(zWriter, data)
         write(zWriter, TranscodingStreams.TOKEN_END)
-        flush(zWriter)
-        TranscodingStreams.finalize(zWriter.codec) # Release allocated resources (issue #43)
+        close(zWriter) # Release allocated resources (issue #43)
 
         # Go back to `initpos` and write real header.
         endpos = position(buf)
@@ -276,13 +275,12 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     # base64-encoded separately!!
     # That's why we don't use a single buffer that contains both, like in the
     # other data_to_xml function.
-    local zWriter
     if compress
         # Write compressed data.
-        zWriter = ZlibCompressorStream(buf, level=vtk.compression_level)
+        zWriter = ZlibCompressorStream(buf, level=vtk.compression_level, stop_on_end=true)
         write_array(zWriter, data)
         write(zWriter, TranscodingStreams.TOKEN_END)
-        flush(zWriter)
+        close(zWriter)
     else
         write_array(buf, data)
     end
@@ -297,9 +295,6 @@ function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
     add_text(xDA, base64encode(take!(buf)))
     add_text(xDA, "\n")
 
-    if compress
-        close(zWriter)
-    end
     close(buf)
 
     xDA
