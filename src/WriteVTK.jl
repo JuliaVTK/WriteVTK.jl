@@ -107,6 +107,16 @@ end
 DatasetFile(dtype, xdoc::XMLDocument, fname::AbstractString, args...; kwargs...) =
     DatasetFile(xdoc, add_extension(fname, dtype), xml_name(dtype), args...; kwargs...)
 
+function data_format(vtk::DatasetFile)
+    if vtk.appended
+        :appended
+    elseif vtk.ascii
+        :ascii
+    else
+        :inline
+    end
+end
+
 function show(io::IO, vtk::DatasetFile)
     open_str = isopen(vtk) ? "open" : "closed"
     print(io, "VTK file '$(vtk.path)' ($(vtk.grid_type) file, $open_str)")

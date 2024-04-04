@@ -14,6 +14,11 @@ struct PVTKFile <: VTKFile
     path::String
 end
 
+# This is just to make a PVTKFile work like a DatasetFile.
+# Only used when writing VTKFieldData to a PVTK file.
+# Note that data is always written as text (ASCII).
+data_format(::PVTKFile) = :ascii
+
 # Returns true if the arguments do *not* contain any cell vectors.
 _pvtk_is_structured(x::AbstractVector{<:AbstractMeshCell}, args...) = Val(false)
 _pvtk_is_structured(x, args...) = _pvtk_is_structured(args...)
@@ -130,11 +135,44 @@ end
 
 # Add point and cell data as usual
 function Base.setindex!(
-        pvtk::PVTKFile, data, name::AbstractString, args...,
+        pvtk::PVTKFile, data, name::AbstractString, loc::AbstractFieldData,
     )
-    pvtk.vtk[name, args...] = data
+    pvtk.vtk[name, loc] = data
 end
 
+# In the case of field data, also add it to the pvtk file.
+# Otherwise field data (typically the time / "TimeValue") is not seen by ParaView.
+function Base.setindex!(
+        pvtk::PVTKFile, data, name::AbstractString, loc::VTKFieldData,
+    )
+    pvtk.vtk[name, loc] = data
+    if pvtk.pvtkargs.ismain
+        add_field_data(pvtk, data, name, loc)
+    end
+    data
+end
+
+# Used in add_field_data.
+# We need to find the PUnstructuredGrid / PStructuredGrid / ... node.
+function find_base_xml_node_to_add_field(pvtk::PVTKFile, loc)
+    xroot = root(pvtk.xdoc)
+    pgrid_type = "P" * pvtk.vtk.grid_type
+    find_element(xroot, pgrid_type)
+end
+
+# If `loc` was not passed, try to guess which kind of data was passed.
+function Base.setindex!(
+        pvtk::PVTKFile, data, name::AbstractString,
+    )
+    loc = guess_data_location(data, pvtk.vtk) :: AbstractFieldData
+    pvtk[name, loc] = data
+end
+
+# Write XML attribute.
+# Example:
+#
+#   pvtk[VTKCellData()] = Dict("HigherOrderDegrees" => "HigherOrderDegreesDataset")
+#
 function Base.setindex!(
         pvtk::PVTKFile, attributes, loc::AbstractFieldData,
     )

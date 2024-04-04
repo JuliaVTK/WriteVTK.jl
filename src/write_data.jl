@@ -110,17 +110,23 @@ function write_array(io, data::Tuple)
     n
 end
 
-function add_data_ascii(xml, x::Union{Number,String})
+function add_data_ascii(xml, x::Union{Number,AbstractString})
     add_text(xml, " ")
     add_text(xml, string(x))
 end
 
-add_data_ascii(xml, x::AbstractArray) = map(v -> add_data_ascii(xml, v), x)
+function add_data_ascii(xml, x::AbstractArray)
+    for v ∈ x
+        add_data_ascii(xml, v)
+    end
+    nothing
+end
 
 function add_data_ascii(xml, data::Tuple)
     for i in eachindex(data...), x in data
         add_data_ascii(xml, x[i])
     end
+    nothing
 end
 
 function set_num_components(xDA, vtk, data, loc)
@@ -173,9 +179,10 @@ function data_to_xml(vtk, xParent, data, name,
             set_attribute(xDA, "ComponentName$(i - 1)", n) # 0-based
         end
     end
-    if vtk.appended
+    fmt = data_format(vtk)
+    if fmt === :appended
         data_to_xml_appended(vtk, xDA, data)
-    elseif vtk.ascii
+    elseif fmt === :ascii
         data_to_xml_ascii(vtk, xDA, data)
     else
         data_to_xml_inline(vtk, xDA, data)
@@ -209,7 +216,7 @@ containing the size of the data array in bytes.
 
 """
 function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
-    @assert vtk.appended
+    @assert data_format(vtk) === :appended
 
     buf = vtk.buf    # append buffer
     compress = vtk.compression_level > 0
@@ -258,7 +265,7 @@ end
 Add inline, base64-encoded data to VTK XML file.
 """
 function data_to_xml_inline(vtk::DatasetFile, xDA::XMLElement, data)
-    @assert !vtk.appended && !vtk.ascii
+    @assert data_format(vtk) === :inline
     compress = vtk.compression_level > 0
 
     # DataArray node
@@ -305,8 +312,8 @@ end
 
 Add inline data to VTK XML file in ASCII format.
 """
-function data_to_xml_ascii(vtk::DatasetFile, xDA::XMLElement, data)
-    @assert !vtk.appended && vtk.ascii
+function data_to_xml_ascii(vtk::VTKFile, xDA::XMLElement, data)
+    @assert data_format(vtk) === :ascii
     set_attribute(xDA, "format", "ascii")
     add_text(xDA, "\n")
     add_data_ascii(xDA, data)
@@ -320,18 +327,10 @@ end
 
 Add either point or cell data to VTK file.
 """
-function add_field_data(vtk::DatasetFile, data, name::AbstractString,
+function add_field_data(vtk::VTKFile, data, name::AbstractString,
                         loc::AbstractFieldData;
                         component_names::Union{AbstractVector, Nothing}=nothing)
-    # Find Piece node.
-    xroot = root(vtk.xdoc)
-    xGrid = find_element(xroot, vtk.grid_type)
-
-    xbase = if loc === VTKFieldData()
-        xGrid
-    else
-        find_element(xGrid, "Piece")
-    end
+    xbase = find_base_xml_node_to_add_field(vtk, loc)
 
     # Find or create "nodetype" (PointData, CellData or FieldData) node.
     nodetype = node_type(loc)
@@ -342,6 +341,18 @@ function add_field_data(vtk::DatasetFile, data, name::AbstractString,
     xDA = data_to_xml(vtk, xPD, data, name, loc; component_names=component_names)
 
     xDA
+end
+
+function find_base_xml_node_to_add_field(vtk::DatasetFile, loc)
+    # Find Piece node.
+    xroot = root(vtk.xdoc)
+    xGrid = find_element(xroot, vtk.grid_type)
+    xbase = if loc === VTKFieldData()
+        xGrid
+    else
+        find_element(xGrid, "Piece")
+    end
+    xbase
 end
 
 vtk_point_data(args...; kwargs...) = add_field_data(args..., VTKPointData(); kwargs...)

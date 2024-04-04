@@ -14,8 +14,8 @@ vtk_grid("fields", x, y, z) do vtk
     vtk["Pressure"] = rand(Nx - 1, Ny - 1, Nz - 1)     # scalar field attached to cells
     vtk["Velocity"] = rand(3, Nx, Ny, Nz)              # vector field attached to points
     vtk["VelocityGradients"] = rand(3, 3, Nx, Ny, Nz)  # 3×3 tensor field attached to points
-    vtk["date"] = "31/10/2021"                         # metadata ("field data" in VTK)
-    vtk["time"] = 0.42                                 # metadata ("field data" in VTK)
+    vtk["Date"] = "31/10/2021"                         # metadata ("field data" in VTK)
+    vtk["TimeValue"] = 0.42                            # metadata ("field data" in VTK)
 end
 ```
 
@@ -24,6 +24,17 @@ attached to grid points or to grid cells depending on the dimensions of the
 input.
 In particular, note that the `Pressure` field is attached to cells instead of points, since it has dimensions ``(N_x - 1) × (N_y - 1) × (N_z - 1)``, which is the number of cells in structured files (see [Cells in structured formats](@ref)).
 For more control, see [Dataset types](@ref) below.
+
+!!! note "Time values"
+
+    As a sidenote, the `TimeValue` field used above [is special](https://docs.vtk.org/en/latest/design_documents/IOXMLTimeInFieldData.html#field-data-as-time-meta-data-in-vtk-xml-file-formats),
+    as it is interpreted by VTK and ParaView as the time associated to the dataset.
+    This can be convenient when writing time series data (for example, results from a simulation at different timesteps).
+
+    Other alternatives for including time information are to use [ParaView collections](@ref) (`.pvd` format), or to generate
+    [JSON `.series` files](https://gitlab.kitware.com/paraview/paraview/-/blob/v5.5.0/Documentation/release/ParaView-5.5.0.md#json-based-new-meta-file-format-for-series-added)
+    (the latter can't be currently done by WriteVTK, but the format is very simple).
+
 
 ## Passing tuples of arrays
 
@@ -124,8 +135,8 @@ vtk_grid("fields_explicit", x, y, z) do vtk
     vtk["Pressure", VTKCellData()] = rand(Nx - 1, Ny - 1, Nz - 1)
     vtk["Velocity", VTKPointData()] = rand(3, Nx, Ny, Nz)
     vtk["VelocityGradients", VTKPointData()] = rand(3, 3, Nx, Ny, Nz)
-    vtk["date", VTKFieldData()] = "31/10/2021"
-    vtk["time", VTKFieldData()] = 0.42
+    vtk["Date", VTKFieldData()] = "31/10/2021"
+    vtk["TimeValue", VTKFieldData()] = 0.42
 end
 ```
 
