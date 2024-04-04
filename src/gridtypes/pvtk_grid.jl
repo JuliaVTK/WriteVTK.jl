@@ -155,9 +155,8 @@ end
 # Used in add_field_data.
 # We need to find the PUnstructuredGrid / PStructuredGrid / ... node.
 function find_base_xml_node_to_add_field(pvtk::PVTKFile, loc)
-    (; vtk, xdoc,) = pvtk
-    xroot = root(xdoc)
-    pgrid_type = "P" * vtk.grid_type
+    xroot = root(pvtk.xdoc)
+    pgrid_type = "P" * pvtk.vtk.grid_type
     find_element(xroot, pgrid_type)
 end
 
