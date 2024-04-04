@@ -104,10 +104,14 @@ function pvtk_rectilinear()
     collect(Iterators.flatten(filenames))
 end
 
+# In this test we write to a subdirectory using relative paths.
 function pvtk_structured()
     Ns, extents = make_structured_partition()
     nparts = length(extents)  # number of "processes"
     filenames = Vector{Vector{String}}(undef, nparts)
+    outdir = "pvtk_structured_output"
+    mkpath(outdir)
+    outname = joinpath(outdir, "pstructured")
     @sync for (n, extent) ∈ enumerate(extents)
         @spawn begin
             points = [
@@ -121,7 +125,7 @@ function pvtk_structured()
             point_data = map(sum, points)
             processid = fill(n, length.(extent) .- 1)  # cell data
             filenames[n] = pvtk_grid(
-                "pstructured", points;
+                outname, points;
                 part = n, extents = extents,
                 append = false, compress = false,
             ) do vtk
