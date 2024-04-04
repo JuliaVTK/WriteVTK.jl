@@ -109,10 +109,10 @@ function pvtk_grid(
     nparts = _pvtk_nparts(is_structured; kwargs...)
     extents = _pvtk_extents(is_structured; kwargs...)
 
-    mkpath(filename)
-    bname = basename(filename)
-    prefix = joinpath(filename, bname)
-    fn = _serial_filename(part, nparts, prefix, "")
+    dir_serial = filename * "_dir"  # directory where serial files will be written
+    mkpath(dir_serial)
+    prefix = _pvtk_vtk_filename_prefix(filename; relative_to_pvtk = false, create_dirs = true)
+    filename_serial = _serial_filename(part, nparts, prefix, "")
 
     vtk = let kws_vtk = _remove_parallel_kwargs(; kwargs...)
         kws = if extents === nothing
@@ -120,7 +120,7 @@ function pvtk_grid(
         else
             (; kws_vtk..., extent = extents[part])
         end
-        vtk_grid(fn, args...; kws...)
+        vtk_grid(filename_serial, args...; kws...)
     end
 
     pvtkargs = PVTKArgs(part, nparts, ismain, ghost_level)
@@ -200,6 +200,26 @@ function _serial_filename(part, nparts, prefix, extension)
     prefix * "_$p" * extension
 end
 
+# Determine base filename (or "prefix") for serial VTK files included in a parallel VTK
+# file.
+# Here `path` is the basename of the main pvtk file (without the extension).
+# Note that it can be in a subdirectory of `.`, and it can either be an absolute or relative
+# path.
+# If it is an absolute value, then always return an absolute value.
+function _pvtk_vtk_filename_prefix(path; relative_to_pvtk, create_dirs = false)
+    dir_serial = path  # directory where serial files will be written
+    if create_dirs
+        mkpath(dir_serial)
+    end
+    bname = basename(path)
+    if isabspath(path) || !relative_to_pvtk
+        joinpath(dir_serial, bname)
+    else
+        _, reldir = splitdir(dir_serial)
+        joinpath(reldir, bname)
+    end
+end
+
 function _init_pvtk!(pvtk::PVTKFile, extents)
     # Recover some data
     vtk = pvtk.vtk
@@ -208,7 +228,7 @@ function _init_pvtk!(pvtk::PVTKFile, extents)
     npieces = pvtkargs.nparts
     pref, _ = splitext(pvtk.path)
     _, ext = splitext(vtk.path)
-    prefix = joinpath(pref, basename(pref))
+    prefix = _pvtk_vtk_filename_prefix(pref; relative_to_pvtk = true)
 
     # VTKFile (root) node
     pvtk_root = create_root(pvtk.xdoc, "VTKFile")
