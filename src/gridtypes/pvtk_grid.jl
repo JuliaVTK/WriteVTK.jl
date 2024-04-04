@@ -109,8 +109,6 @@ function pvtk_grid(
     nparts = _pvtk_nparts(is_structured; kwargs...)
     extents = _pvtk_extents(is_structured; kwargs...)
 
-    dir_serial = filename * "_dir"  # directory where serial files will be written
-    mkpath(dir_serial)
     prefix = _pvtk_vtk_filename_prefix(filename; relative_to_pvtk = false, create_dirs = true)
     filename_serial = _serial_filename(part, nparts, prefix, "")
 
