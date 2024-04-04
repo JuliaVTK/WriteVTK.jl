@@ -18,6 +18,7 @@ function pvtk_unstructured()
         pvtk["Processor"] = [1,2]
         pvtk["Temperature", VTKPointData()] = y
         pvtk["Id", VTKCellData()] = [2, 1]
+        pvtk["TimeValue"] = 4.2
     end
     @test isfile(vtufile)
     @test vtufile ∈ outfiles
@@ -73,6 +74,7 @@ function pvtk_imagedata()
             ) do vtk
                 vtk["point_data"] = point_data
                 vtk["process_id"] = processid
+                vtk["TimeValue"] = 1.2
             end
         end
     end
@@ -95,6 +97,7 @@ function pvtk_rectilinear()
             ) do vtk
                 vtk["point_data"] = point_data
                 vtk["process_id"] = processid
+                vtk["TimeValue"] = 3.4
             end
         end
     end
@@ -124,6 +127,7 @@ function pvtk_structured()
             ) do vtk
                 vtk["point_data"] = point_data
                 vtk["process_id"] = processid
+                vtk["TimeValue"] = 3.5
             end
         end
     end
