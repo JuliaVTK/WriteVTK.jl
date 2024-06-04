@@ -53,7 +53,7 @@ In each case, the correct kind of VTK file will be generated.
 ## Supported VTK formats
 
 This package attempts to implement writers for all VTK XML formats described in
-the [VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf).
+the [VTK specification](https://docs.vtk.org/en/latest/design_documents/VTKFileFormats.html).
 Note that legacy (non-XML) files are not supported.
 
 Supported dataset formats include:
