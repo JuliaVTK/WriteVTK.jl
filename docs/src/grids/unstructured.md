@@ -46,7 +46,7 @@ Note that, since this is a triangle, the connectivity vector *must* contain thre
 ## Unstructured grid
 
 The cell types available for the unstructured grid format are those listed in the
-[VTK specification](http://www.vtk.org/VTK/img/file-formats.pdf) (figures 2 and 3).
+[VTK specification](https://docs.vtk.org/en/latest/design_documents/VTKFileFormats.html) (figures 2 and 3).
 For convenience, WriteVTK includes a [`VTKCellTypes`](@ref) module that contains
 these definitions.
 For instance, a triangle is associated to the cell type `VTKCellTypes.VTK_TRIANGLE`.
