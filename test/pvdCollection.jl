@@ -1,6 +1,7 @@
 #!/usr/bin/env julia
 
 using WriteVTK
+using Test
 
 using Printf: @sprintf
 

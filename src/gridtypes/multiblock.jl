@@ -10,6 +10,7 @@ struct VTKBlock
     VTKBlock(xelm) = new(xelm, Union{VTKFile,VTKBlock}[])
 end
 
+Base.close(vtb::VTKBlock) = vtk_save(vtb)
 xml_block_root(vtb::VTKBlock) = vtb.xelm
 
 """
