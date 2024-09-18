@@ -21,8 +21,6 @@ using FillArrays: Zeros
 
 using Base64: base64encode
 
-import Base: close, isopen, show
-
 using VTKBase:
     VTKBase,
     VTKCellTypes,  # cell type definitions as in vtkCellType.h
@@ -117,24 +115,24 @@ function data_format(vtk::DatasetFile)
     end
 end
 
-function show(io::IO, vtk::DatasetFile)
+function Base.show(io::IO, vtk::DatasetFile)
     open_str = isopen(vtk) ? "open" : "closed"
     print(io, "VTK file '$(vtk.path)' ($(vtk.grid_type) file, $open_str)")
 end
 
 """
-    close(vtk::VTKFile)
+    Base.close(vtk::VTKFile)
 
 Write and close VTK file.
 """
-close(vtk::VTKFile) = free(vtk.xdoc)
+Base.close(vtk::VTKFile) = free(vtk.xdoc)
 
 """
-    isopen(vtk::VTKFile)
+    Base.isopen(vtk::VTKFile)
 
 Check if VTK file is still being written.
 """
-isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
+Base.isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
 # Add a default extension to the filename, unless the user have already given
 # the correct one.
