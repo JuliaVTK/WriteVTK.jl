@@ -7,7 +7,10 @@ struct CollectionFile <: VTKFile
     xdoc::XMLDocument
     path::String
     timeSteps::Vector{String}
-    CollectionFile(xdoc, path) = new(xdoc, path, String[])
+    function CollectionFile(xdoc, path)
+        finalizer(LightXML.free, xdoc)
+        new(xdoc, path, String[])
+    end
 end
 
 function paraview_collection(filename::AbstractString;

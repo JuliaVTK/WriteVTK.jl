@@ -21,7 +21,10 @@ struct MultiblockFile <: VTKFile
     xdoc::XMLDocument
     path::String
     blocks::Vector{Union{VTKFile,VTKBlock}}
-    MultiblockFile(xdoc, path) = new(xdoc, path, Union{VTKFile,VTKBlock}[])
+    function MultiblockFile(xdoc, path)
+        finalizer(LightXML.free, xdoc)
+        new(xdoc, path, Union{VTKFile,VTKBlock}[])
+    end
 end
 
 function xml_block_root(vtm::MultiblockFile)

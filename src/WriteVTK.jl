@@ -102,8 +102,10 @@ struct DatasetFile <: VTKFile
     end
 end
 
-DatasetFile(dtype, xdoc::XMLDocument, fname::AbstractString, args...; kwargs...) =
+function DatasetFile(dtype, xdoc::XMLDocument, fname::AbstractString, args...; kwargs...)
+    finalizer(LightXML.free, xdoc)
     DatasetFile(xdoc, add_extension(fname, dtype), xml_name(dtype), args...; kwargs...)
+end
 
 function data_format(vtk::DatasetFile)
     if vtk.appended

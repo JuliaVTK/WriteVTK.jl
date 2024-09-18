@@ -12,6 +12,10 @@ struct PVTKFile <: VTKFile
     xdoc::XMLDocument
     vtk::DatasetFile
     path::String
+    function PVTKFile(args, xdoc, vtk, path)
+        finalizer(LightXML.free, xdoc)
+        new(args, xdoc, vtk, path)
+    end
 end
 
 # This is just to make a PVTKFile work like a DatasetFile.
