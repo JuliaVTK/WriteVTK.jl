@@ -21,8 +21,8 @@ pvtk_grid(
 
 which returns a handler representing a parallel VTK file that can be
 appended with cell and point data and eventually written to disk with
-[`vtk_save`](@ref) as usual.
-In an MPI job, `vtk_save` will cause each rank to write a serial file and just
+[`close`](@ref) as usual.
+In an MPI job, `close` will cause each rank to write a serial file and just
 a single rank (e.g., rank 0) will write the header file.
 
 This signature is valid for **unstructured grids**.

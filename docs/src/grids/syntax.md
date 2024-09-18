@@ -25,7 +25,7 @@ is equivalent to:
 ```julia
 vtk = vtk_grid(filename, points..., [cells]; kws...)
 # add datasets here...
-saved_files = vtk_save(vtk)
+saved_files = close(vtk)
 ```
 
 ## Data formatting options

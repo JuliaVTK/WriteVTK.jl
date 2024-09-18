@@ -22,7 +22,7 @@ julia> zs = @. cos(xs) + sin(ys');
 julia> vtk = vtk_surface("surf", xs, ys, zs)
 VTK file 'surf.vtu' (UnstructuredGrid file, open)
 
-julia> vtk_save(vtk)
+julia> close(vtk)
 1-element Vector{String}:
  "surf.vtu"
 ```

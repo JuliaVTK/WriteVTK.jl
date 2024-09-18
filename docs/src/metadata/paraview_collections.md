@@ -31,13 +31,13 @@ collection_add_timestep(pvd, vtk, time)
 ```
 
 Here, `time` is a real number that represents the current time (or timestep) in
-the simulation. Note that both options implicitly call `vtk_save(vtk)` so adding
+the simulation. Note that both options implicitly call `close(vtk)` so adding
 the VTK file to the collection must be done after adding data to the file.
 
 When all the files are added to the `pvd` file, it can be saved using:
 
 ``` julia
-vtk_save(pvd)
+close(pvd)
 ```
 
 ## Working example
