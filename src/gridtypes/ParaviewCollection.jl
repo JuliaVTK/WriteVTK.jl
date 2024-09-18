@@ -7,7 +7,10 @@ struct CollectionFile <: VTKFile
     xdoc::XMLDocument
     path::String
     timeSteps::Vector{String}
-    CollectionFile(xdoc, path) = new(xdoc, path, String[])
+    function CollectionFile(xdoc, path)
+        finalizer(LightXML.free, xdoc)
+        new(xdoc, path, String[])
+    end
 end
 
 function paraview_collection(filename::AbstractString;
@@ -65,7 +68,7 @@ function collection_add_timestep(pvd::CollectionFile, datfile::VTKFile,
     set_attribute(xDataSet, "timestep", string(time))
     set_attribute(xDataSet, "part", "0")
     set_attribute(xDataSet, "file", fname)
-    append!(pvd.timeSteps, vtk_save(datfile))
+    append!(pvd.timeSteps, close(datfile))
     return
 end
 
@@ -75,8 +78,8 @@ Base.setindex!(pvd::CollectionFile, datfile::VTKFile, time::Real) =
 function vtk_save(pvd::CollectionFile)
     outfiles = [pvd.path; pvd.timeSteps]::Vector{String}
     if isopen(pvd)
-        save_file(pvd.xdoc, pvd.path)
-        close(pvd)
+        LightXML.save_file(pvd.xdoc, pvd.path)
+        close_xml(pvd)
     end
     return outfiles
 end

@@ -2,6 +2,7 @@
 
 using WriteVTK
 using StaticArrays: SVector
+using Test
 
 const FloatType = Float32
 const vtk_filename_noext = "structured"
@@ -111,8 +112,11 @@ function generate_structured(grid_format, ::Val{dim}) where {dim}
         vtk["myVector.SVector"] = vs
 
         # Save and close vtk file.
-        vtk_save(vtk)
+        files = close(vtk)
+        @test isopen(vtk) == false
     end
+
+    files
 end
 
 function main()

@@ -57,7 +57,7 @@ vtk = vtk_grid(yet_another_block, "my_deeply_nested_file", x4, y4, z4)
 Finally, only the multiblock file needs to be saved explicitly:
 
 ``` julia
-outfiles = vtk_save(vtm)
+outfiles = close(vtm)
 ```
 
 WriteVTK will write out a multiblock VTK file that looks like something like this (in addition to all the VTK files contained in the multiblock file):

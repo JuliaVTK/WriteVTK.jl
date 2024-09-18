@@ -6,8 +6,8 @@ function vtk_save(vtk::DatasetFile)
             save_file(vtk.xdoc, vtk.path)
         end
     end
-    if isopen(vtk)  # just in case the file was closed by calls to save_* above
-        close(vtk)
+    if isopen(vtk)  # just in case the XML handler was freed by calls to save_* above
+        close_xml(vtk)
     end
     return [vtk.path] :: Vector{String}
 end

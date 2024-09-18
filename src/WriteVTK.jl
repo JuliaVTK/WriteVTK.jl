@@ -21,8 +21,6 @@ using FillArrays: Zeros
 
 using Base64: base64encode
 
-import Base: close, isopen, show
-
 using VTKBase:
     VTKBase,
     VTKCellTypes,  # cell type definitions as in vtkCellType.h
@@ -50,7 +48,7 @@ const HeaderType = UInt64  # should be UInt32 or UInt64
 """
     VTKFile
 
-Abstract type describing a VTK file that may be written using [`vtk_save`](@ref).
+Abstract type describing a VTK file that may be written using [`close`](@ref).
 """
 abstract type VTKFile end
 
@@ -104,8 +102,10 @@ struct DatasetFile <: VTKFile
     end
 end
 
-DatasetFile(dtype, xdoc::XMLDocument, fname::AbstractString, args...; kwargs...) =
+function DatasetFile(dtype, xdoc::XMLDocument, fname::AbstractString, args...; kwargs...)
+    finalizer(LightXML.free, xdoc)
     DatasetFile(xdoc, add_extension(fname, dtype), xml_name(dtype), args...; kwargs...)
+end
 
 function data_format(vtk::DatasetFile)
     if vtk.appended
@@ -117,24 +117,39 @@ function data_format(vtk::DatasetFile)
     end
 end
 
-function show(io::IO, vtk::DatasetFile)
+function Base.show(io::IO, vtk::DatasetFile)
     open_str = isopen(vtk) ? "open" : "closed"
     print(io, "VTK file '$(vtk.path)' ($(vtk.grid_type) file, $open_str)")
 end
 
 """
-    close(vtk::VTKFile)
+    Base.close(vtk::VTKFile) -> Vector{String}
 
 Write and close VTK file.
+
+Returns a list of paths pointing to the written VTK files (typically just one file, but can
+be more for e.g. `MultiblockFile`).
+
+---
+
+    Base.close(vtm::MultiblockFile) -> Vector{String}
+
+Save and close multiblock file (`.vtm`).
+The VTK files included in the multiblock file are also saved.
 """
-close(vtk::VTKFile) = free(vtk.xdoc)
+Base.close(vtk::VTKFile) = vtk_save(vtk)  # for backwards compatibility, the actual implementation is in vtk_save (which still works)
+
+# Free LightXML memory. Note that this is also called when an xdoc object is finalised, but
+# it seems to be OK to call `free` multiple times.
+# After calling this, the VTK file is considered as closed (see `isopen` below).
+close_xml(vtk::VTKFile) = LightXML.free(vtk.xdoc)
 
 """
-    isopen(vtk::VTKFile)
+    Base.isopen(vtk::VTKFile)
 
 Check if VTK file is still being written.
 """
-isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
+Base.isopen(vtk::VTKFile) = (vtk.xdoc.ptr != C_NULL)
 
 # Add a default extension to the filename, unless the user have already given
 # the correct one.
@@ -201,7 +216,7 @@ for func in (:vtk_grid, :pvtk_grid, :vtk_multiblock, :paraview_collection,
             try
                 f(vtk)
             finally
-                outfiles = vtk_save(vtk)
+                outfiles = close(vtk)
             end
             outfiles :: Vector{String}
         end
