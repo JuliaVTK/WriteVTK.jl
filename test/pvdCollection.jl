@@ -69,7 +69,8 @@ function main()
             vtk["q_values"] = q
             vtk["myVector"] = vec
             vtk["myCellData"] = cdata
-            vtk_save(vtk)
+            close(vtk)
+            @test isopen(vtk) == false
             pvd[float(it + 1)] = vtk
         end
     end
@@ -83,7 +84,7 @@ function main()
     # add a vtk file
     vtk_reload = vtk_grid("collection_reload", [1, 2, 3], [1, 2, 3])
     pvd_reload[5.0] = vtk_reload
-    pvd_reload_files = vtk_save(pvd_reload)
+    pvd_reload_files = close(pvd_reload)
     append!(outfiles, pvd_reload_files)
 
     println("Saved:  ", join(outfiles, "  "))

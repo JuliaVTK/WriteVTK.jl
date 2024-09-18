@@ -48,7 +48,7 @@ const HeaderType = UInt64  # should be UInt32 or UInt64
 """
     VTKFile
 
-Abstract type describing a VTK file that may be written using [`vtk_save`](@ref).
+Abstract type describing a VTK file that may be written using [`close`](@ref).
 """
 abstract type VTKFile end
 
@@ -123,18 +123,21 @@ function Base.show(io::IO, vtk::DatasetFile)
 end
 
 """
-    Base.close(vtk::VTKFile)
+    Base.close(vtk::VTKFile) -> Vector{String}
 
 Write and close VTK file.
 
+Returns a list of paths pointing to the written VTK files (typically just one file, but can
+be more for e.g. `MultiblockFile`).
+
 ---
 
-    Base.close(vtm::MultiblockFile)
+    Base.close(vtm::MultiblockFile) -> Vector{String}
 
 Save and close multiblock file (`.vtm`).
 The VTK files included in the multiblock file are also saved.
 """
-Base.close(vtk::VTKFile) = vtk_save(vtk)
+Base.close(vtk::VTKFile) = vtk_save(vtk)  # for backwards compatibility, the actual implementation is in vtk_save (which still works)
 
 # Free LightXML memory. Note that this is also called when an xdoc object is finalised, but
 # it seems to be OK to call `free` multiple times.
@@ -213,7 +216,7 @@ for func in (:vtk_grid, :pvtk_grid, :vtk_multiblock, :paraview_collection,
             try
                 f(vtk)
             finally
-                outfiles = vtk_save(vtk)
+                outfiles = close(vtk)
             end
             outfiles :: Vector{String}
         end

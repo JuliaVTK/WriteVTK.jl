@@ -56,9 +56,9 @@ compute_whole_extent(::Nothing) = nothing
     )
 
 Returns a handler representing a parallel VTK file, which can be
-eventually written to file with `vtk_save`.
+eventually written to file with [`close`](@ref).
 
-Positional and keyword arguments in `args` and `kwargs` are passed to `vtk_grid`
+Positional and keyword arguments in `args` and `kwargs` are passed to [`vtk_grid`](@ref)
 verbatim.
 Note that serial filenames are automatically generated from `filename` and from
 the process id `part`.
@@ -190,8 +190,8 @@ function vtk_save(pvtk::PVTKFile)
             save_file(pvtk.xdoc, pvtk.path)
             push!(outfiles, pvtk.path)
         end
-        append!(outfiles, vtk_save(pvtk.vtk))
-        close(pvtk)
+        append!(outfiles, close(pvtk.vtk))
+        close_xml(pvtk)
     end
     outfiles
 end

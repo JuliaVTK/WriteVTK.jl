@@ -99,7 +99,8 @@ function main()
             vtk["myCellData"] = cdata
 
             # Save and close vtk file.
-            append!(outfiles, vtk_save(vtk))
+            append!(outfiles, close(vtk))
+            @test isopen(vtk) == false
         end
 
     end # dim loop

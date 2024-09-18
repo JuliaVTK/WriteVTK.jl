@@ -13,7 +13,9 @@ files = String[]
 let
     @time output = let
         vtk = vtk_surface("surface_basic", xs, ys, zs)
-        vtk_save(vtk)
+        output = close(vtk)
+        @test isopen(vtk) == false
+        output
     end
     append!(files, output)
 end

@@ -111,7 +111,8 @@ function generate_structured(grid_format, ::Val{dim}) where {dim}
         vtk["myVector.SVector"] = vs
 
         # Save and close vtk file.
-        vtk_save(vtk)
+        close(vtk)
+        @test isopen(vtk) == false
     end
 end
 

@@ -42,9 +42,9 @@ Initialise VTK multiblock file, linking multiple VTK dataset files.
 
 Returns a handler for a multiblock file.
 To recursively save the multiblock file and linked dataset files, call
-[`vtk_save`](@ref) on the returned handler.
+[`close`](@ref) on the returned handler.
 
-Note that `vtk_save` is implicitly called if the optional `f` argument is passed.
+Note that `close` is implicitly called if the optional `f` argument is passed.
 This is in particular what happens when using the do-block syntax.
 """
 function vtk_multiblock(filename::AbstractString)
@@ -106,20 +106,14 @@ function _generate_gridfile_basename(vtm::VTKBlock)
     end
 end
 
-"""
-    vtk_save(vtm::MultiblockFile)
-
-Save and close multiblock file (`.vtm`).
-The VTK files included in the multiblock file are also saved.
-"""
 function vtk_save(vtm::MultiblockFile)
     outfiles = [vtm.path]::Vector{String}
     for vtk in vtm.blocks
-        append!(outfiles, vtk_save(vtk))
+        append!(outfiles, close(vtk))
     end
     if isopen(vtm)
-        save_file(vtm.xdoc, vtm.path)
-        close(vtm)
+        LightXML.save_file(vtm.xdoc, vtm.path)
+        close_xml(vtm)
     end
     outfiles
 end
@@ -128,7 +122,7 @@ function vtk_save(vtm::VTKBlock)
     # Saves VTKBlocks.
     outfiles = String[]
     for vtk in vtm.blocks
-        append!(outfiles, vtk_save(vtk))
+        append!(outfiles, close(vtk))
     end
     return outfiles
 end
