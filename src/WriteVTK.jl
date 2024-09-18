@@ -126,8 +126,20 @@ end
     Base.close(vtk::VTKFile)
 
 Write and close VTK file.
+
+---
+
+    Base.close(vtm::MultiblockFile)
+
+Save and close multiblock file (`.vtm`).
+The VTK files included in the multiblock file are also saved.
 """
-Base.close(vtk::VTKFile) = free(vtk.xdoc)
+Base.close(vtk::VTKFile) = vtk_save(vtk)
+
+# Free LightXML memory. Note that this is also called when an xdoc object is finalised, but
+# it seems to be OK to call `free` multiple times.
+# After calling this, the VTK file is considered as closed (see `isopen` below).
+close_xml(vtk::VTKFile) = LightXML.free(vtk.xdoc)
 
 """
     Base.isopen(vtk::VTKFile)
