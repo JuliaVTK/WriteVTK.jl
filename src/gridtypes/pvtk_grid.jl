@@ -207,14 +207,13 @@ end
 # Here `path` is the basename of the main pvtk file (without the extension).
 # Note that it can be in a subdirectory of `.`, and it can either be an absolute or relative
 # path.
-# If it is an absolute value, then always return an absolute value.
 function _pvtk_vtk_filename_prefix(path; relative_to_pvtk, create_dirs = false)
     dir_serial = path  # directory where serial files will be written
     if create_dirs
         mkpath(dir_serial)
     end
     bname = basename(path)
-    if isabspath(path) || !relative_to_pvtk
+    if !relative_to_pvtk
         joinpath(dir_serial, bname)
     else
         _, reldir = splitdir(dir_serial)
