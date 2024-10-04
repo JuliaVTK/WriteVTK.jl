@@ -42,6 +42,7 @@ for test in tests
 
     # Check that the generated files match the stored checksums.
     for file in outfiles
+        file = relpath(file)  # convert to path relative to the current directory (EXECDIR)
         sha_str = bytes2hex(open(sha1, file)) * "  $file\n"
         if OVERWRITE_CHECKSUMS
             write(csio, sha_str)

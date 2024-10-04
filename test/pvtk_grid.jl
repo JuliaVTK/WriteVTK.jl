@@ -3,7 +3,7 @@ using StaticArrays
 using WriteVTK
 using Test
 
-function pvtk_unstructured()
+function pvtk_unstructured(; use_abspath = false,)
     # Suppose that the mesh is made of 5 points:
     cells = [
         MeshCell(VTKCellTypes.VTK_TRIANGLE, [1, 4, 2]),
@@ -11,9 +11,11 @@ function pvtk_unstructured()
     ]
     x = [0.95, 0.16, 0.07, 0.21, 0.60]
     y = [0.32, 0.55, 0.87, 0.12, 0.85]
-    vtufile = "simulation/simulation_1.vtu"
+    pvtk_name = "simulation" * (use_abspath ? "_abs" : "")
+    pvtk_dir = use_abspath ? abspath(pvtk_name) : pvtk_name
+    vtufile = joinpath(pvtk_dir, "$(pvtk_name)_1.vtu")
     rm(vtufile, force = true)
-    @time outfiles = pvtk_grid("simulation", x, y, cells; part = 1, nparts = 1) do pvtk # 2D
+    @time outfiles = pvtk_grid(pvtk_dir, x, y, cells; part = 1, nparts = 1) do pvtk # 2D
         pvtk["Pressure"] = x
         pvtk["Processor"] = [1,2]
         pvtk["Temperature", VTKPointData()] = y
@@ -140,7 +142,8 @@ end
 
 function main()
     vcat(
-        pvtk_unstructured(),
+        pvtk_unstructured(use_abspath = false),
+        pvtk_unstructured(use_abspath = true),
         pvtk_unstructured_higherorderdegrees(),
         pvtk_imagedata(),
         pvtk_rectilinear(),
