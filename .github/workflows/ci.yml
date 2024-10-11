@@ -19,7 +19,7 @@ jobs:
         experimental: [false]
         version:
           - '1.6'
-          - '1.10'
+          - '1.11'
         os:
           - ubuntu-latest
         arch:
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@latest
         with:
-          version: '1.10'
+          version: '1.11'
       - name: Install dependencies
         run: |
           julia --project=docs -e '
