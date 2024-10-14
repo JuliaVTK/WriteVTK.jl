@@ -152,7 +152,7 @@ xml_data_array_name(::Union{String,ListOfStrings}) = "Array"
     data_to_xml(
         vtk::DatasetFile, xParent::XMLElement, data,
         name::AbstractString, Nc::Union{Int,AbstractFieldData} = 1;
-        component_names::Union{AbstractVector, Nothing} = nothing
+        component_names = nothing
     )
 
 Add numerical data to VTK XML file.
@@ -164,8 +164,8 @@ In the latter case, the number of components will be deduced from the data
 dimensions and the type of field data.
 """
 function data_to_xml(vtk, xParent, data, name,
-                     Nc::Union{Int,AbstractFieldData}=1;
-                     component_names::Union{AbstractVector,Nothing}=nothing)
+                     Nc::Union{Int,AbstractFieldData} = 1;
+                     component_names = nothing)
     xDA = new_child(xParent, xml_data_array_name(data))
     set_attribute(xDA, "type", datatype_str(data))
     set_attribute(xDA, "Name", name)
@@ -322,14 +322,16 @@ function data_to_xml_ascii(vtk::VTKFile, xDA::XMLElement, data)
 end
 
 """
-    add_field_data(vtk::DatasetFile, data,
-                   name::AbstractString, loc::AbstractFieldData)
+    add_field_data(
+        vtk::DatasetFile, data, name::AbstractString, loc::AbstractFieldData;
+        component_names = nothing,
+    )
 
 Add either point or cell data to VTK file.
 """
 function add_field_data(vtk::VTKFile, data, name::AbstractString,
                         loc::AbstractFieldData;
-                        component_names::Union{AbstractVector, Nothing}=nothing)
+                        component_names = nothing)
     xbase = find_base_xml_node_to_add_field(vtk, loc)
 
     # Find or create "nodetype" (PointData, CellData or FieldData) node.
@@ -360,18 +362,22 @@ vtk_cell_data(args...; kwargs...) = add_field_data(args..., VTKCellData(); kwarg
 vtk_field_data(args...; kwargs...) = add_field_data(args..., VTKFieldData(); kwargs...)
 
 """
-    setindex!(vtk::DatasetFile, data, name::AbstractString, [field_type])
+    setindex!(vtk::DatasetFile, data, name::AbstractString, [field_type]; [component_names])
 
 Add a new dataset to VTK file.
 
 The number of components of the dataset (e.g. for scalar or vector fields) is
 determined automatically from the input data dimensions.
 
-The optional argument `field_type` should be an instance of `VTKPointData`,
+The optional `field_type` argument should be an instance of `VTKPointData`,
 `VTKCellData` or `VTKFieldData`.
 It determines whether the data should be associated to grid points, cells or
 none.
 If not given, this is guessed from the input data size and the grid dimensions.
+
+The optional `component_names` keyword argument allows to override the default component
+names when writing vector or tensor fields. It should be a tuple or a vector of strings (see
+below for an example).
 
 # Example
 
@@ -382,20 +388,27 @@ vel = rand(3, 12, 14, 42)  # vector field
 time = 42.0
 
 vtk = vtk_grid(...)
-vtk["velocity", VTKPointData()] = vel
+vtk["velocity", VTKPointData(), component_names = ("Ux", "Uy", "Uz")] = vel
 vtk["time", VTKFieldData()] = time
 
 # This also works, and will generally give the same result:
-vtk["velocity"] = vel
+vtk["velocity", component_names = ("Ux", "Uy", "Uz")] = vel
 vtk["time"] = time
 ```
 """
-Base.setindex!(vtk::DatasetFile, data, name::AbstractString,
-               loc::AbstractFieldData; kwargs...) = add_field_data(vtk, data, name, loc; kwargs...)
+function Base.setindex!(
+        vtk::DatasetFile, data, name::AbstractString, loc::AbstractFieldData;
+        component_names::Union{Nothing, ListOfStrings} = nothing,
+    )
+    add_field_data(vtk, data, name, loc; component_names = component_names)
+end
 
-function Base.setindex!(vtk::DatasetFile, data, name::AbstractString; kwargs...)
-    loc = guess_data_location(data, vtk) :: AbstractFieldData
-    setindex!(vtk, data, name, loc; kwargs...)
+function Base.setindex!(
+        vtk::DatasetFile, data, name::AbstractString;
+        component_names::Union{Nothing, ListOfStrings} = nothing
+    )
+    loc = guess_data_location(data, vtk)::AbstractFieldData
+    setindex!(vtk, data, name, loc; component_names = component_names)
 end
 
 """
