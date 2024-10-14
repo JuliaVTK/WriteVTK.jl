@@ -91,6 +91,7 @@ function pvtk_rectilinear()
         @spawn begin
             xs = map(is -> [sqrt(i) for i ∈ is], extent)  # local grid
             point_data = map(sum, Iterators.product(xs...))
+            vecdata = (1, 2, 3) .* Ref(point_data)
             processid = fill(n, length.(xs) .- 1)  # cell data
             filenames[n] = pvtk_grid(
                 "prectilinear", xs...;
@@ -98,6 +99,7 @@ function pvtk_rectilinear()
                 append = false, compress = false,
             ) do vtk
                 vtk["point_data"] = point_data
+                vtk["vector", component_names = ("Ux", "Uy", "Uz")] = vecdata
                 vtk["process_id"] = processid
                 vtk["TimeValue"] = 3.4
             end

@@ -137,19 +137,21 @@ end
 
 # Add point and cell data as usual
 function Base.setindex!(
-        pvtk::PVTKFile, data, name::AbstractString, loc::AbstractFieldData,
+        pvtk::PVTKFile, data, name::AbstractString, loc::AbstractFieldData;
+        component_names::Union{Nothing, ListOfStrings} = nothing
     )
-    pvtk.vtk[name, loc] = data
+    setindex!(pvtk.vtk, data, name, loc; component_names = component_names)
 end
 
 # In the case of field data, also add it to the pvtk file.
 # Otherwise field data (typically the time / "TimeValue") is not seen by ParaView.
 function Base.setindex!(
-        pvtk::PVTKFile, data, name::AbstractString, loc::VTKFieldData,
+        pvtk::PVTKFile, data, name::AbstractString, loc::VTKFieldData;
+        component_names::Union{Nothing, ListOfStrings} = nothing,
     )
-    pvtk.vtk[name, loc] = data
+    setindex!(pvtk.vtk, data, name, loc; component_names = component_names)
     if pvtk.pvtkargs.ismain
-        add_field_data(pvtk, data, name, loc)
+        add_field_data(pvtk, data, name, loc; component_names = component_names)
     end
     data
 end
@@ -164,10 +166,11 @@ end
 
 # If `loc` was not passed, try to guess which kind of data was passed.
 function Base.setindex!(
-        pvtk::PVTKFile, data, name::AbstractString,
+        pvtk::PVTKFile, data, name::AbstractString;
+        component_names::Union{Nothing, ListOfStrings} = nothing
     )
-    loc = guess_data_location(data, pvtk.vtk) :: AbstractFieldData
-    pvtk[name, loc] = data
+    loc = guess_data_location(data, pvtk.vtk)::AbstractFieldData
+    setindex!(pvtk, data, name, loc; component_names = component_names)
 end
 
 # Write XML attribute.
@@ -332,10 +335,18 @@ function _update_pvtk!(pvtk::PVTKFile)
             t = attribute(vtk_data_array, "type")
             name = attribute(vtk_data_array, "Name")
             Nc = attribute(vtk_data_array, "NumberOfComponents")
+            Nc_val = parse(Int, Nc)
             pvtk_pdata_array = new_child(pvtk_ppoint_data, "PDataArray")
             set_attribute(pvtk_pdata_array, "type", t)
             set_attribute(pvtk_pdata_array, "Name", name)
             set_attribute(pvtk_pdata_array, "NumberOfComponents", Nc)
+            for n in 1:Nc_val
+                attr = "ComponentName$(n - 1)"
+                component_name = attribute(vtk_data_array, attr)
+                if component_name !== nothing
+                    set_attribute(pvtk_pdata_array, attr, component_name)
+                end
+            end
         end
     end
 
