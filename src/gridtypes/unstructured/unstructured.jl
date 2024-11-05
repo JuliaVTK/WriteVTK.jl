@@ -143,6 +143,21 @@ function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
     vtk
 end
 
+# If the type of `cells` is not concrete, then try to guess the actual cell type and convert
+# the vector to a concrete type.
+# This usually happens when a user initialises a cell vector as MeshCell[] (which is not
+# completely inferred) and then pushes cells into that vector.
+function _adapt_cells(cells::AbstractVector)
+    if isconcretetype(eltype(cells))
+        cells
+    elseif !isempty(cells)
+        CellType = typeof(first(cells))  # concrete cell type (assume container is homogeneous)
+        convert(Vector{CellType}, cells)
+    else
+        throw(ArgumentError("concrete cell type cannot be determined (cells vector is empty)"))
+    end
+end
+
 # Variant of vtk_grid with 2-D array "points".
 #   size(points) = (dim, num_points), with dim ∈ {1, 2, 3}
 """
@@ -157,8 +172,9 @@ Create an unstructured mesh  image data (`.vtu`) file.
 `X` is a matrix with each column containing the Cartesian coordinates of a point
 """
 function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
-                  cells::CellVector, args...; kwargs...) where T
+                  cells_in::CellVector, args...; kwargs...) where T
     dim, Npts = size(points)
+    cells = _adapt_cells(cells_in)
     gtype = grid_type(eltype(cells))
 
     if dim == 3
@@ -200,11 +216,12 @@ Create an unstructured mesh image data (`.vtu`) file.
 """
 function vtk_grid(filename::AbstractString, x::AbstractVector{T},
                   y::AbstractVector{T}, z::AbstractVector{T},
-                  cells::CellVector, args...; kwargs...) where {T}
+                  cells_in::CellVector, args...; kwargs...) where {T}
     if !(length(x) == length(y) == length(z))
         throw(DimensionMismatch("length of x, y and z arrays must be the same."))
     end
     points = (x, y, z)
+    cells = _adapt_cells(cells_in)
     gtype = grid_type(eltype(cells))
     vtk_grid(gtype, filename, points, cells, args...; kwargs...)
 end
@@ -236,7 +253,8 @@ Create an unstructured mesh  image data (`.vtu`) file.
 `xs` is a vector of coordinates, such as a vector of `SVector{3}` elements.
 """
 function vtk_grid(filename::AbstractString, xs::AbstractVector,
-                  cells::CellVector, args...; kwargs...)
+                  cells_in::CellVector, args...; kwargs...)
+    cells = _adapt_cells(cells_in)
     gtype = grid_type(eltype(cells))
     vtk_grid(gtype, filename, xs, cells, args...; kwargs...)
 end
@@ -244,9 +262,10 @@ end
 # Variant with 4-D Array (for "pseudo-unstructured" datasets, i.e., those that
 # actually have a 3D structure) -- maybe this variant should be removed...
 function vtk_grid(filename::AbstractString, points::AbstractArray{T,4},
-                  cells::CellVector, args...; kwargs...) where T
+                  cells_in::CellVector, args...; kwargs...) where T
     dim, Ni, Nj, Nk = size(points)
     points_r = reshape(points, dim, Ni * Nj * Nk)
+    cells = _adapt_cells(cells_in)
     gtype = grid_type(eltype(cells))
     vtk_grid(gtype, filename, points_r, cells, args...; kwargs...)
 end
