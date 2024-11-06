@@ -154,7 +154,7 @@ function check_cells(cells::AbstractVector)
         """
          Try initialising it as:
 
-            cells = $(string(CellType))[]
+            cells = $(CellType)[]
 
         before appending cells to it.
         """
