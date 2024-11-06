@@ -150,11 +150,8 @@ end
 function _adapt_cells(cells::AbstractVector)
     if isconcretetype(eltype(cells))
         cells
-    elseif !isempty(cells)
-        CellType = typeof(first(cells))  # concrete cell type (assume container is homogeneous)
-        convert(Vector{CellType}, cells)
     else
-        throw(ArgumentError("concrete cell type cannot be determined (cells vector is empty)"))
+        identity.(cells)  # tighten the element type of the container
     end
 end
 
