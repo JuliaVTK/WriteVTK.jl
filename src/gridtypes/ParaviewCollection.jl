@@ -56,6 +56,7 @@ function paraview_collection_load(filename::AbstractString)
         set_attribute(xDataSet, "part", attribute(c, "part"))
         set_attribute(xDataSet, "file", attribute(c, "file"))
     end
+    LightXML.free(xpvd)
     return pvd
 end
 
