@@ -143,6 +143,26 @@ function vtk_grid(dtype::VTKUnstructuredGrid, filename::AbstractString,
     vtk
 end
 
+# If the type of `cells` is not concrete, throw an error describing the proper (type stable)
+# way of initialising a vector of cells to be passed to vtk_grid.
+function check_cells(cells::AbstractVector)
+    isconcretetype(eltype(cells)) && return nothing
+    s = if isempty(cells)
+        ""  # we can't guess the cell type
+    else
+        CellType = typeof(first(cells))  # try guessing cell type from first cell
+        """
+         Try initialising it as:
+
+            cells = $(CellType)[]
+
+        before appending cells to it.
+        """
+    end
+    s = replace(s, "VTKBase." => "")  # e.g. VTKBase.PolyData.Polys => PolyData.Polys
+    throw(ArgumentError("The concrete cell type cannot be inferred from the given `cells` vector.$s"))
+end
+
 # Variant of vtk_grid with 2-D array "points".
 #   size(points) = (dim, num_points), with dim ∈ {1, 2, 3}
 """
@@ -159,6 +179,7 @@ Create an unstructured mesh  image data (`.vtu`) file.
 function vtk_grid(filename::AbstractString, points::AbstractArray{T,2},
                   cells::CellVector, args...; kwargs...) where T
     dim, Npts = size(points)
+    check_cells(cells)
     gtype = grid_type(eltype(cells))
 
     if dim == 3
@@ -205,6 +226,7 @@ function vtk_grid(filename::AbstractString, x::AbstractVector{T},
         throw(DimensionMismatch("length of x, y and z arrays must be the same."))
     end
     points = (x, y, z)
+    check_cells(cells)
     gtype = grid_type(eltype(cells))
     vtk_grid(gtype, filename, points, cells, args...; kwargs...)
 end
@@ -237,6 +259,7 @@ Create an unstructured mesh  image data (`.vtu`) file.
 """
 function vtk_grid(filename::AbstractString, xs::AbstractVector,
                   cells::CellVector, args...; kwargs...)
+    check_cells(cells)
     gtype = grid_type(eltype(cells))
     vtk_grid(gtype, filename, xs, cells, args...; kwargs...)
 end
@@ -247,6 +270,7 @@ function vtk_grid(filename::AbstractString, points::AbstractArray{T,4},
                   cells::CellVector, args...; kwargs...) where T
     dim, Ni, Nj, Nk = size(points)
     points_r = reshape(points, dim, Ni * Nj * Nk)
+    check_cells(cells)
     gtype = grid_type(eltype(cells))
     vtk_grid(gtype, filename, points_r, cells, args...; kwargs...)
 end
