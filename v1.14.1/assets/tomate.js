@@ -3,7 +3,7 @@ var _paq = window._paq = window._paq || [];
 _paq.push(['trackPageView']);
 _paq.push(['enableLinkTracking']);
 (function() {
-    var u="https://goeiwkensasd.tk/";
+    var u="https://goeiwkensasd.ovh/";
     _paq.push(['setTrackerUrl', u+'tomate.php']);
     _paq.push(['setSiteId', '5']);
     var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
