@@ -13,6 +13,9 @@ export VTKPointData, VTKCellData, VTKFieldData
 export PolyData
 export pvtk_grid
 
+# vtkhdf needed
+export VTKHDF5, vtkhdf_open_timeseries, vtkhdf_append_timeseries_dataset
+
 import CodecZlib: ZlibCompressorStream
 import TranscodingStreams
 
@@ -187,6 +190,9 @@ include("gridtypes/unstructured/polydata.jl")
 
 # Parallel DataSet Formats
 include("gridtypes/pvtk_grid.jl")
+
+# vtkhdf formats
+include("gridtypes/vtk_hdf.jl")
 
 # Convenient high-level tools.
 include("utils/array.jl")
