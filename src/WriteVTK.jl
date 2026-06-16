@@ -72,16 +72,18 @@ struct DatasetFile <: VTKFile
     xdoc::XMLDocument
     path::String
     grid_type::String
-    version::String     # VTK XML file version
-    Npts::Int           # Number of grid points.
-    Ncls::Int           # Number of cells.
-    compression_level::Int  # Compression level for zlib (if 0, compression is disabled)
-    appended::Bool      # Data is appended? (otherwise it's written inline, base64-encoded)
-    ascii::Bool         # if true, inline data is written in ASCII format (only used if `appended` is false)
-    buf::IOBuffer       # Buffer with appended data.
+    version::String             # VTK XML file version
+    Npts::Int                   # Number of grid points.
+    Ncls::Int                   # Number of cells.
+    compression_level::Int      # Compression level for zlib (if 0, compression is disabled)
+    parallel_compression::Bool  # Compress appended data blocks in parallel?
+    appended::Bool              # Data is appended? (otherwise it's written inline, base64-encoded)
+    ascii::Bool                 # if true, inline data is written in ASCII format (only used if `appended` is false)
+    buf::IOBuffer               # Buffer with appended data.
     function DatasetFile(
             xdoc, path, grid_type, Npts, Ncls;
             compress=true, append=true, ascii=false,
+            parallel_compression=false,
             vtkversion = :default,
         )
         clevel = _compression_level(compress)
@@ -98,7 +100,8 @@ struct DatasetFile <: VTKFile
             close(buf)
         end
         version = vtk_version(vtkversion)
-        new(xdoc, path, grid_type, version, Npts, Ncls, clevel, append, ascii, buf)
+        new(xdoc, path, grid_type, version, Npts, Ncls, clevel,
+            parallel_compression, append, ascii, buf)
     end
 end
 
