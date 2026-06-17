@@ -64,7 +64,7 @@ More generally:
   This option is ignored when writing inline data in ASCII format.
 
 - If `parallel_compression` is `true`, appended compressed data may be split into
-  VTK compression blocks and compressed using Julia threads.
+  VTK compression blocks and compressed in parallel using Julia threads.
   This is disabled by default and only applies to dense arrays with bitstype
   elements. Other data falls back to serial compression.
 
@@ -102,4 +102,3 @@ The `vtkversion` argument can take the following values:
 VTK file version `1.0` is used by default for backwards compatibility and to
 make sure that the generated files can be read by old versions of the VTK
 libraries and of ParaView.
-
