@@ -110,11 +110,12 @@ function write_array(io, data::Tuple)
     n
 end
 
-const VTK_COMPRESSION_BLOCK_SIZE = 1024^2
+const VTK_COMPRESSION_BLOCKS_PER_THREAD = 4
+const VTK_COMPRESSION_MIN_BLOCK_BYTES = 256^2      # 64 KiB
+const VTK_COMPRESSION_MAX_BLOCK_BYTES = 4 * 1024^2 # 4 MiB
 
 function _can_compress_in_parallel(data::AbstractArray{T}) where {T}
-    # Only dense bitstype arrays can be split into VTK compression blocks
-    # without changing the binary representation written by `write_array`.
+    # Only dense bitstype arrays can be split into VTK compression blocks in a useful way.
     data isa DenseArray && isbitstype(T) && !isempty(data)
 end
 _can_compress_in_parallel(data) = false
@@ -124,22 +125,39 @@ function _compressed_blocks(data::DenseArray{T}, compression_level) where {T}
     # uncompressed header containing all block sizes. Each thread can therefore
     # compress one block into a private buffer, while the final write stays
     # serial to preserve the expected block order.
-    # TODO add more comments
     data_vec = vec(data)
     num_elements = length(data_vec)
     bytes_per_element = sizeof(T)
-    elements_per_block = max(1, div(VTK_COMPRESSION_BLOCK_SIZE, bytes_per_element))
+
+    # Aim for multiple blocks per threads to reduce variance in runtime between threads.
+    target_num_blocks = min(num_elements,
+                            VTK_COMPRESSION_BLOCKS_PER_THREAD * Threads.nthreads())
+
+    elements_per_block = cld(num_elements, target_num_blocks)
+
+    # Avoid absurdly small or large blocks that would lead to inefficient compression
+    # or inefficient multi-threading.
+    min_elements = max(1, cld(VTK_COMPRESSION_MIN_BLOCK_BYTES, bytes_per_element))
+    max_elements = max(1, div(VTK_COMPRESSION_MAX_BLOCK_BYTES, bytes_per_element))
+
+    elements_per_block = clamp(elements_per_block, min_elements, max_elements)
     num_blocks = cld(num_elements, elements_per_block)
 
     blocks = Vector{Vector{UInt8}}(undef, num_blocks)
     Threads.@threads for block in 1:num_blocks
         first_element = firstindex(data_vec) + (block - 1) * elements_per_block
         last_element = min(lastindex(data_vec), first_element + elements_per_block - 1)
+
+        # Create one buffer per block.
         buf = IOBuffer()
+
+        # Write compressed data.
         zWriter = ZlibCompressorStream(buf, level=compression_level, stop_on_end=true)
         write_array(zWriter, @view data_vec[first_element:last_element])
         write(zWriter, TranscodingStreams.TOKEN_END)
-        close(zWriter)
+        close(zWriter) # Release allocated resources (issue #43)
+
+        # Store compressed block in output array.
         blocks[block] = take!(buf)
         close(buf)
     end
@@ -152,10 +170,15 @@ function _compressed_blocks(data::DenseArray{T}, compression_level) where {T}
 end
 
 function _write_compressed_parallel(buf, data::DenseArray, compression_level)
+    # Compress individual blocks in parallel.
     blocks, blocksize, last_blocksize = _compressed_blocks(data, compression_level)
+
+    # Write the header.
     header = HeaderType.((length(blocks), blocksize, last_blocksize,
                           length.(blocks)...))
     write(buf, header...)
+
+    # Write compressed blocks in the expected order.
     foreach(block -> write(buf, block), blocks)
 
     nothing
