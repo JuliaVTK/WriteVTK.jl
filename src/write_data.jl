@@ -329,8 +329,6 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
     nb = sizeof_data(data)
 
     if compress && vtk.parallel_compression && _can_compress_in_parallel(data)
-        # Parallel compression is opt-in because it changes the compressed block
-        # layout and is only valid for data that can be split byte-for-byte.
         _write_compressed_parallel(buf, data, vtk.compression_level)
     elseif compress
         _write_compressed_serial(buf, data, vtk.compression_level, nb)
