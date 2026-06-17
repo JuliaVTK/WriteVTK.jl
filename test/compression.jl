@@ -1,54 +1,36 @@
 using WriteVTK
-using CodecZlib: ZlibDecompressorStream
+using ReadVTK
 using Test
 
-function vtk_compressed_data(bytes)
-    io = IOBuffer(bytes)
-
-    num_blocks = Int(read(io, WriteVTK.HeaderType))
-    read(io, WriteVTK.HeaderType) # block size
-    read(io, WriteVTK.HeaderType) # last block size
-    block_sizes = [Int(read(io, WriteVTK.HeaderType)) for _ in 1:num_blocks]
-
-    data = UInt8[]
-    for block_size in block_sizes
-        block = read(io, block_size)
-        zReader = ZlibDecompressorStream(IOBuffer(block))
-        append!(data, read(zReader))
-        close(zReader)
-    end
-
-    data
+function read_values(filename, dims)
+    vtk = ReadVTK.VTKFile(filename)
+    values = ReadVTK.get_point_data(vtk)["values"]
+    reshape(ReadVTK.get_data(values), dims)
 end
 
 function main()
-    data = collect(Float64, 1:200_000)
+    dims = (200, 100, 10)
+    data = reshape(collect(Float64, 1:prod(dims)), dims)
     compression_level = 3
 
     @test !WriteVTK._can_compress_in_parallel(Float64[])
 
-    data_buf = IOBuffer()
-    WriteVTK.write_array(data_buf, data)
-    data_bytes = take!(data_buf)
-
-    serial_buf = IOBuffer()
-    WriteVTK._write_compressed_serial(serial_buf, data, compression_level,
-                                      WriteVTK.sizeof_data(data))
-    @test vtk_compressed_data(take!(serial_buf)) == data_bytes
-
-    parallel_buf = IOBuffer()
-    WriteVTK._write_compressed_parallel(parallel_buf, data, compression_level)
-    @test vtk_compressed_data(take!(parallel_buf)) == data_bytes
-
     mktempdir() do dir
-        files = vtk_grid(joinpath(dir, "parallel_compression"), 2, 2, 2;
+        serial_files = vtk_grid(joinpath(dir, "serial_compression"), dims...;
+                                compress = compression_level) do vtk
+            vtk["values"] = data
+        end
+        @test length(serial_files) == 1
+        @test read_values(serial_files[1], dims) == data
+
+        parallel_files = vtk_grid(joinpath(dir, "parallel_compression"), dims...;
                          compress = compression_level,
                          parallel_compression = true) do vtk
             @test vtk.parallel_compression
-            vtk["values"] = reshape(collect(Float64, 1:8), 2, 2, 2)
+            vtk["values"] = data
         end
-        @test length(files) == 1
-        @test isfile(files[1])
+        @test length(parallel_files) == 1
+        @test read_values(parallel_files[1], dims) == data
     end
 
     String[]
