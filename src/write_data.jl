@@ -110,13 +110,13 @@ function write_array(io, data::Tuple)
     n
 end
 
+nthreads() = Threads.nthreads() # Function to mock the number of threads in tests.
 const VTK_COMPRESSION_BLOCKS_PER_THREAD = 4
-const VTK_COMPRESSION_MIN_BLOCK_BYTES = 256^2      # 64 KiB
-const VTK_COMPRESSION_MAX_BLOCK_BYTES = 4 * 1024^2 # 4 MiB
+const VTK_COMPRESSION_MIN_BLOCK_BYTES = 256^2 # 64 KiB
 
 function _can_compress_in_parallel(data::AbstractArray{T}) where {T}
     # Only dense bitstype arrays can be split into VTK compression blocks in a useful way.
-    data isa DenseArray && isbitstype(T) && !isempty(data)
+    data isa DenseArray && isbitstype(T) && !isempty(data) && nthreads() > 1
 end
 _can_compress_in_parallel(data) = false
 
@@ -131,16 +131,15 @@ function _compressed_blocks(data::DenseArray{T}, compression_level) where {T}
 
     # Aim for multiple blocks per threads to reduce variance in runtime between threads.
     target_num_blocks = min(num_elements,
-                            VTK_COMPRESSION_BLOCKS_PER_THREAD * Threads.nthreads())
+                            VTK_COMPRESSION_BLOCKS_PER_THREAD * nthreads())
 
     elements_per_block = cld(num_elements, target_num_blocks)
 
-    # Avoid absurdly small or large blocks that would lead to inefficient compression
-    # or inefficient multi-threading.
+    # Avoid absurdly small blocks that would lead to inefficient compression
+    # and inefficient multi-threading.
     min_elements = max(1, cld(VTK_COMPRESSION_MIN_BLOCK_BYTES, bytes_per_element))
-    max_elements = max(1, div(VTK_COMPRESSION_MAX_BLOCK_BYTES, bytes_per_element))
 
-    elements_per_block = clamp(elements_per_block, min_elements, max_elements)
+    elements_per_block = max(elements_per_block, min_elements)
     num_blocks = cld(num_elements, elements_per_block)
 
     blocks = Vector{Vector{UInt8}}(undef, num_blocks)
