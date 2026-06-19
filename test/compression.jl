@@ -34,10 +34,24 @@ function main()
     # |   100 MiB  |     1 MiB  |             100  |
     # |     1 GiB  |    ~1 MiB  |           ~1000  |
     # |   100 GiB  |  ~102 MiB  |            1000  |
+
+    # Test these expected block sizes:
+    # | Input Size | Block Size | Number of Blocks |
+    # |     2 MiB  |   128 KiB  |              16  |
+    # |    10 MiB  |   128 KiB  |              80  |
+    # |    25 MiB  |   256 KiB  |             100  |
+    # |   100 MiB  |     1 MiB  |             100  |
+    # |   500 MiB  |     1 MiB  |             500  |
+    # |     1 GiB  |    ~1 MiB  |           ~1000  |
+    # |    10 GiB  |   ~10 MiB  |            1000  |
+    # |   100 GiB  |  ~102 MiB  |            1000  |
     @test WriteVTK._compression_block_size(2MiB) == 128KiB
+    @test WriteVTK._compression_block_size(10MiB) == 128KiB
     @test WriteVTK._compression_block_size(25MiB) == 256KiB
     @test WriteVTK._compression_block_size(100MiB) == 1MiB
+    @test WriteVTK._compression_block_size(500MiB) == 1MiB
     @test WriteVTK._compression_block_size(1GiB) == cld(1GiB, 1000)
+    @test WriteVTK._compression_block_size(10GiB) == cld(10GiB, 1000)
     @test WriteVTK._compression_block_size(100GiB) == cld(100GiB, 1000)
 
     mktempdir() do dir
