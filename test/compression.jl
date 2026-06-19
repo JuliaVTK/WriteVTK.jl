@@ -30,14 +30,6 @@ function main()
     # Test these expected block sizes:
     # | Input Size | Block Size | Number of Blocks |
     # |     2 MiB  |   128 KiB  |              16  |
-    # |    25 MiB  |   256 KiB  |             100  |
-    # |   100 MiB  |     1 MiB  |             100  |
-    # |     1 GiB  |    ~1 MiB  |           ~1000  |
-    # |   100 GiB  |  ~102 MiB  |            1000  |
-
-    # Test these expected block sizes:
-    # | Input Size | Block Size | Number of Blocks |
-    # |     2 MiB  |   128 KiB  |              16  |
     # |    10 MiB  |   128 KiB  |              80  |
     # |    25 MiB  |   256 KiB  |             100  |
     # |   100 MiB  |     1 MiB  |             100  |
