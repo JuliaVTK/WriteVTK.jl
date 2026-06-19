@@ -17,19 +17,32 @@ function num_compressed_blocks(filename)
     Int(read(io, WriteVTK.HeaderType))
 end
 
-# Mock the number of threads to be able to run this test on a single thread.
-WriteVTK.nthreads() = 4
-
 function main()
     dims = (200, 100, 10)
     data = reshape(collect(Float64, 1:prod(dims)), dims)
-    compression_level = 3
+
+    KiB = 1024
+    MiB = 1024 * KiB
+    GiB = 1024 * MiB
 
     @test !WriteVTK._can_compress_in_parallel(Float64[])
 
+    # Test these expected block sizes:
+    # | Input Size | Block Size | Number of Blocks |
+    # |     2 MiB  |   128 KiB  |              16  |
+    # |    25 MiB  |   256 KiB  |             100  |
+    # |   100 MiB  |     1 MiB  |             100  |
+    # |     1 GiB  |    ~1 MiB  |           ~1000  |
+    # |   100 GiB  |  ~102 MiB  |            1000  |
+    @test WriteVTK._compression_block_size(2MiB) == 128KiB
+    @test WriteVTK._compression_block_size(25MiB) == 256KiB
+    @test WriteVTK._compression_block_size(100MiB) == 1MiB
+    @test WriteVTK._compression_block_size(1GiB) == cld(1GiB, 1000)
+    @test WriteVTK._compression_block_size(100GiB) == cld(100GiB, 1000)
+
     mktempdir() do dir
         serial_files = vtk_grid(joinpath(dir, "serial_compression"), dims...;
-                                compress = compression_level) do vtk
+                                compress = true) do vtk
             vtk["values"] = data
         end
         @test length(serial_files) == 1
@@ -37,13 +50,15 @@ function main()
         @test read_values(serial_files[1], dims) == data
 
         parallel_files = vtk_grid(joinpath(dir, "parallel_compression"), dims...;
-                         compress = compression_level,
-                         parallel_compression = true) do vtk
+                         compress = true, parallel_compression = true) do vtk
             @test vtk.parallel_compression
             vtk["values"] = data
         end
         @test length(parallel_files) == 1
-        @test num_compressed_blocks(parallel_files[1]) == 16
+        field_size = sizeof(eltype(data)) * prod(dims)
+        @test field_size == 1_600_000
+        @test WriteVTK._compression_block_size(field_size) == 128KiB
+        @test num_compressed_blocks(parallel_files[1]) == 13 # cld(1_600_000, 128KiB) == 13
         @test read_values(parallel_files[1], dims) == data
     end
 

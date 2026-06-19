@@ -110,15 +110,38 @@ function write_array(io, data::Tuple)
     n
 end
 
-nthreads() = Threads.nthreads() # Function to mock the number of threads in tests.
-const VTK_COMPRESSION_BLOCKS_PER_THREAD = 4
-const VTK_COMPRESSION_MIN_BLOCK_BYTES = 256^2 # 64 KiB
-
 function _can_compress_in_parallel(data::AbstractArray{T}) where {T}
     # Only dense bitstype arrays can be split into VTK compression blocks in a useful way.
-    data isa DenseArray && isbitstype(T) && !isempty(data) && nthreads() > 1
+    data isa DenseArray && isbitstype(T) && !isempty(data)
 end
 _can_compress_in_parallel(data) = false
+
+function _compression_block_size(nbytes)
+    KiB = 1024
+    MiB = 1024 * KiB
+
+    # To produce hardware-independent output files, choose block size based on input
+    # size, not on the number of threads.
+    # Produce many blocks as soon as possible for small files while avoiding tiny blocks
+    # to allow for efficient multithreading even for small files (~1 MiB).
+    # Then scale up block size to a reasonable 1MiB, then again increase block size
+    # until 1000 blocks to get good scaling for huge CPUs.
+    # After reaching 1000 blocks, cap it at that and increase block size.
+    #
+    # | Input Size | Block Size | Number of Blocks |
+    # |     2 MiB  |   128 KiB  |              16  |
+    # |    25 MiB  |   256 KiB  |             100  |
+    # |   100 MiB  |     1 MiB  |             100  |
+    # |     1 GiB  |    ~1 MiB  |           ~1000  |
+    # |   100 GiB  |  ~102 MiB  |            1000  |
+    if nbytes < 100MiB
+        # For small files, target 100 blocks but use minimum block size of 128 KiB.
+        max(cld(nbytes, 100), 128KiB)
+    else
+        # For large files, target 1000 blocks but use minimum block size of 1 MiB.
+        max(cld(nbytes, 1000), 1MiB)
+    end
+end
 
 function _compressed_blocks(data::DenseArray{T}, compression_level) where {T}
     # Store compressed arrays as independently compressed blocks with an
@@ -128,18 +151,9 @@ function _compressed_blocks(data::DenseArray{T}, compression_level) where {T}
     data_vec = vec(data)
     num_elements = length(data_vec)
     bytes_per_element = sizeof(T)
+    nbytes = num_elements * bytes_per_element
 
-    # Aim for multiple blocks per threads to reduce variance in runtime between threads.
-    target_num_blocks = min(num_elements,
-                            VTK_COMPRESSION_BLOCKS_PER_THREAD * nthreads())
-
-    elements_per_block = cld(num_elements, target_num_blocks)
-
-    # Avoid absurdly small blocks that would lead to inefficient compression
-    # and inefficient multi-threading.
-    min_elements = max(1, cld(VTK_COMPRESSION_MIN_BLOCK_BYTES, bytes_per_element))
-
-    elements_per_block = max(elements_per_block, min_elements)
+    elements_per_block = cld(_compression_block_size(nbytes), bytes_per_element)
     num_blocks = cld(num_elements, elements_per_block)
 
     blocks = Vector{Vector{UInt8}}(undef, num_blocks)
