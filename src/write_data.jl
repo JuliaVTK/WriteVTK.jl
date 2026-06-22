@@ -110,6 +110,119 @@ function write_array(io, data::Tuple)
     n
 end
 
+function _can_compress_in_parallel(data::AbstractArray{T}) where {T}
+    # Only dense bitstype arrays can be split into VTK compression blocks in a useful way.
+    data isa DenseArray && isbitstype(T) && !isempty(data)
+end
+_can_compress_in_parallel(data) = false
+
+function _compression_block_size(nbytes)
+    KiB = 1024
+    MiB = 1024 * KiB
+
+    # To produce hardware-independent output files, choose block size based on input
+    # size, not on the number of threads.
+    # Produce many blocks as soon as possible for small files while avoiding tiny blocks
+    # to allow for efficient multithreading even for small files (~1 MiB).
+    # Then scale up block size to a reasonable 1MiB, then again increase block size
+    # until 1024 blocks to get good scaling for huge CPUs.
+    # After reaching 1024 blocks, cap it at that and increase block size.
+    #
+    # | Input Size | Block Size | Number of Blocks |
+    # |     2 MiB  |   128 KiB  |              16  |
+    # |    16 MiB  |   128 KiB  |             128  |
+    # |   128 MiB  |     1 MiB  |             128  |
+    # |     1 GiB  |     1 MiB  |            1024  |
+    # |   100 GiB  |   100 MiB  |            1024  |
+    if nbytes < 128MiB
+        # For small files, target 128 blocks but use minimum block size of 128 KiB.
+        max(cld(nbytes, 128), 128KiB)
+    else
+        # For large files, target 1024 blocks but use minimum block size of 1 MiB.
+        max(cld(nbytes, 1024), 1MiB)
+    end
+end
+
+function _compressed_blocks(data::DenseArray{T}, compression_level) where {T}
+    # Store compressed arrays as independently compressed blocks with an
+    # uncompressed header containing all block sizes. Each thread can therefore
+    # compress one block into a private buffer, while the final write stays
+    # serial to preserve the expected block order.
+    data_vec = vec(data)
+    num_elements = length(data_vec)
+    bytes_per_element = sizeof(T)
+    nbytes = num_elements * bytes_per_element
+
+    elements_per_block = cld(_compression_block_size(nbytes), bytes_per_element)
+    num_blocks = cld(num_elements, elements_per_block)
+
+    blocks = Vector{Vector{UInt8}}(undef, num_blocks)
+    Threads.@threads for block in 1:num_blocks
+        first_element = firstindex(data_vec) + (block - 1) * elements_per_block
+        last_element = min(lastindex(data_vec), first_element + elements_per_block - 1)
+
+        # Create one buffer per block.
+        buf = IOBuffer()
+
+        # Write compressed data.
+        zWriter = ZlibCompressorStream(buf, level=compression_level, stop_on_end=true)
+        write_array(zWriter, @view data_vec[first_element:last_element])
+        write(zWriter, TranscodingStreams.TOKEN_END)
+        close(zWriter) # Release allocated resources (issue #43)
+
+        # Store compressed block in output array.
+        blocks[block] = take!(buf)
+        close(buf)
+    end
+
+    blocksize = elements_per_block * bytes_per_element
+    last_blocksize = (num_elements - (num_blocks - 1) * elements_per_block) *
+                     bytes_per_element
+
+    return blocks, blocksize, last_blocksize
+end
+
+function _write_compressed_parallel(buf, data::DenseArray, compression_level)
+    # Compress individual blocks in parallel.
+    blocks, blocksize, last_blocksize = _compressed_blocks(data, compression_level)
+
+    # Write the header.
+    header = HeaderType.((length(blocks), blocksize, last_blocksize,
+                          length.(blocks)...))
+    write(buf, header...)
+
+    # Write compressed blocks in the expected order.
+    foreach(block -> write(buf, block), blocks)
+
+    nothing
+end
+
+function _write_compressed_serial(buf, data, compression_level, nb)
+    initpos = position(buf)
+
+    # Write temporary data that will be replaced later with the real header.
+    let header = ntuple(d -> zero(HeaderType), Val(4))
+        write(buf, header...)
+    end
+
+    # Write compressed data.
+    zWriter = ZlibCompressorStream(buf, level=compression_level, stop_on_end=true)
+    write_array(zWriter, data)
+    write(zWriter, TranscodingStreams.TOKEN_END)
+    close(zWriter) # Release allocated resources (issue #43)
+
+    # Go back to `initpos` and write real header.
+    endpos = position(buf)
+    compbytes = endpos - initpos - 4 * sizeof(HeaderType)
+    let header = HeaderType.((1, nb, nb, compbytes))
+        seek(buf, initpos)
+        write(buf, header...)
+        seek(buf, endpos)
+    end
+
+    nothing
+end
+
 function add_data_ascii(xml, x::Union{Number,AbstractString})
     add_text(xml, " ")
     add_text(xml, string(x))
@@ -228,28 +341,10 @@ function data_to_xml_appended(vtk::DatasetFile, xDA::XMLElement, data)
     # Size of data array (in bytes).
     nb = sizeof_data(data)
 
-    if compress
-        initpos = position(buf)
-
-        # Write temporary data that will be replaced later with the real header.
-        let header = ntuple(d -> zero(HeaderType), Val(4))
-            write(buf, header...)
-        end
-
-        # Write compressed data.
-        zWriter = ZlibCompressorStream(buf, level=vtk.compression_level, stop_on_end=true)
-        write_array(zWriter, data)
-        write(zWriter, TranscodingStreams.TOKEN_END)
-        close(zWriter) # Release allocated resources (issue #43)
-
-        # Go back to `initpos` and write real header.
-        endpos = position(buf)
-        compbytes = endpos - initpos - 4 * sizeof(HeaderType)
-        let header = HeaderType.((1, nb, nb, compbytes))
-            seek(buf, initpos)
-            write(buf, header...)
-            seek(buf, endpos)
-        end
+    if compress && vtk.parallel_compression && _can_compress_in_parallel(data)
+        _write_compressed_parallel(buf, data, vtk.compression_level)
+    elseif compress
+        _write_compressed_serial(buf, data, vtk.compression_level, nb)
     else
         write(buf, HeaderType(nb))  # header (uncompressed version)
         nb_write = write_array(buf, data)

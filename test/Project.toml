@@ -1,6 +1,7 @@
 [deps]
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+ReadVTK = "dc215faf-f008-4882-a9f7-a79a826fadc3"
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
