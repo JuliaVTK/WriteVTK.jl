@@ -125,21 +125,21 @@ function _compression_block_size(nbytes)
     # Produce many blocks as soon as possible for small files while avoiding tiny blocks
     # to allow for efficient multithreading even for small files (~1 MiB).
     # Then scale up block size to a reasonable 1MiB, then again increase block size
-    # until 1000 blocks to get good scaling for huge CPUs.
-    # After reaching 1000 blocks, cap it at that and increase block size.
+    # until 1024 blocks to get good scaling for huge CPUs.
+    # After reaching 1024 blocks, cap it at that and increase block size.
     #
     # | Input Size | Block Size | Number of Blocks |
     # |     2 MiB  |   128 KiB  |              16  |
-    # |    25 MiB  |   256 KiB  |             100  |
-    # |   100 MiB  |     1 MiB  |             100  |
-    # |     1 GiB  |    ~1 MiB  |           ~1000  |
-    # |   100 GiB  |  ~102 MiB  |            1000  |
-    if nbytes < 100MiB
-        # For small files, target 100 blocks but use minimum block size of 128 KiB.
-        max(cld(nbytes, 100), 128KiB)
+    # |    16 MiB  |   128 KiB  |             128  |
+    # |   128 MiB  |     1 MiB  |             128  |
+    # |     1 GiB  |     1 MiB  |            1024  |
+    # |   100 GiB  |   100 MiB  |            1024  |
+    if nbytes < 128MiB
+        # For small files, target 128 blocks but use minimum block size of 128 KiB.
+        max(cld(nbytes, 128), 128KiB)
     else
-        # For large files, target 1000 blocks but use minimum block size of 1 MiB.
-        max(cld(nbytes, 1000), 1MiB)
+        # For large files, target 1024 blocks but use minimum block size of 1 MiB.
+        max(cld(nbytes, 1024), 1MiB)
     end
 end
 
